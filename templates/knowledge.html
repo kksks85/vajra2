@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <div>
+    <h1>Knowledge Management</h1>
+    <p>Capture diagnostics, playbooks, and remediation guides.</p>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Create Article</h2>
+  <form method="post" class="form-grid">
+    <input name="title" placeholder="Title" required />
+    <input name="tags" placeholder="Tags (comma separated)" />
+    <textarea name="content" placeholder="Article content" required></textarea>
+    <button class="primary" type="submit">Publish</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Articles</h2>
+  <div class="list">
+    {% for article in articles %}
+    <div class="list-item">
+      <div>
+        <strong>{{ article.title }}</strong>
+        <div class="meta">{{ article.tags | join(", ") }}</div>
+      </div>
+      <div class="meta">{{ format_utc(article.created_at) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

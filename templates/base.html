@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vajra Service Management</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+  </head>
+  <body class="si-app">
+    <aside id="sidebar" class="si-sidebar">
+      <div class="si-brand">
+        <div>
+          <div class="si-brand-name">Vajra</div>
+          <div class="si-brand-sub">Service Management</div>
+        </div>
+      </div>
+
+      <div class="si-filter">
+        <input type="search" placeholder="Filter navigator" />
+      </div>
+
+      <nav class="si-nav">
+        <div class="si-nav-section">Self-Service</div>
+        <a class="si-nav-link" href="/">Homepage</a>
+        <a class="si-nav-link" href="/incidents">Incidents</a>
+        <a class="si-nav-link si-nav-sublink" href="/incidents/new">Create New</a>
+        <a class="si-nav-link" href="/knowledge">Knowledge</a>
+        <div class="si-nav-section">Operations</div>
+        <a class="si-nav-link" href="/builder">Workflow Builder</a>
+        <div class="si-nav-section">Administration</div>
+        <a class="si-nav-link" href="/admin">System Administration</a>
+        <a class="si-nav-link si-nav-sublink" href="/admin/users">User Management</a>
+        <a class="si-nav-link si-nav-sublink" href="/admin/licenses">License Management</a>
+        <a class="si-nav-link si-nav-sublink" href="/admin/groups">Group Management</a>
+        <a class="si-nav-link si-nav-sublink" href="/admin/customers">Customer Configuration</a>
+        <a class="si-nav-link si-nav-sublink" href="/admin/contracts">Contracts</a>
+        <a class="si-nav-link si-nav-sublink" href="/admin/lm">Loitering Munition (LM)</a>
+        <a class="si-nav-link si-nav-sublink" href="/admin/gcs">Ground Control Systems (GCS)</a>
+        <a class="si-nav-link si-nav-sublink" href="/admin/tmv">Tactical Mobility Vehicle (TMV)</a>
+        <a class="si-nav-link si-nav-sublink" href="/admin/simulator">Simulator</a>
+        <a class="si-nav-link si-nav-sublink" href="/admin/lru">Line Replaceable Unit (LRU)</a>
+        <a class="si-nav-link si-nav-sublink" href="/admin/sub-systems">Sub-Systems</a>
+      </nav>
+
+      <div class="si-sidebar-footer">
+        <div class="si-status">System Healthy</div>
+        <div class="si-status-meta">Last sync: just now</div>
+      </div>
+    </aside>
+
+    <div id="main" class="si-main">
+      <div class="si-topbar">
+        <div class="si-topbar-left">
+          <div class="si-breadcrumb">
+            <span>Vajra Service Management</span>
+          </div>
+        </div>
+        <div class="si-topbar-right">
+          {% if current_user %}
+            <div class="si-profile">
+              <div class="si-avatar-sm">{{ current_user.initials }}</div>
+              <div>
+                <div class="si-profile-name">{{ current_user.name }}</div>
+                <div class="si-profile-role">{{ current_user.role }}</div>
+              </div>
+            </div>
+          {% endif %}
+          <a class="si-btn si-logout" href="/logout">Logout</a>
+        </div>
+      </div>
+
+      {% if flash_messages %}
+        <div class="si-flash-zone">
+          {% for flash in flash_messages %}
+            <div class="si-alert si-alert-{{ flash.category }}">{{ flash.message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <main class="si-content">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </body>
+</html>

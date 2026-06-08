@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="admin-dashboard">
+  <header class="admin-hero">
+    <div class="admin-hero-content">
+      <p class="admin-eyebrow">Admin Command Center</p>
+      <h1>Operations Command</h1>
+      <p>Task-driven service orchestration for the full drone fleet. Monitor readiness, resolve incidents, and coordinate mission-critical maintenance with precision.</p>
+      <div class="admin-hero-actions">
+        <div class="admin-pill">Mission Readiness: 88%</div>
+        <div class="admin-pill admin-pill--soft">Last Sync: just now</div>
+      </div>
+    </div>
+    <div class="admin-hero-panel">
+      <div class="admin-hero-title">Shift Pulse</div>
+      <div class="admin-hero-stat">{{ metrics.incidents }} open incidents</div>
+      <div class="admin-hero-sub">Field operations stable · Automation pipelines online</div>
+      <div class="admin-hero-matrix">
+        <div>
+          <span>Coverage</span>
+          <strong>96%</strong>
+        </div>
+        <div>
+          <span>Utilization</span>
+          <strong>72%</strong>
+        </div>
+        <div>
+          <span>Risk Index</span>
+          <strong>Low</strong>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="admin-metric-grid">
+    <div class="admin-metric-card">
+      <div class="admin-metric-value">{{ metrics.incidents }}</div>
+      <div class="admin-metric-label">Open Incidents</div>
+      <div class="admin-metric-meta">+4 since yesterday</div>
+    </div>
+    <div class="admin-metric-card">
+      <div class="admin-metric-value">{{ metrics.workflows }}</div>
+      <div class="admin-metric-label">Active Workflows</div>
+      <div class="admin-metric-meta">98% success rate</div>
+    </div>
+    <div class="admin-metric-card">
+      <div class="admin-metric-value">{{ metrics.knowledge }}</div>
+      <div class="admin-metric-label">Knowledge Articles</div>
+      <div class="admin-metric-meta">14 published this week</div>
+    </div>
+    <div class="admin-metric-card">
+      <div class="admin-metric-value">{{ metrics.tasks }}</div>
+      <div class="admin-metric-label">Automation Tasks</div>
+      <div class="admin-metric-meta">12 queued · 3 escalated</div>
+    </div>
+  </section>
+
+  <section class="admin-grid">
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div>
+          <h2>Service Posture</h2>
+          <p>Operational readiness across assets and contracts.</p>
+        </div>
+        <span class="admin-tag">Live</span>
+      </div>
+      <div class="admin-progress">
+        <div>
+          <div class="admin-progress-label">Fleet Availability</div>
+          <div class="admin-progress-bar"><span style="width: 84%"></span></div>
+        </div>
+        <div>
+          <div class="admin-progress-label">Mission Assurance</div>
+          <div class="admin-progress-bar"><span style="width: 78%"></span></div>
+        </div>
+        <div>
+          <div class="admin-progress-label">Maintenance Compliance</div>
+          <div class="admin-progress-bar"><span style="width: 91%"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div>
+          <h2>Fleet Health</h2>
+          <p>Subsystem watchlist and predicted risk.</p>
+        </div>
+        <span class="admin-tag admin-tag--warning">Monitor</span>
+      </div>
+      <ul class="admin-list">
+        <li>
+          <div>
+            <strong>Avionics Calibration</strong>
+            <span>12 units due within 72 hrs</span>
+          </div>
+          <span class="admin-badge">Priority</span>
+        </li>
+        <li>
+          <div>
+            <strong>Propulsion Health</strong>
+            <span>3 assets in diagnostic stage</span>
+          </div>
+          <span class="admin-badge admin-badge--info">Tracking</span>
+        </li>
+        <li>
+          <div>
+            <strong>Payload Systems</strong>
+            <span>Stable with 98% uptime</span>
+          </div>
+          <span class="admin-badge admin-badge--success">Stable</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="admin-card admin-card--wide">
+      <div class="admin-card-header">
+        <div>
+          <h2>Command Activity</h2>
+          <p>Latest updates from the control rooms.</p>
+        </div>
+        <span class="admin-tag admin-tag--soft">Last 24 hrs</span>
+      </div>
+      <div class="admin-activity">
+        <div class="admin-activity-item">
+          <span class="admin-activity-dot"></span>
+          <div>
+            <strong>Incident INC-031 escalated</strong>
+            <span>Critical priority raised by Field Ops · 14:02</span>
+          </div>
+        </div>
+        <div class="admin-activity-item">
+          <span class="admin-activity-dot admin-activity-dot--blue"></span>
+          <div>
+            <strong>Workflow WF-204 completed</strong>
+            <span>Automated inspection closed with 0 exceptions · 12:44</span>
+          </div>
+        </div>
+        <div class="admin-activity-item">
+          <span class="admin-activity-dot admin-activity-dot--amber"></span>
+          <div>
+            <strong>Knowledge update published</strong>
+            <span>New avionics troubleshooting guide pushed · 11:18</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card admin-card--wide">
+      <div class="admin-card-header">
+        <div>
+          <h2>Regional Command Board</h2>
+          <p>Coverage by theater and command readiness.</p>
+        </div>
+      </div>
+      <div class="admin-table">
+        <div class="admin-table-row admin-table-head">
+          <span>Region</span>
+          <span>Readiness</span>
+          <span>Open Incidents</span>
+          <span>Active Crews</span>
+        </div>
+        <div class="admin-table-row">
+          <span>North Command</span>
+          <span>92%</span>
+          <span>8</span>
+          <span>14</span>
+        </div>
+        <div class="admin-table-row">
+          <span>East Command</span>
+          <span>87%</span>
+          <span>11</span>
+          <span>12</span>
+        </div>
+        <div class="admin-table-row">
+          <span>South Command</span>
+          <span>95%</span>
+          <span>6</span>
+          <span>9</span>
+        </div>
+        <div class="admin-table-row">
+          <span>West Command</span>
+          <span>89%</span>
+          <span>6</span>
+          <span>10</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
+{% endblock %}

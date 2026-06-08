@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <div>
+    <h1>Administration & RBAC</h1>
+    <p>Define roles, permissions, and manage user access and licensing.</p>
+  </div>
+</section>
+
+<section class="grid-two">
+  <!-- User Management -->
+  <div class="card">
+    <h2>User Management</h2>
+    <p style="color: var(--si-muted); font-size: 12px; margin-bottom: 12px;">Manage user accounts, roles, and access control</p>
+    <a class="ghost small" href="/admin/users">View All Users →</a>
+    <a class="ghost small" href="/admin/users/new">Create New User →</a>
+    <div style="margin-top: 12px; padding: 8px; background: var(--si-surface); border-radius: 4px; font-size: 11px; color: var(--si-muted);">
+      Total Users: <strong>{{ users|length }}</strong>
+    </div>
+  </div>
+
+  <!-- License Management -->
+  <div class="card">
+    <h2>License Management</h2>
+    <p style="color: var(--si-muted); font-size: 12px; margin-bottom: 12px;">View and manage license types and features</p>
+    <a class="ghost small" href="/admin/licenses">View All Licenses →</a>
+    <div style="margin-top: 12px; padding: 8px; background: var(--si-surface); border-radius: 4px; font-size: 11px; color: var(--si-muted);">
+      License Types: <strong>{{ licenses|length }}</strong>
+    </div>
+  </div>
+
+  <!-- Group Management -->
+  <div class="card">
+    <h2>Group Management</h2>
+    <p style="color: var(--si-muted); font-size: 12px; margin-bottom: 12px;">Create and manage team groups and departments</p>
+    <a class="ghost small" href="/admin/groups">View All Groups →</a>
+    <a class="ghost small" href="/admin/groups/new">Create New Group →</a>
+    <div style="margin-top: 12px; padding: 8px; background: var(--si-surface); border-radius: 4px; font-size: 11px; color: var(--si-muted);">
+      Total Groups: <strong>{{ groups|length if groups else 0 }}</strong>
+    </div>
+  </div>
+
+  <!-- Roles & Permissions -->
+  <div class="card">
+    <h2>Roles & Permissions</h2>
+    <p style="color: var(--si-muted); font-size: 12px; margin-bottom: 12px;">Define system roles and permissions</p>
+    <div style="margin-top: 12px; padding: 8px; background: var(--si-surface); border-radius: 4px; font-size: 11px; color: var(--si-muted);">
+      Total Roles: <strong>{{ roles|length }}</strong>
+    </div>
+    <h3 style="margin-top: 16px; margin-bottom: 8px;">Roles List</h3>
+    <div class="list">
+      {% for role in roles %}
+      <div class="list-item">
+        <div><strong>{{ role.name }}</strong></div>
+        <div class="meta" style="font-size: 11px;">{{ role.description }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- System Statistics -->
+  <div class="card">
+    <h2>System Statistics</h2>
+    <p style="color: var(--si-muted); font-size: 12px; margin-bottom: 12px;">Overview of system users and roles</p>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+      <div style="padding: 8px; background: var(--si-surface); border-radius: 4px;">
+        <div class="meta">Administrators</div>
+        <div style="font-size: 18px; font-weight: 600; color: var(--si-primary);">1</div>
+      </div>
+      <div style="padding: 8px; background: var(--si-surface); border-radius: 4px;">
+        <div class="meta">Managers</div>
+        <div style="font-size: 18px; font-weight: 600; color: #3b82f6;">5</div>
+      </div>
+      <div style="padding: 8px; background: var(--si-surface); border-radius: 4px;">
+        <div class="meta">Advisors</div>
+        <div style="font-size: 18px; font-weight: 600; color: #8b5cf6;">5</div>
+      </div>
+      <div style="padding: 8px; background: var(--si-surface); border-radius: 4px;">
+        <div class="meta">Field Agents</div>
+        <div style="font-size: 18px; font-weight: 600; color: #06b6d4;">10</div>
+      </div>
+      <div style="padding: 8px; background: var(--si-surface); border-radius: 4px;">
+        <div class="meta">Tech Engineers</div>
+        <div style="font-size: 18px; font-weight: 600; color: #10b981;">5</div>
+      </div>
+      <div style="padding: 8px; background: var(--si-surface); border-radius: 4px;">
+        <div class="meta">Total Users</div>
+        <div style="font-size: 18px; font-weight: 600; color: var(--si-text);">{{ users|length }}</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .page-header {
+    padding: 20px;
+    margin-bottom: 16px;
+    background: white;
+    border-bottom: 1px solid var(--si-border);
+  }
+
+  .page-header h1 {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    color: var(--si-text);
+  }
+
+  .page-header p {
+    margin: 0;
+    color: var(--si-muted);
+    font-size: 13px;
+  }
+
+  .grid-two {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .card {
+    background: white;
+    border: 1px solid var(--si-border);
+    border-radius: 6px;
+    padding: 16px;
+    box-shadow: var(--si-shadow-soft);
+  }
+
+  .card h2 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    color: var(--si-text);
+  }
+
+  .card h3 {
+    margin: 12px 0 8px 0;
+    font-size: 13px;
+    color: var(--si-text);
+    font-weight: 600;
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .list-item {
+    padding: 8px;
+    background: var(--si-surface);
+    border-radius: 4px;
+    border-left: 3px solid var(--si-primary);
+  }
+
+  .list-item div {
+    margin: 0;
+    font-size: 12px;
+  }
+
+  .list-item .meta {
+    color: var(--si-muted);
+    margin-top: 2px;
+  }
+
+  a.ghost {
+    display: inline-block;
+    margin-bottom: 8px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--si-border);
+    border-radius: 4px;
+    color: var(--si-primary);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  a.ghost:hover {
+    background: var(--si-surface);
+    border-color: var(--si-primary);
+    color: var(--si-primary-2);
+  }
+
+  a.ghost.small {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+</style>
+{% endblock %}

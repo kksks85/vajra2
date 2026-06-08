@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="list-shell">
+  <div class="list-bar">
+    <div class="list-title">
+      <h1>Incidents</h1>
+      <span class="pill">All</span>
+      <div class="list-tabs">
+        <button class="ghost small">All</button>
+        <button class="ghost small">My Groups</button>
+        <button class="ghost small">Open</button>
+      </div>
+    </div>
+    <div class="list-controls">
+      <div class="list-actions">
+        <button class="ghost small">Filter</button>
+        <button class="ghost small">Group</button>
+        <button class="ghost small">Sort</button>
+        <button class="ghost small">Favorites</button>
+      </div>
+      <span class="list-meta">1 to {{ incidents|length }} of {{ incidents|length }}</span>
+    </div>
+  </div>
+
+  <div class="list-card">
+    <table class="table dense clickable">
+      <thead>
+        <tr>
+          <th>Number</th>
+          <th>Opened</th>
+          <th>Short description</th>
+          <th>Priority</th>
+          <th>State</th>
+          <th>Stage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for incident in incidents %}
+        <tr onclick="window.location.href='/incidents/{{ incident.id }}';" style="cursor: pointer;">
+          <td>INC{{ "%07d" | format(incident.id) }}</td>
+          <td>{{ format_utc(incident.created_at, "%Y-%m-%d %H:%M") }}</td>
+          <td>{{ incident.title }}</td>
+          <td><span class="badge priority-{{ incident.priority }}">{{ incident.priority|capitalize }}</span></td>
+          <td><span class="badge status-{{ incident.status }}">{{ incident.status|capitalize }}</span></td>
+          <td>{{ incident.stage|capitalize }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="list-footer">
+    <div class="list-meta">Showing {{ incidents|length }} results</div>
+    <div class="list-pagination">
+      <button class="ghost small">Prev</button>
+      <span>1</span>
+      <button class="ghost small">Next</button>
+    </div>
+  </div>
+</section>
+
+<style>
+  table.clickable tbody tr:hover {
+    background-color: var(--si-primary);
+    background-color: rgba(43, 116, 214, 0.05);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  .badge.priority-critical {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .badge.priority-high {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .badge.priority-medium {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .badge.priority-low {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .badge.status-new {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+
+  .badge.status-diagnosis {
+    background: #fce7f3;
+    color: #831843;
+  }
+
+  .badge.status-work_in_progress {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .badge.status-on_hold {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .badge.status-repair_completed {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .badge.status-quality_check {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .badge.status-closure {
+    background: #dcfce7;
+    color: #166534;
+  }
+</style>
+{% endblock %}

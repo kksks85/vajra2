@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="list-shell">
+  <div class="list-bar">
+    <div class="list-title">
+      <h1>Sub-Systems</h1>
+      <span class="pill">All</span>
+    </div>
+    <div class="list-controls">
+      <div class="list-actions">
+        <a class="ghost small" href="/admin/sub-systems/new">Create New Sub-System</a>
+      </div>
+      <span class="list-meta">{{ pagination.total }} total</span>
+    </div>
+  </div>
+
+  <div class="list-card">
+    <table class="table dense">
+      <thead>
+        <tr>
+          <th>SRLM System</th>
+          <th>Sub-System</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sub_system in sub_systems %}
+        <tr>
+          <td>{{ sub_system.srlm_system }}</td>
+          <td>{{ sub_system.sub_system }}</td>
+          <td>{{ sub_system.status }}</td>
+          <td>
+            <a class="ghost small" href="/admin/sub-systems/{{ sub_system.id }}">View</a>
+            <a class="ghost small" href="/admin/sub-systems/{{ sub_system.id }}/edit">Edit</a>
+            <a class="ghost small" href="/admin/sub-systems/{{ sub_system.id }}/disable">Disable</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination and pagination.total_pages > 1 %}
+  <div class="pagination">
+    <span class="pagination-info">Showing {{ pagination.start_index }}-{{ pagination.end_index }} of {{ pagination.total }}</span>
+    
+    {% if pagination.has_previous %}
+      <a class="pagination-item" href="/admin/sub-systems?page=1" title="First Page">«</a>
+      <a class="pagination-item" href="/admin/sub-systems?page={{ pagination.previous_page }}">← Prev</a>
+    {% else %}
+      <span class="pagination-item pagination-disabled">«</span>
+      <span class="pagination-item pagination-disabled">← Prev</span>
+    {% endif %}
+
+    {% for page_num in range(1, pagination.total_pages + 1) %}
+      {% if page_num == pagination.page %}
+        <span class="pagination-item pagination-current">{{ page_num }}</span>
+      {% elif page_num == 1 or page_num == pagination.total_pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
+        <a class="pagination-item" href="/admin/sub-systems?page={{ page_num }}">{{ page_num }}</a>
+      {% elif page_num == 2 or page_num == pagination.total_pages - 1 %}
+        <span class="pagination-separator">...</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+      <a class="pagination-item" href="/admin/sub-systems?page={{ pagination.next_page }}">Next →</a>
+      <a class="pagination-item" href="/admin/sub-systems?page={{ pagination.total_pages }}" title="Last Page">»</a>
+    {% else %}
+      <span class="pagination-item pagination-disabled">Next →</span>
+      <span class="pagination-item pagination-disabled">»</span>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

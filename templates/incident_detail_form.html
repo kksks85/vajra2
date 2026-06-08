@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="si-incident-new">
+  <header class="si-incident-header">
+    <div>
+      <div class="si-incident-title">Incident</div>
+      <div class="si-incident-subtitle">INC{{ "%07d" | format(incident.id) }}</div>
+    </div>
+    <div class="si-incident-actions">
+      <button type="submit" form="incident-detail-form" class="si-btn">Save</button>
+      <a href="/incidents" class="si-btn si-btn-secondary">Cancel</a>
+    </div>
+  </header>
+
+  <form id="incident-detail-form" method="post" action="/incidents/{{ incident.id }}" class="si-incident-form">
+    <div class="si-incident-grid">
+      <div class="si-incident-section">Incident details</div>
+      <div class="si-incident-field">
+        <label>Incident Number</label>
+        <input value="INC{{ "%07d" | format(incident.id) }}" readonly disabled />
+      </div>
+      <div class="si-incident-field">
+        <label>Created on</label>
+        <input value="{{ format_utc(incident.created_at, "%Y-%m-%d %H:%M:%S") }}" readonly disabled />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Status</label>
+        <select name="status">
+          {% for status in statuses %}
+          <option value="{{ status.id }}" {% if incident.status == status.id %}selected{% endif %}>{{ status.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="si-incident-field">
+        <label>Priority</label>
+        <select name="priority">
+          {% for priority in priorities %}
+          <option value="{{ priority.id }}" {% if incident.priority == priority.id %}selected{% endif %}>{{ priority.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="si-incident-field">
+        <label>Issue Type</label>
+        <select name="issue_type">
+          <option value="">-- Select Issue Type --</option>
+          {% for issue_type in issue_types %}
+          <option value="{{ issue_type.id }}" {% if incident.issue_type == issue_type.id %}selected{% endif %}>{{ issue_type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="si-incident-field">
+        <label>SLA</label>
+        <input name="sla" placeholder="SLA" />
+      </div>
+      <div class="si-incident-field">
+        <label>Assignment Group</label>
+        <input name="assignment_group" placeholder="Assignment group" />
+      </div>
+      <div class="si-incident-field">
+        <label>Assigned to</label>
+        <input name="assigned_to" placeholder="Assigned to" />
+      </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Customer</div>
+      <div class="si-incident-field">
+        <label><span class="si-required">*</span> Customer Name</label>
+        <input name="caller" placeholder="Select customer" list="customer-name-list" />
+        <datalist id="customer-name-list">
+          <option value="Acme Rail Systems"></option>
+          <option value="MetroLine Services"></option>
+          <option value="Urban Transit Corp"></option>
+        </datalist>
+      </div>
+      <div class="si-incident-field">
+        <label>Customer Contract</label>
+        <select name="customer_contract" id="customer-contract">
+          <option value="">-- None --</option>
+          <option value="CTR-2024-001" data-customer="Acme Rail Systems">CTR-2024-001</option>
+          <option value="CTR-2024-014" data-customer="MetroLine Services">CTR-2024-014</option>
+          <option value="CTR-2023-220" data-customer="Urban Transit Corp">CTR-2023-220</option>
+        </select>
+      </div>
+
+      <div class="si-incident-field">
+        <label>Requestor Name</label>
+        <input name="requestor_name" placeholder="Requestor name" list="requestor-name-list" />
+        <datalist id="requestor-name-list"></datalist>
+      </div>
+      <div class="si-incident-field">
+        <label>Requestor Contact</label>
+        <input name="requestor_contact" placeholder="Requestor contact" list="requestor-contact-list" />
+        <datalist id="requestor-contact-list"></datalist>
+      </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Product details</div>
+      <div class="si-incident-field">
+        <label>SRLM System</label>
+        <select name="srlm_system" id="srlm-select">
+          <option value="">-- None --</option>
+          <option value="LM">Loitering Munition (LM)</option>
+          <option value="GCS">Ground Control System (GCS)</option>
+          <option value="TMV">Tactical Mobility Vehicle (TMV)</option>
+          <option value="Simulator">Simulator</option>
+        </select>
+      </div>
+      <div class="si-incident-field">
+        <label>Platform Variant</label>
+        <select name="platform_variant" id="platform-variant">
+          <option value="">-- None --</option>
+        </select>
+      </div>
+      <div class="si-incident-field">
+        <label>Sub-system</label>
+        <select name="sub_system" id="sub-system">
+          <option value="">-- None --</option>
+          <option value="Airframe" data-srlm="LM">Airframe</option>
+          <option value="Propulsion" data-srlm="LM">Propulsion</option>
+          <option value="Avionics & Flight Control" data-srlm="LM">Avionics & Flight Control</option>
+          <option value="Communication" data-srlm="LM">Communication</option>
+          <option value="Payload" data-srlm="LM">Payload</option>
+          <option value="Computing" data-srlm="GCS">Computing</option>
+          <option value="Communication" data-srlm="GCS">Communication</option>
+          <option value="Display" data-srlm="GCS">Display</option>
+          <option value="Control Interface" data-srlm="GCS">Control Interface</option>
+          <option value="Power" data-srlm="GCS">Power</option>
+          <option value="Powertrain" data-srlm="TMV">Powertrain</option>
+          <option value="Electrical" data-srlm="TMV">Electrical</option>
+          <option value="Communication" data-srlm="TMV">Communication</option>
+          <option value="Navigation" data-srlm="TMV">Navigation</option>
+          <option value="Payload Handling" data-srlm="TMV">Payload Handling</option>
+          <option value="Computing" data-srlm="Simulator">Computing</option>
+          <option value="Display" data-srlm="Simulator">Display</option>
+          <option value="Control" data-srlm="Simulator">Control</option>
+          <option value="Audio" data-srlm="Simulator">Audio</option>
+          <option value="Software" data-srlm="Simulator">Software</option>
+        </select>
+      </div>
+      <div class="si-incident-field">
+        <label>Line Replaceable Unit (LRU)</label>
+        <select name="line_replaceable_unit" id="lru-select">
+          <option value="">-- None --</option>
+        </select>
+      </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Service history</div>
+      <div class="si-incident-field">
+        <label>Warranty Status</label>
+        <input name="warranty_status" placeholder="Warranty status" />
+      </div>
+      <div class="si-incident-field">
+        <label>Last Serviced on</label>
+        <input name="last_serviced_on" placeholder="Last serviced on" />
+      </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Issue description</div>
+      <div class="si-incident-field si-incident-field-wide">
+        <label><span class="si-required">*</span> Short description</label>
+        <input name="title" placeholder="Short description" value="{{ incident.title }}" required />
+      </div>
+
+      <div class="si-incident-field si-incident-field-wide">
+        <label>Description</label>
+        <textarea name="description" placeholder="Description">{{ incident.description }}</textarea>
+      </div>
+    </div>
+  </form>
+</section>
+
+<script>
+  const platformVariants = [
+    {
+      customer: "Acme Rail Systems",
+      contract: "CTR-2024-001",
+      srlm: "LM",
+      variant: "LM Alpha - (LM-0001)",
+    },
+    {
+      customer: "MetroLine Services",
+      contract: "CTR-2024-014",
+      srlm: "LM",
+      variant: "LM Bravo - (LM-0002)",
+    },
+    {
+      customer: "Acme Rail Systems",
+      contract: "CTR-2024-001",
+      srlm: "GCS",
+      variant: "GCS North - (GCS-0101)",
+    },
+    {
+      customer: "MetroLine Services",
+      contract: "CTR-2024-014",
+      srlm: "TMV",
+      variant: "TMV Ranger - (TMV-2201)",
+    },
+    {
+      customer: "Urban Transit Corp",
+      contract: "CTR-2023-220",
+      srlm: "Simulator",
+      variant: "Simulator Prime - (SIM-3001)",
+    },
+  ];
+
+  const customerContacts = [
+    {
+      customer: "Acme Rail Systems",
+      primary: { name: "Ravi Kumar", contact: "+91 98765 43210" },
+      additional: [],
+    },
+    {
+      customer: "MetroLine Services",
+      primary: { name: "Neha Singh", contact: "+91 91234 56789" },
+      additional: [
+        { name: "Amit Rao", contact: "+91 90000 11223" },
+      ],
+    },
+    {
+      customer: "Urban Transit Corp",
+      primary: { name: "Arjun Mehta", contact: "+91 99887 66554" },
+      additional: [
+        { name: "Kavya Nair", contact: "+91 91111 22334" },
+        { name: "Rahul Iyer", contact: "+91 93333 44556" },
+      ],
+    },
+  ];
+
+  const lruOptions = [
+    {
+      srlm: "LM",
+      platformVariant: "LM Alpha - (LM-0001)",
+      subSystem: "Navigation",
+      lru: "Guidance Module (LRU-1001)",
+    },
+    {
+      srlm: "LM",
+      platformVariant: "LM Alpha - (LM-0001)",
+      subSystem: "Airframe",
+      lru: "Airframe Sensor Pack (LRU-1002)",
+    },
+    {
+      srlm: "LM",
+      platformVariant: "LM Alpha - (LM-0001)",
+      subSystem: "Propulsion",
+      lru: "Propulsion Pump (LRU-1004)",
+    },
+    {
+      srlm: "LM",
+      platformVariant: "LM Bravo - (LM-0002)",
+      subSystem: "Avionics & Flight Control",
+      lru: "Compute Node A (LRU-2101)",
+    },
+    {
+      srlm: "LM",
+      platformVariant: "LM Bravo - (LM-0002)",
+      subSystem: "Communication",
+      lru: "Comms Router (LRU-2103)",
+    },
+    {
+      srlm: "LM",
+      platformVariant: "LM Bravo - (LM-0002)",
+      subSystem: "Payload",
+      lru: "Display Panel A (LRU-2105)",
+    },
+    {
+      srlm: "GCS",
+      platformVariant: "GCS North - (GCS-0101)",
+      subSystem: "Powertrain",
+      lru: "Transmission Module (LRU-3101)",
+    },
+    {
+      srlm: "GCS",
+      platformVariant: "GCS North - (GCS-0101)",
+      subSystem: "Power",
+      lru: "Battery Pack (LRU-3103)",
+    },
+    {
+      srlm: "GCS",
+      platformVariant: "GCS North - (GCS-0101)",
+      subSystem: "Navigation",
+      lru: "GPS Module (LRU-3108)",
+    },
+    {
+      srlm: "Simulator",
+      platformVariant: "Simulator Prime - (SIM-3001)",
+      subSystem: "Computing",
+      lru: "Sim Compute Node (LRU-4101)",
+    },
+    {
+      srlm: "Simulator",
+      platformVariant: "Simulator Prime - (SIM-3001)",
+      subSystem: "Display",
+      lru: "Projection Unit (LRU-4104)",
+    },
+    {
+      srlm: "Simulator",
+      platformVariant: "Simulator Prime - (SIM-3001)",
+      subSystem: "Audio",
+      lru: "Audio Mixer (LRU-4107)",
+    },
+  ];
+
+  // Dependent field filtering logic
+  function updatePlatformVariants() {
+    const srlmSelect = document.getElementById("srlm-select");
+    const platformSelect = document.getElementById("platform-variant");
+    const selectedSrlm = srlmSelect.value;
+
+    platformSelect.innerHTML = '<option value="">-- None --</option>';
+    const variants = platformVariants.filter((v) => v.srlm === selectedSrlm);
+    variants.forEach((v) => {
+      const option = document.createElement("option");
+      option.value = v.variant;
+      option.textContent = v.variant;
+      platformSelect.appendChild(option);
+    });
+  }
+
+  function updateSubSystems() {
+    const srlmSelect = document.getElementById("srlm-select");
+    const subSystemSelect = document.getElementById("sub-system");
+    const selectedSrlm = srlmSelect.value;
+
+    const subSystems = subSystemSelect.querySelectorAll("option");
+    subSystems.forEach((option) => {
+      if (option.dataset.srlm) {
+        option.style.display = option.dataset.srlm === selectedSrlm ? "block" : "none";
+      }
+    });
+  }
+
+  function updateLruOptions() {
+    const srlmSelect = document.getElementById("srlm-select");
+    const platformSelect = document.getElementById("platform-variant");
+    const subSystemSelect = document.getElementById("sub-system");
+    const lruSelect = document.getElementById("lru-select");
+
+    const selectedSrlm = srlmSelect.value;
+    const selectedPlatform = platformSelect.value;
+    const selectedSubSystem = subSystemSelect.value;
+
+    lruSelect.innerHTML = '<option value="">-- None --</option>';
+
+    const matchingLrus = lruOptions.filter(
+      (lru) =>
+        lru.srlm === selectedSrlm &&
+        lru.platformVariant === selectedPlatform &&
+        lru.subSystem === selectedSubSystem
+    );
+
+    matchingLrus.forEach((lru) => {
+      const option = document.createElement("option");
+      option.value = lru.lru;
+      option.textContent = lru.lru;
+      lruSelect.appendChild(option);
+    });
+  }
+
+  function updateRequestorFields() {
+    const callerInput = document.querySelector('input[name="caller"]');
+    const requestorNameInput = document.querySelector('input[name="requestor_name"]');
+    const requestorContactInput = document.querySelector('input[name="requestor_contact"]');
+
+    const requestorNameList = document.getElementById("requestor-name-list");
+    const requestorContactList = document.getElementById("requestor-contact-list");
+
+    const customer = customerContacts.find(
+      (c) => c.customer === callerInput.value
+    );
+
+    if (customer) {
+      requestorNameList.innerHTML = "";
+      requestorContactList.innerHTML = "";
+
+      const allContacts = [customer.primary, ...customer.additional];
+      allContacts.forEach((contact) => {
+        const nameOption = document.createElement("option");
+        nameOption.value = contact.name;
+        requestorNameList.appendChild(nameOption);
+
+        const contactOption = document.createElement("option");
+        contactOption.value = contact.contact;
+        requestorContactList.appendChild(contactOption);
+      });
+    }
+  }
+
+  // Event listeners
+  document.getElementById("srlm-select").addEventListener("change", () => {
+    updatePlatformVariants();
+    updateSubSystems();
+    updateLruOptions();
+  });
+
+  document.getElementById("platform-variant").addEventListener("change", updateLruOptions);
+  document.getElementById("sub-system").addEventListener("change", updateLruOptions);
+
+  document.querySelector('input[name="caller"]').addEventListener("change", updateRequestorFields);
+</script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Vajra app",
+			"type": "shell",
+			"command": "uvicorn",
+			"args": [
+				"main:app",
+				"--reload"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run Vajra app (venv)",
+			"type": "shell",
+			"command": "c:/Project_Dev/Vajra 2.0/.venv/Scripts/python.exe",
+			"args": [
+				"-m",
+				"uvicorn",
+				"main:app",
+				"--reload"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

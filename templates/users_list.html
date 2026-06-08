@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="list-shell">
+  <div class="list-bar">
+    <div class="list-title">
+      <h1>User Management</h1>
+      <span class="pill">All</span>
+    </div>
+    <div class="list-controls">
+      <div class="list-actions">
+        <a class="ghost small" href="/admin/users/new">Create New User</a>
+      </div>
+      <span class="list-meta">{{ pagination.total }} total</span>
+    </div>
+  </div>
+
+  <div class="list-card">
+    <table class="table dense clickable">
+      <thead>
+        <tr>
+          <th>Employee ID</th>
+          <th>Full Name</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Department</th>
+          <th>Location</th>
+          <th>License</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr onclick="window.location.href='/admin/users/{{ user.id }}';" style="cursor: pointer;">
+          <td>{{ user.employee_id or "-" }}</td>
+          <td>{{ user.full_name }}</td>
+          <td>{{ user.username }}</td>
+          <td>{{ user.email }}</td>
+          <td><span class="badge">{{ user.role }}</span></td>
+          <td>{{ user.department or "-" }}</td>
+          <td>{{ user.location or "-" }}</td>
+          <td><span class="badge secondary">{{ user.license_type }}</span></td>
+          <td><span class="badge {{ 'success' if user.status == 'Active' else 'warning' }}">{{ user.status }}</span></td>
+          <td onclick="event.stopPropagation();">
+            <a class="ghost small" href="/admin/users/{{ user.id }}">View</a>
+            <a class="ghost small" href="/admin/users/{{ user.id }}/edit">Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination and pagination.total_pages > 1 %}
+  <div class="pagination">
+    <span class="pagination-info">Showing {{ pagination.start_index }}-{{ pagination.end_index }} of {{ pagination.total }}</span>
+    
+    {% if pagination.has_previous %}
+      <a class="pagination-item" href="/admin/users?page=1" title="First Page">«</a>
+      <a class="pagination-item" href="/admin/users?page={{ pagination.previous_page }}">← Prev</a>
+    {% else %}
+      <span class="pagination-item pagination-disabled">«</span>
+      <span class="pagination-item pagination-disabled">← Prev</span>
+    {% endif %}
+
+    {% for page_num in range(1, pagination.total_pages + 1) %}
+      {% if page_num == pagination.page %}
+        <span class="pagination-item pagination-current">{{ page_num }}</span>
+      {% elif page_num == 1 or page_num == pagination.total_pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
+        <a class="pagination-item" href="/admin/users?page={{ page_num }}">{{ page_num }}</a>
+      {% elif page_num == 2 or page_num == pagination.total_pages - 1 %}
+        <span class="pagination-separator">...</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+      <a class="pagination-item" href="/admin/users?page={{ pagination.next_page }}">Next →</a>
+      <a class="pagination-item" href="/admin/users?page={{ pagination.total_pages }}" title="Last Page">»</a>
+    {% else %}
+      <span class="pagination-item pagination-disabled">Next →</span>
+      <span class="pagination-item pagination-disabled">»</span>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<style>
+  .badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--si-primary);
+    color: white;
+  }
+
+  .badge.secondary {
+    background: #6366f1;
+  }
+
+  .badge.success {
+    background: #10b981;
+  }
+
+  .badge.warning {
+    background: #f59e0b;
+  }
+</style>
+{% endblock %}

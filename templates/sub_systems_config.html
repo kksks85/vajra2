@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% set view_only = mode == "view" %}
+{% set sub_system = sub_system or {} %}
+{% block content %}
+<section class="si-incident-new">
+  <header class="si-incident-header">
+    <div>
+      <div class="si-incident-title">
+        {% if mode == "view" %}
+          Sub-System Details
+        {% elif mode == "edit" %}
+          Edit Sub-System
+        {% else %}
+          Create Sub-System
+        {% endif %}
+      </div>
+      <div class="si-incident-subtitle">Manage platform variant sub-systems</div>
+    </div>
+    <div class="si-incident-actions">
+      <a class="si-btn" href="/admin/sub-systems">Back</a>
+      {% if not view_only %}
+        <button class="si-btn si-btn-primary" type="submit" form="sub-system-form">Save</button>
+      {% endif %}
+    </div>
+  </header>
+
+  <form id="sub-system-form" method="post" action="/admin/sub-systems" class="si-incident-form">
+    <div class="si-incident-grid">
+      <div class="si-incident-section">Sub-System details</div>
+      <div class="si-incident-field">
+        <label>SRLM System</label>
+        <select name="srlm_system" {% if view_only %}disabled{% endif %}>
+          <option value="">-- None --</option>
+          <option value="LM" {% if sub_system.get('srlm_system') == 'LM' %}selected{% endif %}>Loitering Munition (LM)</option>
+          <option value="GCS" {% if sub_system.get('srlm_system') == 'GCS' %}selected{% endif %}>Ground Control System (GCS)</option>
+          <option value="TMV" {% if sub_system.get('srlm_system') == 'TMV' %}selected{% endif %}>Tactical Mobility Vehicle (TMV)</option>
+          <option value="Simulator" {% if sub_system.get('srlm_system') == 'Simulator' %}selected{% endif %}>Simulator</option>
+        </select>
+      </div>
+      <div class="si-incident-field">
+        <label>Sub-System</label>
+        <input name="sub_system" placeholder="Sub-system" value="{{ sub_system.get('sub_system', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+    </div>
+  </form>
+</section>
+{% endblock %}

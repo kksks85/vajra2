@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% set view_only = mode == "view" %}
+{% set unit = unit or {} %}
+{% block content %}
+<section class="si-incident-new">
+  <header class="si-incident-header">
+    <div>
+      <div class="si-incident-title">
+        {% if mode == "view" %}
+          Simulator Details
+        {% elif mode == "edit" %}
+          Edit Simulator
+        {% else %}
+          Simulator
+        {% endif %}
+      </div>
+      <div class="si-incident-subtitle">Configure unit, customer, and contract details</div>
+    </div>
+    <div class="si-incident-actions">
+      <a class="si-btn" href="/admin/simulator">Back</a>
+      {% if not view_only %}
+        <button class="si-btn si-btn-primary" type="submit" form="simulator-config-form">Save</button>
+      {% endif %}
+    </div>
+  </header>
+
+  <form id="simulator-config-form" method="post" action="/admin/simulator" class="si-incident-form">
+    <div class="si-incident-grid">
+      <div class="si-incident-section">Unit details</div>
+      <div class="si-incident-field">
+        <label>Serial Number</label>
+        <input name="serial_number" placeholder="Serial number" value="{{ unit.get('serial_number', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>Unit Name</label>
+        <input name="unit_name" placeholder="Unit name" value="{{ unit.get('unit_name', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>SRLM System</label>
+        <select name="srlm_system" disabled>
+          <option value="">-- None --</option>
+          <option value="LM" {% if unit.get('srlm_system') == 'LM' %}selected{% endif %}>Loitering Munition (LM)</option>
+          <option value="GCS" {% if unit.get('srlm_system') == 'GCS' %}selected{% endif %}>Ground Control System (GCS)</option>
+          <option value="TMV" {% if unit.get('srlm_system') == 'TMV' %}selected{% endif %}>Tactical Mobility Vehicle (TMV)</option>
+          <option value="Simulator" {% if unit.get('srlm_system', 'Simulator') == 'Simulator' %}selected{% endif %}>Simulator</option>
+        </select>
+      </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Customer and contract</div>
+      <div class="si-incident-field">
+        <label>Customer</label>
+        <select name="customer_id" id="sim-customer" {% if view_only %}disabled{% endif %}>
+          <option value="">-- None --</option>
+          {% for customer in customers or [] %}
+          <option value="{{ customer.id }}" {% if customer.id == unit.get('customer_id') %}selected{% endif %}>
+            {{ customer.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="si-incident-field">
+        <label>Contract</label>
+        <select name="contract_id" id="sim-contract" {% if view_only %}disabled{% endif %}>
+          <option value="">-- None --</option>
+          {% for contract in contracts or [] %}
+          <option value="{{ contract.id }}" data-customer-id="{{ contract.customer_id }}" {% if contract.id == unit.get('contract_id') %}selected{% endif %}>
+            {{ contract.number }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Warranty</div>
+      <div class="si-incident-field">
+        <label>Warranty Valid From</label>
+        <input name="warranty_valid_from" placeholder="YYYY-MM-DD" value="{{ unit.get('warranty_valid_from', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>Warranty Valid To</label>
+        <input name="warranty_valid_to" placeholder="YYYY-MM-DD" value="{{ unit.get('warranty_valid_to', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+    </div>
+  </form>
+</section>
+
+<script>
+  const customerSelect = document.getElementById("sim-customer");
+  const contractSelect = document.getElementById("sim-contract");
+
+  const syncContracts = () => {
+    const selectedCustomer = customerSelect.value;
+    const options = Array.from(contractSelect.options);
+
+    options.forEach((option) => {
+      const customerId = option.getAttribute("data-customer-id");
+      if (!customerId) {
+        option.hidden = false;
+        return;
+      }
+      option.hidden = selectedCustomer && customerId !== selectedCustomer;
+    });
+
+    if (contractSelect.selectedOptions.length) {
+      const selected = contractSelect.selectedOptions[0];
+      if (selected.hidden) {
+        contractSelect.value = "";
+      }
+    }
+  };
+
+  customerSelect.addEventListener("change", syncContracts);
+  syncContracts();
+</script>
+{% endblock %}

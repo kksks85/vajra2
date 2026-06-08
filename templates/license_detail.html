@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="detail-shell">
+  <div class="detail-header">
+    <div class="detail-breadcrumb">
+      <a href="/admin/licenses">Licenses</a>
+      <span>/</span>
+      <span>{{ license.name }}</span>
+    </div>
+    <div class="detail-actions">
+      {% if can_edit %}
+      <button class="primary small" id="edit-btn">Edit</button>
+      {% endif %}
+      <button class="ghost small" onclick="history.back()">Back</button>
+    </div>
+  </div>
+
+  <div class="detail-card">
+    {% if mode == "edit" %}
+    <form method="POST" id="license-form" class="form-grid">
+      <div class="form-group">
+        <label for="name">License Name *</label>
+        <input type="text" id="name" name="name" value="{{ license.name }}" required />
+      </div>
+
+      <div class="form-group">
+        <label for="max_users">Max Users</label>
+        <input type="number" id="max_users" name="max_users" value="{{ license.max_users }}" />
+      </div>
+
+      <div class="form-group full-width">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="4">{{ license.description }}</textarea>
+      </div>
+
+      <div class="form-group full-width">
+        <label>Features</label>
+        <div class="features-input">
+          {% for feature in license.features %}
+          <div class="feature-input-item">
+            <input type="text" value="{{ feature }}" />
+            <button type="button" class="ghost small">Remove</button>
+          </div>
+          {% endfor %}
+          <button type="button" class="ghost small">Add Feature</button>
+        </div>
+      </div>
+
+      <div class="form-actions full-width">
+        <button type="submit" class="primary">Save</button>
+        <button type="button" class="ghost" onclick="location.href='/admin/licenses/{{ license_id }}'">Cancel</button>
+      </div>
+    </form>
+    {% else %}
+    <div class="detail-content">
+      <div class="detail-section">
+        <h2>License Details</h2>
+        <div class="detail-grid">
+          <div class="detail-row">
+            <div class="detail-label">License Name</div>
+            <div class="detail-value">{{ license.name }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Max Users</div>
+            <div class="detail-value">{{ license.max_users }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Description</div>
+            <div class="detail-value">{{ license.description }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Features</div>
+            <div class="detail-value">
+              <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                {% for feature in license.features %}
+                <span class="feature-tag">{{ feature }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<style>
+  .detail-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid var(--si-border);
+    padding-bottom: 1rem;
+  }
+
+  .detail-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--si-muted);
+  }
+
+  .detail-breadcrumb a {
+    color: var(--si-primary);
+    text-decoration: none;
+  }
+
+  .detail-breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .detail-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .detail-card {
+    background: var(--si-surface);
+    border: 1px solid var(--si-border);
+    border-radius: 0.375rem;
+    padding: 1.5rem;
+  }
+
+  .detail-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .detail-section h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--si-text);
+    border-bottom: 1px solid var(--si-border);
+    padding-bottom: 0.75rem;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .detail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .detail-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--si-muted);
+    letter-spacing: 0.5px;
+  }
+
+  .detail-value {
+    font-size: 0.95rem;
+    color: var(--si-text);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .form-group.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .form-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--si-text);
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--si-border);
+    border-radius: 0.375rem;
+    background: white;
+    font-size: 0.9rem;
+    font-family: inherit;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: var(--si-primary);
+    box-shadow: 0 0 0 3px rgba(43, 116, 214, 0.1);
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .feature-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: var(--si-primary);
+    color: white;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  .features-input {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .feature-input-item {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .feature-input-item input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--si-border);
+    border-radius: 0.375rem;
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 768px) {
+    .detail-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .detail-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  document.getElementById('edit-btn')?.addEventListener('click', function() {
+    window.location.href = '/admin/licenses/{{ license_id }}?edit=true';
+  });
+</script>
+{% endblock %}

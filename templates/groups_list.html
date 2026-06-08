@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="list-shell">
+  <div class="list-bar">
+    <div class="list-title">
+      <h1>Group Management</h1>
+      <span class="pill">All</span>
+    </div>
+    <div class="list-controls">
+      <div class="list-actions">
+        <a class="ghost small" href="/admin/groups/new">Create New Group</a>
+      </div>
+      <span class="list-meta">{{ pagination.total }} total</span>
+    </div>
+  </div>
+
+  <div class="list-card">
+    <table class="table dense clickable">
+      <thead>
+        <tr>
+          <th>Group Name</th>
+          <th>Description</th>
+          <th>Members</th>
+          <th>Member Count</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for group in groups %}
+        <tr onclick="window.location.href='/admin/groups/{{ group.id }}';" style="cursor: pointer;">
+          <td><strong>{{ group.name }}</strong></td>
+          <td>{{ group.description or "-" }}</td>
+          <td>
+            {% if group.user_ids and group.user_ids|length > 0 %}
+              <span style="font-size: 12px; color: var(--si-muted);">{{ group.user_ids|length }} user{{ "s" if group.user_ids|length != 1 else "" }}</span>
+            {% else %}
+              <span style="font-size: 12px; color: var(--si-muted);">No members</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge secondary">{{ group.member_count }}</span>
+          </td>
+          <td onclick="event.stopPropagation();">
+            <a class="ghost small" href="/admin/groups/{{ group.id }}">View</a>
+            <a class="ghost small" href="/admin/groups/{{ group.id }}/edit">Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination and pagination.total_pages > 1 %}
+  <div class="pagination">
+    <span class="pagination-info">Showing {{ pagination.start_index }}-{{ pagination.end_index }} of {{ pagination.total }}</span>
+    
+    {% if pagination.has_previous %}
+      <a class="pagination-item" href="/admin/groups?page=1" title="First Page">«</a>
+      <a class="pagination-item" href="/admin/groups?page={{ pagination.previous_page }}">← Prev</a>
+    {% else %}
+      <span class="pagination-item pagination-disabled">«</span>
+      <span class="pagination-item pagination-disabled">← Prev</span>
+    {% endif %}
+
+    {% for page_num in range(1, pagination.total_pages + 1) %}
+      {% if page_num == pagination.page %}
+        <span class="pagination-item pagination-current">{{ page_num }}</span>
+      {% elif page_num == 1 or page_num == pagination.total_pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
+        <a class="pagination-item" href="/admin/groups?page={{ page_num }}">{{ page_num }}</a>
+      {% elif page_num == 2 or page_num == pagination.total_pages - 1 %}
+        <span class="pagination-separator">...</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+      <a class="pagination-item" href="/admin/groups?page={{ pagination.next_page }}">Next →</a>
+      <a class="pagination-item" href="/admin/groups?page={{ pagination.total_pages }}" title="Last Page">»</a>
+    {% else %}
+      <span class="pagination-item pagination-disabled">Next →</span>
+      <span class="pagination-item pagination-disabled">»</span>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

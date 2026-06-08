@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="list-shell">
+  <div class="list-bar">
+    <div class="list-title">
+      <h1>Contracts</h1>
+      <span class="pill">All</span>
+    </div>
+    <div class="list-controls">
+      <div class="list-actions">
+        <a class="ghost small" href="/admin/contracts/new">Create New Contract</a>
+      </div>
+      <span class="list-meta">{{ pagination.total }} total</span>
+    </div>
+  </div>
+
+  <div class="list-card">
+    <table class="table dense">
+      <thead>
+        <tr>
+          <th>Contract Number</th>
+          <th>Customer</th>
+          <th>Executed On</th>
+          <th>Valid Till</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for contract in contracts %}
+        <tr>
+          <td>{{ contract.number }}</td>
+          <td>{{ contract.customer_name }}</td>
+          <td>{{ contract.executed_on }}</td>
+          <td>{{ contract.valid_till }}</td>
+          <td>{{ contract.status }}</td>
+          <td>
+            <a class="ghost small" href="/admin/contracts/{{ contract.id }}">View</a>
+            <a class="ghost small" href="/admin/contracts/{{ contract.id }}/edit">Edit</a>
+            <a class="ghost small" href="/admin/contracts/{{ contract.id }}/disable">Disable</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination and pagination.total_pages > 1 %}
+  <div class="pagination">
+    <span class="pagination-info">Showing {{ pagination.start_index }}-{{ pagination.end_index }} of {{ pagination.total }}</span>
+    
+    {% if pagination.has_previous %}
+      <a class="pagination-item" href="/admin/contracts?page=1" title="First Page">«</a>
+      <a class="pagination-item" href="/admin/contracts?page={{ pagination.previous_page }}">← Prev</a>
+    {% else %}
+      <span class="pagination-item pagination-disabled">«</span>
+      <span class="pagination-item pagination-disabled">← Prev</span>
+    {% endif %}
+
+    {% for page_num in range(1, pagination.total_pages + 1) %}
+      {% if page_num == pagination.page %}
+        <span class="pagination-item pagination-current">{{ page_num }}</span>
+      {% elif page_num == 1 or page_num == pagination.total_pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
+        <a class="pagination-item" href="/admin/contracts?page={{ page_num }}">{{ page_num }}</a>
+      {% elif page_num == 2 or page_num == pagination.total_pages - 1 %}
+        <span class="pagination-separator">...</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+      <a class="pagination-item" href="/admin/contracts?page={{ pagination.next_page }}">Next →</a>
+      <a class="pagination-item" href="/admin/contracts?page={{ pagination.total_pages }}" title="Last Page">»</a>
+    {% else %}
+      <span class="pagination-item pagination-disabled">Next →</span>
+      <span class="pagination-item pagination-disabled">»</span>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

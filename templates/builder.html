@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <div>
+    <h1>Low-Code Workflow Builder</h1>
+    <p>Create workflows, define stages, and attach tasks.</p>
+  </div>
+</section>
+
+<section class="grid-two">
+  <div class="card">
+    <h2>Workflows</h2>
+    <form method="post" action="/builder/workflows" class="form-grid">
+      <input name="name" placeholder="Workflow name" required />
+      <input name="description" placeholder="Description" />
+      <button class="primary" type="submit">Create Workflow</button>
+    </form>
+    <div class="list">
+      {% for workflow in workflows %}
+      <div class="list-item">
+        <div>{{ workflow.name }}</div>
+        <div class="meta">{{ workflow.description }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Stages</h2>
+    <form method="post" action="/builder/stages" class="form-grid">
+      <input name="workflow_id" placeholder="Workflow ID" required />
+      <input name="name" placeholder="Stage name" required />
+      <input name="order" placeholder="Order" />
+      <button class="primary" type="submit">Create Stage</button>
+    </form>
+    <div class="list">
+      {% for stage in stages %}
+      <div class="list-item">
+        <div>{{ stage.name }}</div>
+        <div class="meta">Workflow ID: {{ stage.workflow_id }} | Order: {{ stage.order }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Task Definitions</h2>
+  <form method="post" action="/builder/tasks" class="form-grid">
+    <input name="stage_id" placeholder="Stage ID" required />
+    <input name="name" placeholder="Task name" required />
+    <input name="task_type" placeholder="Type (manual/automation)" />
+    <textarea name="config" placeholder='{"key": "value"}'></textarea>
+    <button class="primary" type="submit">Create Task</button>
+  </form>
+  <div class="list">
+    {% for task in tasks %}
+    <div class="list-item">
+      <div>{{ task.name }}</div>
+      <div class="meta">Stage ID: {{ task.stage_id }} | Type: {{ task.task_type }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

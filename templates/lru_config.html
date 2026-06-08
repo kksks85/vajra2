@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% set view_only = mode == "view" %}
+{% set lru = lru or {} %}
+{% block content %}
+<section class="si-incident-new">
+  <header class="si-incident-header">
+    <div>
+      <div class="si-incident-title">
+        {% if mode == "view" %}
+          LRU Details
+        {% elif mode == "edit" %}
+          Edit LRU
+        {% else %}
+          Create LRU
+        {% endif %}
+      </div>
+      <div class="si-incident-subtitle">Manage line replaceable units</div>
+    </div>
+    <div class="si-incident-actions">
+      <a class="si-btn" href="/admin/lru">Back</a>
+      {% if not view_only %}
+        <button class="si-btn si-btn-primary" type="submit" form="lru-config-form">Save</button>
+      {% endif %}
+    </div>
+  </header>
+
+  <form id="lru-config-form" method="post" action="/admin/lru" class="si-incident-form">
+    <div class="si-incident-grid">
+      <div class="si-incident-section">LRU details</div>
+      <div class="si-incident-field">
+        <label>LRU Serial Number</label>
+        <input name="lru_serial_number" placeholder="LRU serial number" value="{{ lru.get('serial_number', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>LRU Name</label>
+        <input name="lru_name" placeholder="LRU name" value="{{ lru.get('name', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Platform mapping</div>
+      <div class="si-incident-field">
+        <label>Related Platform Variant Name</label>
+        <select name="platform_variant" {% if view_only %}disabled{% endif %}>
+          <option value="">-- None --</option>
+          {% for variant in platform_variants or [] %}
+            <option value="{{ variant }}" {% if variant == lru.get('platform_variant') %}selected{% endif %}>
+              {{ variant }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="si-incident-field">
+        <label>Sub-system</label>
+        <input name="sub_system" placeholder="Sub-system" value="{{ lru.get('sub_system', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+    </div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="detail-shell">
+  <div class="detail-header">
+    <div class="detail-breadcrumb">
+      <a href="/incidents">Incidents</a>
+      <span>/</span>
+      <span>INC{{ "%07d" | format(incident.id) }}</span>
+    </div>
+    <div class="detail-actions">
+      {% if can_edit %}
+      <button class="primary small" id="edit-btn">Edit</button>
+      {% endif %}
+      <button class="ghost small" onclick="history.back()">Back</button>
+    </div>
+  </div>
+
+  <div class="detail-card">
+    {% if mode == "edit" %}
+    <form method="POST" id="incident-form" class="form-grid">
+      <div class="form-group">
+        <label for="title">Title *</label>
+        <input type="text" id="title" name="title" value="{{ incident.title }}" required />
+      </div>
+
+      <div class="form-group">
+        <label for="priority">Priority</label>
+        <select id="priority" name="priority">
+          {% for priority in priorities %}
+          <option value="{{ priority.id }}" {% if incident.priority == priority.id %}selected{% endif %}>{{ priority.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+          {% for st in statuses %}
+          <option value="{{ st.id }}" {% if incident.status == st.id %}selected{% endif %}>{{ st.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="issue_type">Issue Type</label>
+        <select id="issue_type" name="issue_type">
+          <option value="">Select issue type</option>
+          {% for issue in issue_types %}
+          <option value="{{ issue.id }}" {% if incident.issue_type == issue.id %}selected{% endif %}>{{ issue.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="stage">Stage</label>
+        <select id="stage" name="stage">
+          <option value="triage" {% if incident.stage == "triage" %}selected{% endif %}>Triage</option>
+          <option value="investigation" {% if incident.stage == "investigation" %}selected{% endif %}>Investigation</option>
+          <option value="resolution" {% if incident.stage == "resolution" %}selected{% endif %}>Resolution</option>
+          <option value="testing" {% if incident.stage == "testing" %}selected{% endif %}>Testing</option>
+          <option value="closed" {% if incident.stage == "closed" %}selected{% endif %}>Closed</option>
+        </select>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="6">{{ incident.description }}</textarea>
+      </div>
+
+      <div class="form-actions full-width">
+        <button type="submit" class="primary">Save</button>
+        <button type="button" class="ghost" onclick="location.href='/incidents/{{ incident.id }}'">Cancel</button>
+      </div>
+    </form>
+    {% else %}
+    <div class="detail-content">
+      <div class="detail-section">
+        <h2>Incident Details</h2>
+        <div class="detail-grid">
+          <div class="detail-row">
+            <div class="detail-label">Number</div>
+            <div class="detail-value">INC{{ "%07d" | format(incident.id) }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Title</div>
+            <div class="detail-value">{{ incident.title }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Priority</div>
+            <div class="detail-value">
+              <span class="badge priority-{{ incident.priority }}">{{ incident.priority|capitalize }}</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Status</div>
+            <div class="detail-value">
+              <span class="badge status-{{ incident.status }}">{{ incident.status|capitalize }}</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Issue Type</div>
+            <div class="detail-value">{{ incident.issue_type|capitalize }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Stage</div>
+            <div class="detail-value">{{ incident.stage|capitalize }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Created</div>
+            <div class="detail-value">{{ format_utc(incident.created_at, "%Y-%m-%d %H:%M:%S") }}</div>
+          </div>
+          {% if incident.updated_at %}
+          <div class="detail-row">
+            <div class="detail-label">Last Updated</div>
+            <div class="detail-value">{{ format_utc(incident.updated_at, "%Y-%m-%d %H:%M:%S") }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h2>Description</h2>
+        <div class="detail-description">
+          {{ incident.description or "No description provided" }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<style>
+  .detail-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid var(--si-border);
+    padding-bottom: 1rem;
+  }
+
+  .detail-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--si-muted);
+  }
+
+  .detail-breadcrumb a {
+    color: var(--si-primary);
+    text-decoration: none;
+  }
+
+  .detail-breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .detail-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .detail-card {
+    background: var(--si-surface);
+    border: 1px solid var(--si-border);
+    border-radius: 0.375rem;
+    padding: 1.5rem;
+  }
+
+  .detail-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .detail-section h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--si-text);
+    border-bottom: 1px solid var(--si-border);
+    padding-bottom: 0.75rem;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .detail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .detail-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--si-muted);
+    letter-spacing: 0.5px;
+  }
+
+  .detail-value {
+    font-size: 0.95rem;
+    color: var(--si-text);
+  }
+
+  .detail-description {
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .form-group.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .form-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--si-text);
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--si-border);
+    border-radius: 0.375rem;
+    background: white;
+    font-size: 0.9rem;
+    font-family: inherit;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: var(--si-primary);
+    box-shadow: 0 0 0 3px rgba(43, 116, 214, 0.1);
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  .badge.priority-critical {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .badge.priority-high {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .badge.priority-medium {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .badge.priority-low {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .badge.status-new {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+
+  .badge.status-diagnosis {
+    background: #fce7f3;
+    color: #831843;
+  }
+
+  .badge.status-work_in_progress {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .badge.status-on_hold {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .badge.status-repair_completed {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .badge.status-quality_check {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .badge.status-closure {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  @media (max-width: 768px) {
+    .detail-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .detail-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  document.getElementById('edit-btn')?.addEventListener('click', function() {
+    // Switch to edit mode by reloading with ?edit=true
+    window.location.href = '/incidents/{{ incident.id }}?edit=true';
+  });
+</script>
+{% endblock %}

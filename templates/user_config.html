@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% set view_only = mode == "view" %}
+{% set user = user or {} %}
+{% block content %}
+<section class="si-incident-new">
+  <header class="si-incident-header">
+    <div>
+      <div class="si-incident-title">
+        {% if mode == "view" %}
+          User Details
+        {% elif mode == "edit" %}
+          Edit User
+        {% else %}
+          Create New User
+        {% endif %}
+      </div>
+      <div class="si-incident-subtitle">Manage user account and access</div>
+    </div>
+    <div class="si-incident-actions">
+      <a class="si-btn" href="/admin/users">Back</a>
+      {% if not view_only %}
+        <button class="si-btn si-btn-primary" type="submit" form="user-config-form">Save</button>
+      {% endif %}
+    </div>
+  </header>
+
+  <form id="user-config-form" method="post" action="/admin/users" class="si-incident-form">
+    <div class="si-incident-grid">
+      <!-- Personal Information -->
+      <div class="si-incident-section">Personal Information</div>
+      <div class="si-incident-field">
+        <label>Full Name *</label>
+        <input name="full_name" placeholder="Full name" value="{{ user.get('full_name', '') }}" {% if view_only %}readonly disabled{% endif %} required />
+      </div>
+      <div class="si-incident-field">
+        <label>Email Address *</label>
+        <input name="email" type="email" placeholder="Email address" value="{{ user.get('email', '') }}" {% if view_only %}readonly disabled{% endif %} required />
+      </div>
+      <div class="si-incident-field">
+        <label>Phone</label>
+        <input name="phone" type="tel" placeholder="Phone number" value="{{ user.get('phone', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <!-- Account Information -->
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Account Information</div>
+      <div class="si-incident-field">
+        <label>Username *</label>
+        <input name="username" placeholder="Username" value="{{ user.get('username', '') }}" {% if view_only %}readonly disabled{% endif %} required />
+      </div>
+      <div class="si-incident-field">
+        <label>Employee ID</label>
+        <input name="employee_id" placeholder="Employee ID" value="{{ user.get('employee_id', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>Status *</label>
+        <select name="status" {% if view_only %}disabled{% endif %} required>
+          <option value="">-- Select Status --</option>
+          <option value="Active" {% if user.get('status') == 'Active' %}selected{% endif %}>Active</option>
+          <option value="Inactive" {% if user.get('status') == 'Inactive' %}selected{% endif %}>Inactive</option>
+          <option value="On Leave" {% if user.get('status') == 'On Leave' %}selected{% endif %}>On Leave</option>
+        </select>
+      </div>
+
+      <!-- Role & License -->
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Role & License</div>
+      <div class="si-incident-field">
+        <label>Role *</label>
+        <select name="role" {% if view_only %}disabled{% endif %} required>
+          <option value="">-- Select Role --</option>
+          {% for role in roles or [] %}
+            <option value="{{ role.name }}" {% if role.name == user.get('role') %}selected{% endif %}>
+              {{ role.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="si-incident-field">
+        <label>License Type *</label>
+        <select name="license_type" {% if view_only %}disabled{% endif %} required>
+          <option value="">-- Select License --</option>
+          {% for license in licenses or [] %}
+            <option value="{{ license.name }}" {% if license.name == user.get('license_type') %}selected{% endif %}>
+              {{ license.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Organization -->
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Organization</div>
+      <div class="si-incident-field">
+        <label>Department</label>
+        <select name="department" {% if view_only %}disabled{% endif %}>
+          <option value="">-- Select Department --</option>
+          {% for dept in departments or [] %}
+            <option value="{{ dept }}" {% if dept == user.get('department') %}selected{% endif %}>
+              {{ dept }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="si-incident-field">
+        <label>Location</label>
+        <select name="location" {% if view_only %}disabled{% endif %}>
+          <option value="">-- Select Location --</option>
+          {% for loc in locations or [] %}
+            <option value="{{ loc }}" {% if loc == user.get('location') %}selected{% endif %}>
+              {{ loc }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="si-incident-field">
+        <label>Specialization</label>
+        <select name="specialization" {% if view_only %}disabled{% endif %}>
+          <option value="">-- Select Specialization --</option>
+          {% for spec in specializations or [] %}
+            <option value="{{ spec }}" {% if spec == user.get('specialization') %}selected{% endif %}>
+              {{ spec }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Employment Details -->
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Employment Details</div>
+      <div class="si-incident-field">
+        <label>Hire Date</label>
+        <input name="hire_date" type="date" value="{{ user.get('hire_date', '')[:10] if user.get('hire_date') else '' }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+    </div>
+  </form>
+</section>
+{% endblock %}

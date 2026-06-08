@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="list-shell">
+  <div class="list-bar">
+    <div class="list-title">
+      <h1>Group {% if mode == 'edit' %}Edit{% elif mode == 'view' %}View{% else %}New record{% endif %}</h1>
+      <span class="pill">View: {% if mode == 'edit' %}Edit{% elif mode == 'view' %}View{% else %}Form{% endif %}</span>
+    </div>
+  </div>
+
+  <div class="list-card">
+    <form method="POST" action="/admin/groups" class="si-form">
+      <div class="form-grid">
+        <!-- Left Column -->
+        <div class="form-column">
+          <!-- Group Name -->
+          <div class="form-group">
+            <label for="name">Name *</label>
+            <input 
+              type="text" 
+              id="name" 
+              name="name" 
+              required
+              placeholder="Group name"
+              value="{{ group.name if group else '' }}"
+              {% if mode == 'view' %}disabled{% endif %}
+            />
+          </div>
+
+          <!-- Manager -->
+          <div class="form-group">
+            <label for="manager_id">Manager</label>
+            <select 
+              id="manager_id" 
+              name="manager_id"
+              {% if mode == 'view' %}disabled{% endif %}
+            >
+              <option value="">-- Select Manager --</option>
+              {% for manager in managers %}
+              <option value="{{ manager.id }}" {% if group and group.get('manager_id') == manager.id %}selected{% endif %}>
+                {{ manager.full_name }} ({{ manager.department }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="form-column">
+          <!-- Group Email -->
+          <div class="form-group">
+            <label for="group_email">Group email</label>
+            <div class="email-input">
+              <input 
+                type="email" 
+                id="group_email" 
+                name="group_email"
+                placeholder="group@example.com"
+                value="{{ group.group_email if group else '' }}"
+                {% if mode == 'view' %}disabled{% endif %}
+              />
+              <span class="email-icon">✉️</span>
+            </div>
+          </div>
+
+          <!-- Parent Group -->
+          <div class="form-group">
+            <label for="parent">Parent</label>
+            <div class="search-input">
+              <input 
+                type="text" 
+                id="parent" 
+                name="parent"
+                placeholder="Select parent group..."
+                value="{{ group.parent if group else '' }}"
+                {% if mode == 'view' %}disabled{% endif %}
+              />
+              <span class="search-icon">🔍</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description (Full Width) -->
+      <div class="form-group" style="margin-top: 20px;">
+        <label for="description">Description</label>
+        <textarea 
+          id="description" 
+          name="description"
+          placeholder="Describe the purpose and responsibilities of this group"
+          rows="6"
+          {% if mode == 'view' %}disabled{% endif %}
+        >{{ group.description if group else '' }}</textarea>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <a href="/admin/groups" class="button ghost">Cancel</a>
+        {% if mode != 'view' %}
+        <button type="submit" class="button primary">
+          {% if mode == 'edit' %}Update Group{% else %}Create Group{% endif %}
+        </button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Members Section - Only shown after group is saved -->
+  {% if group %}
+  <div class="list-card" style="margin-top: 20px;">
+    <h2 style="margin-top: 0;">Group Members</h2>
+    <p style="color: var(--si-muted); font-size: 12px; margin-bottom: 20px;">Manage members in this group</p>
+    
+    {% if group_users %}
+    <div class="members-grid">
+      {% for user in group_users %}
+      <div class="member-card">
+        <div class="member-header">
+          <strong>{{ user.full_name }}</strong>
+        </div>
+        <div class="member-info">
+          <div class="info-row">
+            <span class="label">Role:</span>
+            <span class="value">{{ user.role }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Department:</span>
+            <span class="value">{{ user.department }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Email:</span>
+            <span class="value">{{ user.email }}</span>
+          </div>
+        </div>
+        <div class="member-actions">
+          <a href="/admin/users/{{ user.id }}" class="ghost small">View User</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="padding: 20px; background: var(--si-surface); border-radius: 4px; text-align: center; color: var(--si-muted);">
+      No members in this group yet. Add members after saving the group.
+    </div>
+    {% endif %}
+
+    {% if mode == 'edit' %}
+    <div style="margin-top: 20px;">
+      <a href="/admin/groups/{{ group.id }}/manage-members" class="button primary">Manage Members</a>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<style>
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 30px;
+  }
+
+  .form-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-group label {
+    font-weight: 500;
+    color: var(--si-text);
+    font-size: 14px;
+  }
+
+  .form-group input[type="text"],
+  .form-group input[type="email"],
+  .form-group textarea,
+  .form-group select {
+    padding: 10px 12px;
+    border: 1px solid var(--si-border);
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: var(--si-primary);
+    box-shadow: 0 0 0 3px rgba(43, 116, 214, 0.1);
+  }
+
+  .search-input,
+  .email-input {
+    position: relative;
+  }
+
+  .search-input input,
+  .email-input input {
+    width: 100%;
+    padding-right: 36px;
+  }
+
+  .search-icon,
+  .email-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: var(--si-muted);
+    pointer-events: none;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 20px;
+    border-top: 1px solid var(--si-border);
+    margin-top: 30px;
+  }
+
+  .button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .button.primary {
+    background: var(--si-primary);
+    color: white;
+  }
+
+  .button.primary:hover {
+    background: #2065c3;
+  }
+
+  .button.ghost {
+    background: transparent;
+    color: var(--si-primary);
+    border: 1px solid var(--si-border);
+  }
+
+  .button.ghost:hover {
+    background: var(--si-surface);
+  }
+
+  .members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .member-card {
+    border: 1px solid var(--si-border);
+    border-radius: 4px;
+    padding: 16px;
+    background: var(--si-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .member-header {
+    font-weight: 600;
+    color: var(--si-text);
+  }
+
+  .member-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .info-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .info-row .label {
+    color: var(--si-muted);
+    min-width: 70px;
+  }
+
+  .info-row .value {
+    color: var(--si-text);
+    font-weight: 500;
+  }
+
+  .member-actions {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--si-border);
+  }
+
+  .member-actions a {
+    font-size: 12px;
+  }
+
+  @media (max-width: 768px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+  }
+</style>
+{% endblock %}

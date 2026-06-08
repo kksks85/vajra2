@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% set view_only = mode == "view" %}
+{% set contract = contract or {} %}
+{% block content %}
+<section class="si-incident-new">
+  <header class="si-incident-header">
+    <div>
+      <div class="si-incident-title">
+        {% if mode == "view" %}
+          Contract Details
+        {% elif mode == "edit" %}
+          Edit Contract
+        {% else %}
+          Contract Configuration
+        {% endif %}
+      </div>
+      <div class="si-incident-subtitle">Manage contract details</div>
+    </div>
+    <div class="si-incident-actions">
+      <a class="si-btn" href="/admin/contracts">Back</a>
+      {% if not view_only %}
+        <button class="si-btn si-btn-primary" type="submit" form="contract-config-form">Save</button>
+      {% endif %}
+    </div>
+  </header>
+
+  <form id="contract-config-form" method="post" action="/admin/contracts" class="si-incident-form">
+    <div class="si-incident-grid">
+      <div class="si-incident-section">Contract details</div>
+      <div class="si-incident-field">
+        <label>Contract Number</label>
+        <input name="contract_number" placeholder="Contract number" value="{{ contract.get('number', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>Customer</label>
+        <select name="customer" {% if view_only %}disabled{% endif %}>
+          <option value="">Select customer</option>
+          {% for customer_item in customers or [] %}
+            <option value="{{ customer_item.id }}" {% if customer_item.id == contract.get('customer_id') %}selected{% endif %}>
+              {{ customer_item.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="si-incident-field">
+        <label>Executed on</label>
+        <input name="executed_on" placeholder="Executed on" value="{{ contract.get('executed_on', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>Valid Till</label>
+        <input name="valid_till" placeholder="Valid till" value="{{ contract.get('valid_till', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Status</label>
+        <select name="status" {% if view_only %}disabled{% endif %}>
+          <option value="active" {% if contract.get('status') == 'Active' %}selected{% endif %}>Active</option>
+          <option value="expired" {% if contract.get('status') == 'Expired' %}selected{% endif %}>Expired</option>
+          <option value="disabled" {% if contract.get('status') == 'Disabled' %}selected{% endif %}>Disabled</option>
+        </select>
+      </div>
+      <div class="si-incident-field">
+        <label>Attachment</label>
+        <input type="file" name="attachment" {% if view_only %}disabled{% endif %} />
+      </div>
+    </div>
+  </form>
+</section>
+{% endblock %}
