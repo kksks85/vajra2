@@ -10,6 +10,12 @@ from utils import build_template_context, redirect_with_flash, paginate
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+BATTERY_TYPES = [
+    "Lithium-Ion 12S 44.4V",
+    "Li-Polymer 6S 22.2V",
+    "Li-Fe 4S 12.8V"
+]
+
 
 @router.get("/admin")
 def admin_page(request: Request, db: Session = Depends(get_db)):
@@ -269,7 +275,7 @@ def _get_sample_customers():
 
 
 def _get_sample_contracts():
-    return [
+    items = [
         {
             "id": 101,
             "number": "CTR-2024-001",
@@ -298,6 +304,17 @@ def _get_sample_contracts():
             "status": "Expired",
         },
     ]
+    for item in items:
+        item.setdefault("main_deliverables", "LM: 10, GCS: 2, TMV: 4, Simulator: 1, LRU: 15")
+        item.setdefault("main_warranty", True)
+        item.setdefault("main_manuals", "User Manual v1.2 (2024-01-15), Maintenance Manual v1.0 (2024-01-20)")
+        item.setdefault("sub_scheduled_maintenance", True)
+        item.setdefault("sub_unscheduled_maintenance", True)
+        item.setdefault("sub_calibration", True)
+        item.setdefault("sub_software_upgrade", False)
+        item.setdefault("sub_visits_record", "Scheduled: 4 visits/yr (2 engineers, 3 days). Unscheduled: As needed.")
+        item.setdefault("sub_refresher_training", True)
+    return items
 
 
 def _get_sample_units(unit_type: str):
@@ -333,12 +350,17 @@ def _get_sample_units(unit_type: str):
                 "id": 2001,
                 "serial_number": "GCS-0101",
                 "unit_name": "GCS North",
+                "sap_part_number": "10000000002001",
+                "customer_part_number": "80002001",
                 "customer_id": 1,
                 "customer_name": "Acme Rail Systems",
                 "contract_id": 101,
                 "contract_number": "CTR-2024-001",
                 "warranty_valid_from": "2024-01-20",
                 "warranty_valid_to": "2026-01-20",
+                "make": "VajraCorp",
+                "model": "VC-GCS-V1",
+                "software_version": "1.0.4",
                 "status": "Active",
             },
         ],
@@ -354,6 +376,10 @@ def _get_sample_units(unit_type: str):
                 "warranty_valid_from": "2024-05-01",
                 "warranty_valid_to": "2026-05-01",
                 "status": "Active",
+                "sap_part_number": "20000000003001",
+                "customer_part_number": "80003001",
+                "make": "TMVCorp",
+                "model": "Ranger-V1",
             },
         ],
         "SIM": [
@@ -370,6 +396,134 @@ def _get_sample_units(unit_type: str):
                 "status": "Expired",
             },
         ],
+        "RDV": [
+            {
+                "id": 5001,
+                "serial_number": "RDV-1001",
+                "unit_name": "RDV Alpha",
+                "sap_part_number": "20000000005001",
+                "customer_part_no": "90005001",
+                "customer_id": 1,
+                "customer_name": "Acme Rail Systems",
+                "contract_id": 101,
+                "contract_number": "CTR-2024-001",
+                "warranty_valid_from": "2024-03-01",
+                "warranty_valid_to": "2026-03-01",
+                "make": "RDVCorp",
+                "model": "Alpha-V1",
+                "last_servicing_done": "2024-09-01",
+                "next_servicing_due": "2025-09-01",
+                "status": "Active",
+            },
+        ],
+        "BATTERY": [
+            {
+                "id": 7001,
+                "serial_number": "BATT-0001",
+                "unit_name": "Battery Pack Alpha",
+                "sap_part_number": "10000000007001",
+                "customer_part_number": "80007001",
+                "customer_id": 1,
+                "customer_name": "Acme Rail Systems",
+                "contract_id": 101,
+                "contract_number": "CTR-2024-001",
+                "warranty_valid_from": "2024-02-01",
+                "warranty_valid_to": "2026-02-01",
+                "battery_type": "Lithium-Ion 12S 44.4V",
+                "battery_and_its_types": "LiPo 12S",
+                "battery_chargers": "Vajra Charger Dual",
+                "make": "VajraCorp",
+                "model": "VC-BATT-V1",
+                "software_version": "1.0.4",
+                "status": "Active",
+            },
+        ],
+        "WARHEAD": [
+            {
+                "id": 8001,
+                "serial_number": "WH-0001",
+                "unit_name": "Warhead Charge Alpha",
+                "sap_part_number": "10000000008001",
+                "customer_part_number": "80008001",
+                "customer_id": 1,
+                "customer_name": "Acme Rail Systems",
+                "contract_id": 101,
+                "contract_number": "CTR-2024-001",
+                "warranty_valid_from": "2024-02-01",
+                "warranty_valid_to": "2026-02-01",
+                "srlm_system": "LM",
+                "make": "VajraCorp",
+                "model": "VC-WH-V1",
+                "software_version": "1.0.4",
+                "status": "Active",
+            },
+        ],
+        "MRLS": [
+            {
+                "id": 9001,
+                "serial_number": "MRLS-1001",
+                "unit_name": "MRLS Spare Kit Alpha",
+                "sap_part_number": "10000000009001",
+                "customer_part_number": "80009001",
+                "customer_id": 1,
+                "customer_name": "Acme Rail Systems",
+                "contract_id": 101,
+                "contract_number": "CTR-2024-001",
+                "warranty_valid_from": "2024-03-01",
+                "warranty_valid_to": "2026-03-01",
+                "lru_serial_number": "LRU-1001",
+                "lru_name": "Guidance Module",
+                "platform_variant": "LM Alpha - (LM-0001)",
+                "sub_system": "Navigation",
+                "make": "VajraCorp",
+                "model": "VC-MRLS-V1",
+                "software_version": "1.0.4",
+                "status": "Active",
+            }
+        ],
+        "SMT_STE": [
+            {
+                "id": 9101,
+                "serial_number": "SMT-1001",
+                "unit_name": "SMT-STE Toolset Alpha",
+                "sap_part_number": "10000000009101",
+                "customer_part_number": "80009101",
+                "customer_id": 1,
+                "customer_name": "Acme Rail Systems",
+                "contract_id": 101,
+                "contract_number": "CTR-2024-001",
+                "warranty_valid_from": "2024-03-01",
+                "warranty_valid_to": "2026-03-01",
+                "lru_serial_number": "SMT-STE-1001",
+                "lru_name": "Hexagon Toolset",
+                "platform_variant": "LM Alpha - (LM-0001)",
+                "sub_system": "Mechanical Support",
+                "make": "VajraCorp",
+                "model": "VC-SMT-V1",
+                "software_version": "1.0.4",
+                "status": "Active",
+            }
+        ],
+        "SAM": [
+            {
+                "id": 9201,
+                "serial_number": "SAM-1001",
+                "unit_name": "SAM System Alpha",
+                "sap_part_number": "10000000009201",
+                "customer_part_number": "80009201",
+                "customer_id": 1,
+                "customer_name": "Acme Rail Systems",
+                "contract_id": 101,
+                "contract_number": "CTR-2024-001",
+                "warranty_valid_from": "2024-03-01",
+                "warranty_valid_to": "2026-03-01",
+                "srlm_system": "LM",
+                "make": "VajraCorp",
+                "model": "VC-SAM-V1",
+                "software_version": "1.0.4",
+                "status": "Active",
+            }
+        ],
     }
     return base.get(unit_type, [])
 
@@ -385,7 +539,7 @@ def _get_sample_platform_variants():
 
 
 def _get_sample_lrus():
-    return [
+    items = [
         {
             "id": 5001,
             "serial_number": "LRU-1001",
@@ -811,6 +965,13 @@ def _get_sample_lrus():
             "status": "Active",
         },
     ]
+    for idx, item in enumerate(items):
+        item.setdefault("sap_part_number", f"1000000000{5000+idx}")
+        item.setdefault("customer_part_number", f"8000{3000+idx}")
+        item.setdefault("make", "VajraCorp")
+        item.setdefault("model", f"VC-{item['name'].split()[0]}-V1")
+        item.setdefault("software_version", "1.0.4")
+    return items
 
 
 def _get_sample_sub_systems():
@@ -1164,6 +1325,275 @@ def simulator_edit_page(request: Request, unit_id: int):
 @router.get("/admin/simulator/{unit_id}/disable")
 def simulator_disable(request: Request, unit_id: int):
     return redirect_with_flash("/admin/simulator", request, "Unit disabled.", "success")
+
+
+@router.get("/admin/rdv")
+def rdv_list_page(request: Request):
+    page = int(request.query_params.get("page", 1))
+    all_units = _get_sample_units("RDV")
+    pagination = paginate(all_units, page=page, per_page=50)
+    context = build_template_context(request, units=pagination["items"], unit_label="Rapid Deployment Vehicle (RDV)", pagination=pagination)
+    return templates.TemplateResponse(request, "rdv_list.html", context)
+
+
+@router.get("/admin/rdv/new")
+def rdv_new_page(request: Request):
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    context = build_template_context(request, customers=customers, contracts=contracts)
+    return templates.TemplateResponse(request, "rapid_deployment_vehicle.html", context)
+
+
+@router.get("/admin/rdv/{unit_id}")
+def rdv_view_page(request: Request, unit_id: int):
+    unit = next((item for item in _get_sample_units("RDV") if item["id"] == unit_id), None)
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="view")
+    return templates.TemplateResponse(request, "rapid_deployment_vehicle.html", context)
+
+
+@router.get("/admin/rdv/{unit_id}/edit")
+def rdv_edit_page(request: Request, unit_id: int):
+    unit = next((item for item in _get_sample_units("RDV") if item["id"] == unit_id), None)
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="edit")
+    return templates.TemplateResponse(request, "rapid_deployment_vehicle.html", context)
+
+
+@router.get("/admin/rdv/{unit_id}/disable")
+def rdv_disable(request: Request, unit_id: int):
+    return redirect_with_flash("/admin/rdv", request, "Unit disabled.", "success")
+
+
+@router.get("/admin/batteries/types")
+def manage_battery_types(request: Request):
+    context = build_template_context(request, battery_types=BATTERY_TYPES)
+    return templates.TemplateResponse(request, "battery_types.html", context)
+
+
+@router.post("/admin/batteries/types")
+def add_battery_type(request: Request, new_type: str = Form(...)):
+    new_type_stripped = new_type.strip()
+    if new_type_stripped and new_type_stripped not in BATTERY_TYPES:
+        BATTERY_TYPES.append(new_type_stripped)
+        return redirect_with_flash("/admin/batteries/types", request, "Battery type added.", "success")
+    return redirect_with_flash("/admin/batteries/types", request, "Invalid or duplicate battery type.", "error")
+
+
+@router.get("/admin/batteries/types/{type_idx}/delete")
+def delete_battery_type(request: Request, type_idx: int):
+    if 0 <= type_idx < len(BATTERY_TYPES):
+        removed = BATTERY_TYPES.pop(type_idx)
+        return redirect_with_flash("/admin/batteries/types", request, f"Battery type '{removed}' removed.", "success")
+    return redirect_with_flash("/admin/batteries/types", request, "Battery type not found.", "error")
+
+
+@router.get("/admin/batteries")
+def batteries_list_page(request: Request):
+    page = int(request.query_params.get("page", 1))
+    all_units = _get_sample_units("BATTERY")
+    pagination = paginate(all_units, page=page, per_page=50)
+    context = build_template_context(request, units=pagination["items"], unit_label="Batteries", pagination=pagination)
+    return templates.TemplateResponse(request, "batteries_list.html", context)
+
+
+@router.get("/admin/batteries/new")
+def batteries_new_page(request: Request):
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    context = build_template_context(request, customers=customers, contracts=contracts, battery_types=BATTERY_TYPES)
+    return templates.TemplateResponse(request, "battery_config.html", context)
+
+
+@router.get("/admin/batteries/{unit_id}")
+def batteries_view_page(request: Request, unit_id: int):
+    unit = next((item for item in _get_sample_units("BATTERY") if item["id"] == unit_id), None)
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, battery_types=BATTERY_TYPES, mode="view")
+    return templates.TemplateResponse(request, "battery_config.html", context)
+
+
+@router.get("/admin/batteries/{unit_id}/edit")
+def batteries_edit_page(request: Request, unit_id: int):
+    unit = next((item for item in _get_sample_units("BATTERY") if item["id"] == unit_id), None)
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, battery_types=BATTERY_TYPES, mode="edit")
+    return templates.TemplateResponse(request, "battery_config.html", context)
+
+
+@router.get("/admin/batteries/{unit_id}/disable")
+def batteries_disable(request: Request, unit_id: int):
+    return redirect_with_flash("/admin/batteries", request, "Unit disabled.", "success")
+
+
+@router.get("/admin/warhead")
+def warhead_list_page(request: Request):
+    page = int(request.query_params.get("page", 1))
+    all_units = _get_sample_units("WARHEAD")
+    pagination = paginate(all_units, page=page, per_page=50)
+    context = build_template_context(request, units=pagination["items"], unit_label="War Head", pagination=pagination)
+    return templates.TemplateResponse(request, "warhead_list.html", context)
+
+
+@router.get("/admin/warhead/new")
+def warhead_new_page(request: Request):
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    context = build_template_context(request, customers=customers, contracts=contracts)
+    return templates.TemplateResponse(request, "warhead_config.html", context)
+
+
+@router.get("/admin/warhead/{unit_id}")
+def warhead_view_page(request: Request, unit_id: int):
+    unit = next((item for item in _get_sample_units("WARHEAD") if item["id"] == unit_id), None)
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="view")
+    return templates.TemplateResponse(request, "warhead_config.html", context)
+
+
+@router.get("/admin/warhead/{unit_id}/edit")
+def warhead_edit_page(request: Request, unit_id: int):
+    unit = next((item for item in _get_sample_units("WARHEAD") if item["id"] == unit_id), None)
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="edit")
+    return templates.TemplateResponse(request, "warhead_config.html", context)
+
+
+@router.get("/admin/warhead/{unit_id}/disable")
+def warhead_disable(request: Request, unit_id: int):
+    return redirect_with_flash("/admin/warhead", request, "Unit disabled.", "success")
+
+
+@router.get("/admin/mrls")
+def mrls_list_page(request: Request):
+    page = int(request.query_params.get("page", 1))
+    all_units = _get_sample_units("MRLS")
+    pagination = paginate(all_units, page=page, per_page=50)
+    context = build_template_context(request, units=pagination["items"], unit_label="MRLS", pagination=pagination)
+    return templates.TemplateResponse(request, "mrls_list.html", context)
+
+
+@router.get("/admin/mrls/new")
+def mrls_new_page(request: Request):
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    platform_variants = _get_sample_platform_variants()
+    context = build_template_context(request, customers=customers, contracts=contracts, platform_variants=platform_variants)
+    return templates.TemplateResponse(request, "mrls_config.html", context)
+
+
+@router.get("/admin/mrls/{unit_id}")
+def mrls_view_page(request: Request, unit_id: int):
+    unit = next((item for item in _get_sample_units("MRLS") if item["id"] == unit_id), None)
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    platform_variants = _get_sample_platform_variants()
+    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, platform_variants=platform_variants, mode="view")
+    return templates.TemplateResponse(request, "mrls_config.html", context)
+
+
+@router.get("/admin/mrls/{unit_id}/edit")
+def mrls_edit_page(request: Request, unit_id: int):
+    unit = next((item for item in _get_sample_units("MRLS") if item["id"] == unit_id), None)
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    platform_variants = _get_sample_platform_variants()
+    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, platform_variants=platform_variants, mode="edit")
+    return templates.TemplateResponse(request, "mrls_config.html", context)
+
+
+@router.get("/admin/mrls/{unit_id}/disable")
+def mrls_disable(request: Request, unit_id: int):
+    return redirect_with_flash("/admin/mrls", request, "Unit disabled.", "success")
+
+
+@router.get("/admin/smt-ste")
+def smt_ste_list_page(request: Request):
+    page = int(request.query_params.get("page", 1))
+    all_units = _get_sample_units("SMT_STE")
+    pagination = paginate(all_units, page=page, per_page=50)
+    context = build_template_context(request, units=pagination["items"], unit_label="Field Assembly Tools/ SMT/ STE", pagination=pagination)
+    return templates.TemplateResponse(request, "smt_ste_list.html", context)
+
+
+@router.get("/admin/smt-ste/new")
+def smt_ste_new_page(request: Request):
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    platform_variants = _get_sample_platform_variants()
+    context = build_template_context(request, customers=customers, contracts=contracts, platform_variants=platform_variants)
+    return templates.TemplateResponse(request, "smt_ste_config.html", context)
+
+
+@router.get("/admin/smt-ste/{unit_id}")
+def smt_ste_view_page(request: Request, unit_id: int):
+    unit = next((item for item in _get_sample_units("SMT_STE") if item["id"] == unit_id), None)
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    platform_variants = _get_sample_platform_variants()
+    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, platform_variants=platform_variants, mode="view")
+    return templates.TemplateResponse(request, "smt_ste_config.html", context)
+
+
+@router.get("/admin/smt-ste/{unit_id}/edit")
+def smt_ste_edit_page(request: Request, unit_id: int):
+    unit = next((item for item in _get_sample_units("SMT_STE") if item["id"] == unit_id), None)
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    platform_variants = _get_sample_platform_variants()
+    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, platform_variants=platform_variants, mode="edit")
+    return templates.TemplateResponse(request, "smt_ste_config.html", context)
+
+
+@router.get("/admin/smt-ste/{unit_id}/disable")
+def smt_ste_disable(request: Request, unit_id: int):
+    return redirect_with_flash("/admin/smt-ste", request, "Unit disabled.", "success")
+
+
+@router.get("/admin/sam")
+def sam_list_page(request: Request):
+    page = int(request.query_params.get("page", 1))
+    all_units = _get_sample_units("SAM")
+    pagination = paginate(all_units, page=page, per_page=50)
+    context = build_template_context(request, units=pagination["items"], unit_label="SAM", pagination=pagination)
+    return templates.TemplateResponse(request, "sam_list.html", context)
+
+
+@router.get("/admin/sam/new")
+def sam_new_page(request: Request):
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    context = build_template_context(request, customers=customers, contracts=contracts)
+    return templates.TemplateResponse(request, "sam_config.html", context)
+
+
+@router.get("/admin/sam/{unit_id}")
+def sam_view_page(request: Request, unit_id: int):
+    unit = next((item for item in _get_sample_units("SAM") if item["id"] == unit_id), None)
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="view")
+    return templates.TemplateResponse(request, "sam_config.html", context)
+
+
+@router.get("/admin/sam/{unit_id}/edit")
+def sam_edit_page(request: Request, unit_id: int):
+    unit = next((item for item in _get_sample_units("SAM") if item["id"] == unit_id), None)
+    customers = _get_sample_customers()
+    contracts = _get_sample_contracts()
+    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="edit")
+    return templates.TemplateResponse(request, "sam_config.html", context)
+
+
+@router.get("/admin/sam/{unit_id}/disable")
+def sam_disable(request: Request, unit_id: int):
+    return redirect_with_flash("/admin/sam", request, "Unit disabled.", "success")
 
 
 @router.get("/admin/lru")
@@ -1869,6 +2299,11 @@ def create_simulator(request: Request):
     return redirect_with_flash("/admin/simulator", request, "Unit saved.", "success")
 
 
+@router.post("/admin/rdv")
+def create_rdv(request: Request):
+    return redirect_with_flash("/admin/rdv", request, "Unit saved.", "success")
+
+
 @router.post("/admin/lru")
 def create_lru(request: Request):
     return redirect_with_flash("/admin/lru", request, "LRU saved.", "success")
@@ -1877,3 +2312,30 @@ def create_lru(request: Request):
 @router.post("/admin/sub-systems")
 def create_sub_system(request: Request):
     return redirect_with_flash("/admin/sub-systems", request, "Sub-system saved.", "success")
+
+
+@router.post("/admin/batteries")
+def create_battery(request: Request):
+    return redirect_with_flash("/admin/batteries", request, "Unit saved.", "success")
+
+
+@router.post("/admin/warhead")
+def create_warhead(request: Request):
+    return redirect_with_flash("/admin/warhead", request, "Unit saved.", "success")
+
+
+@router.post("/admin/mrls")
+def create_mrls(request: Request):
+    return redirect_with_flash("/admin/mrls", request, "Unit saved.", "success")
+
+
+@router.post("/admin/smt-ste")
+def create_smt_ste(request: Request):
+    return redirect_with_flash("/admin/smt-ste", request, "Unit saved.", "success")
+
+
+@router.post("/admin/sam")
+def create_sam(request: Request):
+    return redirect_with_flash("/admin/sam", request, "Unit saved.", "success")
+
+

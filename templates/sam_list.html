@@ -8,7 +8,7 @@
     </div>
     <div class="list-controls">
       <div class="list-actions">
-        <a class="ghost small" href="/admin/gcs/new">Create New GCS</a>
+        <a class="ghost small" href="/admin/sam/new">Create New SAM</a>
       </div>
       <span class="list-meta">{{ pagination.total }} total</span>
     </div>
@@ -20,14 +20,9 @@
         <tr>
           <th>Serial Number</th>
           <th>Unit Name</th>
-          <th>SAP Part number</th>
-          <th>Customer Part no</th>
           <th>Customer</th>
           <th>Contract</th>
-          <th>Warranty Valid To</th>
-          <th>Make</th>
-          <th>Model</th>
-          <th>Software version</th>
+          <th>SRLM System</th>
           <th>Status</th>
           <th>Actions</th>
         </tr>
@@ -37,19 +32,14 @@
         <tr>
           <td>{{ unit.serial_number }}</td>
           <td>{{ unit.unit_name }}</td>
-          <td>{{ unit.sap_part_number }}</td>
-          <td>{{ unit.customer_part_number }}</td>
           <td>{{ unit.customer_name }}</td>
           <td>{{ unit.contract_number }}</td>
-          <td>{{ unit.warranty_valid_to }}</td>
-          <td>{{ unit.make }}</td>
-          <td>{{ unit.model }}</td>
-          <td>{{ unit.software_version }}</td>
+          <td>{{ unit.srlm_system }}</td>
           <td>{{ unit.status }}</td>
           <td>
-            <a class="ghost small" href="/admin/gcs/{{ unit.id }}">View</a>
-            <a class="ghost small" href="/admin/gcs/{{ unit.id }}/edit">Edit</a>
-            <a class="ghost small" href="/admin/gcs/{{ unit.id }}/disable">Disable</a>
+            <a class="ghost small" href="/admin/sam/{{ unit.id }}">View</a>
+            <a class="ghost small" href="/admin/sam/{{ unit.id }}/edit">Edit</a>
+            <a class="ghost small" href="/admin/sam/{{ unit.id }}/disable">Disable</a>
           </td>
         </tr>
         {% endfor %}
@@ -62,8 +52,8 @@
     <span class="pagination-info">Showing {{ pagination.start_index }}-{{ pagination.end_index }} of {{ pagination.total }}</span>
     
     {% if pagination.has_previous %}
-      <a class="pagination-item" href="/admin/gcs?page=1" title="First Page">«</a>
-      <a class="pagination-item" href="/admin/gcs?page={{ pagination.previous_page }}">← Prev</a>
+      <a class="pagination-item" href="/admin/sam?page=1" title="First Page">«</a>
+      <a class="pagination-item" href="/admin/sam?page={{ pagination.previous_page }}">← Prev</a>
     {% else %}
       <span class="pagination-item pagination-disabled">«</span>
       <span class="pagination-item pagination-disabled">← Prev</span>
@@ -73,15 +63,15 @@
       {% if page_num == pagination.page %}
         <span class="pagination-item pagination-current">{{ page_num }}</span>
       {% elif page_num == 1 or page_num == pagination.total_pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
-        <a class="pagination-item" href="/admin/gcs?page={{ page_num }}">{{ page_num }}</a>
+        <a class="pagination-item" href="/admin/sam?page={{ page_num }}">{{ page_num }}</a>
       {% elif page_num == 2 or page_num == pagination.total_pages - 1 %}
         <span class="pagination-separator">...</span>
       {% endif %}
     {% endfor %}
 
     {% if pagination.has_next %}
-      <a class="pagination-item" href="/admin/gcs?page={{ pagination.next_page }}">Next →</a>
-      <a class="pagination-item" href="/admin/gcs?page={{ pagination.total_pages }}" title="Last Page">»</a>
+      <a class="pagination-item" href="/admin/sam?page={{ pagination.next_page }}">Next →</a>
+      <a class="pagination-item" href="/admin/sam?page={{ pagination.total_pages }}" title="Last Page">»</a>
     {% else %}
       <span class="pagination-item pagination-disabled">Next →</span>
       <span class="pagination-item pagination-disabled">»</span>

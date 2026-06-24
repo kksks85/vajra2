@@ -1,0 +1,2 @@
+id,serial_number,unit_name,customer_id,customer_name,contract_id,contract_number,warranty_valid_from,warranty_valid_to,status
+4001,SIM-3001,Simulator Prime,3,Urban Transit Corp,103,CTR-2023-220,2023-08-01,2024-08-01,Expired

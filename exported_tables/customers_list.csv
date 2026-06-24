@@ -1,0 +1,4 @@
+id,name,primary_address,contact_name,contact_email,contact_phone,status
+1,Acme Rail Systems,"Plot 12, Industrial Estate, Pune",Ravi Kumar,ravi.kumar@acme.example,+91 98765 43210,Active
+2,MetroLine Services,"47 Transit Park, Mumbai",Neha Singh,neha.singh@metroline.example,+91 91234 56789,Active
+3,Urban Transit Corp,"88 City Loop Rd, Delhi",Arjun Mehta,arjun.mehta@urban.example,+91 99887 66554,Disabled

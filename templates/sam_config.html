@@ -7,24 +7,24 @@
     <div>
       <div class="si-incident-title">
         {% if mode == "view" %}
-          Ground Control Systems (GCS) Details
+          SAM Details
         {% elif mode == "edit" %}
-          Edit Ground Control Systems (GCS)
+          Edit SAM
         {% else %}
-          Ground Control Systems (GCS)
+          SAM Configuration
         {% endif %}
       </div>
-      <div class="si-incident-subtitle">Configure unit, customer, and contract details</div>
+      <div class="si-incident-subtitle">Configure Surface-to-Air Missile (SAM) units, customer and contract details</div>
     </div>
     <div class="si-incident-actions">
-      <a class="si-btn" href="/admin/gcs">Back</a>
+      <a class="si-btn" href="/admin/sam">Back</a>
       {% if not view_only %}
-        <button class="si-btn si-btn-primary" type="submit" form="gcs-config-form">Save</button>
+        <button class="si-btn si-btn-primary" type="submit" form="sam-config-form">Save</button>
       {% endif %}
     </div>
   </header>
 
-  <form id="gcs-config-form" method="post" action="/admin/gcs" class="si-incident-form">
+  <form id="sam-config-form" method="post" action="/admin/sam" class="si-incident-form">
     <div class="si-incident-grid">
       <div class="si-incident-section">Unit details</div>
       <div class="si-incident-field">
@@ -47,8 +47,8 @@
         <label>SRLM System</label>
         <select name="srlm_system" disabled>
           <option value="">-- None --</option>
-          <option value="LM" {% if unit.get('srlm_system') == 'LM' %}selected{% endif %}>Loitering Munition (LM)</option>
-          <option value="GCS" {% if unit.get('srlm_system', 'GCS') == 'GCS' %}selected{% endif %}>Ground Control System (GCS)</option>
+          <option value="LM" {% if unit.get('srlm_system', 'LM') == 'LM' %}selected{% endif %}>Loitering Munition (LM)</option>
+          <option value="GCS" {% if unit.get('srlm_system') == 'GCS' %}selected{% endif %}>Ground Control System (GCS)</option>
           <option value="TMV" {% if unit.get('srlm_system') == 'TMV' %}selected{% endif %}>Tactical Mobility Vehicle (TMV)</option>
           <option value="Simulator" {% if unit.get('srlm_system') == 'Simulator' %}selected{% endif %}>Simulator</option>
         </select>
@@ -58,7 +58,7 @@
       <div class="si-incident-section">Customer and contract</div>
       <div class="si-incident-field">
         <label>Customer</label>
-        <select name="customer_id" id="gcs-customer" {% if view_only %}disabled{% endif %}>
+        <select name="customer_id" id="sam-customer" {% if view_only %}disabled{% endif %}>
           <option value="">-- None --</option>
           {% for customer in customers or [] %}
           <option value="{{ customer.id }}" {% if customer.id == unit.get('customer_id') %}selected{% endif %}>
@@ -69,7 +69,7 @@
       </div>
       <div class="si-incident-field">
         <label>Contract</label>
-        <select name="contract_id" id="gcs-contract" {% if view_only %}disabled{% endif %}>
+        <select name="contract_id" id="sam-contract" {% if view_only %}disabled{% endif %}>
           <option value="">-- None --</option>
           {% for contract in contracts or [] %}
           <option value="{{ contract.id }}" data-customer-id="{{ contract.customer_id }}" {% if contract.id == unit.get('contract_id') %}selected{% endif %}>
@@ -109,8 +109,8 @@
 </section>
 
 <script>
-  const customerSelect = document.getElementById("gcs-customer");
-  const contractSelect = document.getElementById("gcs-contract");
+  const customerSelect = document.getElementById("sam-customer");
+  const contractSelect = document.getElementById("sam-contract");
 
   const syncContracts = () => {
     const selectedCustomer = customerSelect.value;

@@ -1,0 +1,3 @@
+id,serial_number,unit_name,customer_id,customer_name,contract_id,contract_number,warranty_valid_from,warranty_valid_to,status
+1001,LM-0001,LM Alpha,1,Acme Rail Systems,101,CTR-2024-001,2024-02-01,2026-02-01,Active
+1002,LM-0002,LM Bravo,2,MetroLine Services,102,CTR-2024-014,2024-04-10,2026-04-10,Active

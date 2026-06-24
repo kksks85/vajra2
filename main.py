@@ -76,6 +76,73 @@ def on_startup():
         else:
             print(f"✓ Database already has {existing_users} user(s)")
         
+        # Seed default knowledge documents
+        from models.knowledge import KnowledgeDocument
+        existing_docs = db.query(KnowledgeDocument).count()
+        if existing_docs == 0:
+            print("🔄 Seeding default knowledge documents...")
+            import os
+            os.makedirs("static/uploads", exist_ok=True)
+            
+            default_docs = [
+                ("manual", "MAN-LM-001", "v1.0", "2024-01-15", "LM Alpha Operator Flight Manual", "Please refer to the attached document.", []),
+                ("manual", "MAN-GCS-002", "v2.1", "2024-03-20", "GCS Ground Station User Manual", "Please refer to the attached document.", []),
+                ("service_bulletin", "SB-PROP-102", "Rev A", "2024-02-10", "Propulsion System Lubrication Interval Bulletin", "Please refer to the attached document.", []),
+                ("operator_bulletin", "OB-AV-204", "v1.1", "2024-04-05", "Avionics Calibration Procedures Operator Bulletin", "Please refer to the attached document.", []),
+                ("amendments_leaflet", "AL-WH-301", "v3.0", "2024-05-18", "Warhead Payload Attachment leaf amendment leaflet", "Please refer to the attached document.", []),
+                ("incoming_letter", "LET-INC-901", "N/A", "2024-05-22", "Customer Letter: Operational Acceptance approval", "Please refer to the attached document.", []),
+                ("incoming_letter", "LET-INC-902", "N/A", "2024-06-01", "Customs Clearance Authorization Letter", "Please refer to the attached document.", []),
+                ("outgoing_letter", "LET-OUT-801", "N/A", "2024-05-30", "Outgoing Dispatch Slip: Spare Parts shipment", "Please refer to the attached document.", [])
+            ]
+            
+            for doc_type, file_ref, version, date_of_issue, subject, description, attachments in default_docs:
+                try:
+                    doc = KnowledgeDocument(
+                        doc_type=doc_type,
+                        file_reference_number=file_ref,
+                        version=version,
+                        date_of_issue=date_of_issue,
+                        subject_line=subject,
+                        description=description,
+                        attachments=attachments,
+                    )
+                    db.add(doc)
+                    print(f"  ✓ {file_ref}")
+                except Exception as e:
+                    print(f"  ✗ {file_ref}: {e}")
+            db.commit()
+            print("✓ Knowledge document seeding completed")
+        else:
+            print(f"✓ Database already has {existing_docs} knowledge document(s)")
+            
+        # Seed default knowledge articles
+        from models.knowledge import KnowledgeArticle
+        from datetime import datetime
+        existing_articles = db.query(KnowledgeArticle).count()
+        if existing_articles == 0:
+            print("🔄 Seeding default knowledge articles...")
+            default_articles = [
+                ("KM001", "Vajra Knowledge Management User Guide", "Guide to creating, viewing, and managing text-based knowledge articles and uploaded service bulletins in Vajra Service Management.", ["guide", "general"]),
+                ("KM002", "Avionics Troubleshooting Playbook", "Steps for debugging avionics connectivity issues on Loitering Munitions:\n1. Check battery voltages.\n2. Ensure telemetry is active.\n3. Validate GPS lock.", ["avionics", "playbook"])
+            ]
+            for ref, title, content, tags in default_articles:
+                try:
+                    art = KnowledgeArticle(
+                        reference_number=ref,
+                        title=title,
+                        content=content,
+                        tags=tags,
+                        created_at=datetime.utcnow()
+                    )
+                    db.add(art)
+                    print(f"  ✓ {ref}")
+                except Exception as e:
+                    print(f"  ✗ {ref}: {e}")
+            db.commit()
+            print("✓ Knowledge articles seeding completed")
+        else:
+            print(f"✓ Database already has {existing_articles} knowledge article(s)")
+            
         db.close()
     except Exception as e:
         print(f"✗ Error during user seeding: {e}")

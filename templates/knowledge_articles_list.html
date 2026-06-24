@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="si-incident-new">
+  <header class="si-incident-header" style="margin-bottom: 20px;">
+    <div>
+      <div class="si-incident-title">Knowledge Articles</div>
+      <div class="si-incident-subtitle">Diagnostics, playbooks, and standard operational procedures</div>
+    </div>
+    <div class="si-incident-actions">
+      <a class="si-btn" href="/knowledge">Back to Dashboard</a>
+      <a class="si-btn si-btn-primary" href="/knowledge/article/new">Create New Article</a>
+    </div>
+  </header>
+
+  <!-- Search form -->
+  <form method="get" action="/knowledge/articles" style="margin-bottom: 24px; display: flex; gap: 10px; max-width: 600px;">
+    <input type="text" name="search" placeholder="Search by title, tag, content or reference ID (e.g. KM001)..." value="{{ search or '' }}" style="flex: 1; padding: 10px 14px; border: 1px solid var(--si-border); border-radius: 6px; font-size: 13px;" />
+    <button type="submit" class="si-btn si-btn-primary" style="padding: 10px 20px;">Search</button>
+    {% if search %}
+      <a href="/knowledge/articles" class="si-btn" style="padding: 10px 15px; text-decoration: none; display: flex; align-items: center; justify-content: center;">Clear</a>
+    {% endif %}
+  </form>
+
+  <!-- Articles List Grid -->
+  <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+    {% for article in articles %}
+      <div style="background: var(--si-card); border: 1px solid var(--si-border); border-radius: 8px; padding: 20px; position: relative; transition: all 0.2s ease-in-out;" class="article-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="background: rgba(43, 116, 214, 0.08); color: var(--si-primary); font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 4px; letter-spacing: 0.5px;">{{ article.reference_number }}</span>
+            <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: var(--si-text);">
+              <a href="/knowledge/article/{{ article.id }}" style="text-decoration: none; color: inherit; transition: color 0.15s ease;">{{ article.title }}</a>
+            </h2>
+          </div>
+          <span style="font-size: 12px; color: var(--si-muted);">{{ article.created_at.strftime('%Y-%m-%d') if article.created_at else '' }}</span>
+        </div>
+
+        <p style="color: var(--si-text); opacity: 0.85; font-size: 14px; line-height: 1.5; margin: 0 0 14px 0;">
+          {{ article.content[:220] }}{% if article.content|length > 220 %}...{% endif %}
+        </p>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            {% for tag in article.tags %}
+              <span style="background: var(--si-bg); border: 1px solid var(--si-border); color: var(--si-muted); font-size: 11px; padding: 2px 8px; border-radius: 12px;">{{ tag }}</span>
+            {% endfor %}
+          </div>
+          <a href="/knowledge/article/{{ article.id }}" style="font-size: 13px; font-weight: 600; color: var(--si-primary); text-decoration: none;">Read Article &rarr;</a>
+        </div>
+      </div>
+    {% else %}
+      <div style="background: var(--si-card); border: 1px solid var(--si-border); border-radius: 8px; padding: 40px; text-align: center; color: var(--si-muted);">
+        <p style="margin: 0 0 10px 0; font-size: 15px; font-weight: 500;">No articles found</p>
+        <p style="margin: 0; font-size: 13px; opacity: 0.8;">Get started by publishing the first knowledge article in your team's wiki.</p>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<style>
+  .article-card:hover {
+    border-color: var(--si-primary) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  }
+  .article-card h2 a:hover {
+    color: var(--si-primary) !important;
+  }
+</style>
+{% endblock %}

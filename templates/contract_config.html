@@ -64,6 +64,57 @@
         <label>Attachment</label>
         <input type="file" name="attachment" {% if view_only %}disabled{% endif %} />
       </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Main Contract</div>
+
+      <div class="si-incident-field si-incident-field-wide">
+        <label>No of Deliverables [LM/ GCS/ TMV/ RDV/ Simulator/ LRU/ MRLS/ SMTs/STEs]</label>
+        <input name="main_deliverables" placeholder="No of deliverables details..." value="{{ contract.get('main_deliverables', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field si-incident-field-wide" style="display: flex; align-items: center; gap: 8px; padding-top: 10px;">
+        <input type="checkbox" id="main_warranty" name="main_warranty" value="true" {% if contract.get('main_warranty') %}checked{% endif %} {% if view_only %}disabled{% endif %} style="width: 18px; height: 18px; cursor: pointer; margin: 0;" />
+        <label for="main_warranty" style="margin: 0; cursor: pointer; font-weight: normal;">Includes warranty as per executed on and valid till</label>
+      </div>
+
+      <div class="si-incident-field si-incident-field-wide">
+        <label>Manuals [All versions with date of issue]</label>
+        <input name="main_manuals" placeholder="Manuals list with issue dates..." value="{{ contract.get('main_manuals', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Sub contract [AMC/ CMC]</div>
+
+      <div class="si-incident-field si-incident-field-wide" style="display: flex; align-items: center; gap: 8px; padding-top: 5px;">
+        <input type="checkbox" id="sub_scheduled_maintenance" name="sub_scheduled_maintenance" value="true" {% if contract.get('sub_scheduled_maintenance') %}checked{% endif %} {% if view_only %}disabled{% endif %} style="width: 18px; height: 18px; cursor: pointer; margin: 0;" />
+        <label for="sub_scheduled_maintenance" style="margin: 0; cursor: pointer; font-weight: normal;">Scheduled Maintenance [Periodic Maintenance] (option to include spares for replacement)</label>
+      </div>
+
+      <div class="si-incident-field si-incident-field-wide" style="display: flex; align-items: center; gap: 8px; padding-top: 5px;">
+        <input type="checkbox" id="sub_unscheduled_maintenance" name="sub_unscheduled_maintenance" value="true" {% if contract.get('sub_unscheduled_maintenance') %}checked{% endif %} {% if view_only %}disabled{% endif %} style="width: 18px; height: 18px; cursor: pointer; margin: 0;" />
+        <label for="sub_unscheduled_maintenance" style="margin: 0; cursor: pointer; font-weight: normal;">Unscheduled Maintenance [Repair of items post failure]</label>
+      </div>
+
+      <div class="si-incident-field si-incident-field-wide" style="display: flex; align-items: center; gap: 8px; padding-top: 5px;">
+        <input type="checkbox" id="sub_calibration" name="sub_calibration" value="true" {% if contract.get('sub_calibration') %}checked{% endif %} {% if view_only %}disabled{% endif %} style="width: 18px; height: 18px; cursor: pointer; margin: 0;" />
+        <label for="sub_calibration" style="margin: 0; cursor: pointer; font-weight: normal;">Calibration of equipments</label>
+      </div>
+
+      <div class="si-incident-field si-incident-field-wide" style="display: flex; align-items: center; gap: 8px; padding-top: 5px;">
+        <input type="checkbox" id="sub_software_upgrade" name="sub_software_upgrade" value="true" {% if contract.get('sub_software_upgrade') %}checked{% endif %} {% if view_only %}disabled{% endif %} style="width: 18px; height: 18px; cursor: pointer; margin: 0;" />
+        <label for="sub_software_upgrade" style="margin: 0; cursor: pointer; font-weight: normal;">Software upgrade</label>
+      </div>
+
+      <div class="si-incident-field si-incident-field-wide">
+        <label>Record of No of scheduled/ unscheduled visits (including no of personnel and days)</label>
+        <input name="sub_visits_record" placeholder="Record of visits details..." value="{{ contract.get('sub_visits_record', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field si-incident-field-wide" style="display: flex; align-items: center; gap: 8px; padding-top: 5px;">
+        <input type="checkbox" id="sub_refresher_training" name="sub_refresher_training" value="true" {% if contract.get('sub_refresher_training') %}checked{% endif %} {% if view_only %}disabled{% endif %} style="width: 18px; height: 18px; cursor: pointer; margin: 0;" />
+        <label for="sub_refresher_training" style="margin: 0; cursor: pointer; font-weight: normal;">Refresher Training</label>
+      </div>
     </div>
   </form>
 </section>

@@ -28,6 +28,14 @@
     <div class="si-incident-grid">
       <div class="si-incident-section">Unit details</div>
       <div class="si-incident-field">
+        <label>SAP Part number</label>
+        <input name="sap_part_number" placeholder="14 Digit part no generated on SAP" value="{{ unit.get('sap_part_number', '') }}" maxlength="14" pattern="\d{14}" title="Must be exactly 14 digits" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>Customer Part no</label>
+        <input name="customer_part_number" placeholder="08 Digit part no generated for customer" value="{{ unit.get('customer_part_number', '') }}" maxlength="8" pattern="\d{8}" title="Must be exactly 8 digits" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
         <label>Serial Number</label>
         <input name="serial_number" placeholder="Serial number" value="{{ unit.get('serial_number', '') }}" {% if view_only %}readonly disabled{% endif %} />
       </div>
@@ -80,6 +88,28 @@
       <div class="si-incident-field">
         <label>Warranty Valid To</label>
         <input name="warranty_valid_to" placeholder="YYYY-MM-DD" value="{{ unit.get('warranty_valid_to', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Manufacturer details</div>
+      <div class="si-incident-field">
+        <label>Make</label>
+        <input name="make" placeholder="Make" value="{{ unit.get('make', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>Model</label>
+        <input name="model" placeholder="Model" value="{{ unit.get('model', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Servicing</div>
+      <div class="si-incident-field">
+        <label>Last Servicing Done</label>
+        <input type="date" name="last_servicing_done" value="{{ unit.get('last_servicing_done', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>Next Servicing Due</label>
+        <input type="date" name="next_servicing_due" value="{{ unit.get('next_servicing_due', '') }}" {% if view_only %}readonly disabled{% endif %} />
       </div>
     </div>
   </form>

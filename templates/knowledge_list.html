@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="list-shell">
+  <div class="list-bar">
+    <div class="list-title">
+      <h1>{{ label }}</h1>
+      <span class="pill">All</span>
+    </div>
+    <div class="list-controls">
+      <div class="list-actions">
+        <a class="ghost small" href="/knowledge/document/new?type={{ doc_type }}">Upload New Document</a>
+      </div>
+      <span class="list-meta">{{ documents|length }} total</span>
+    </div>
+  </div>
+
+  <div class="list-card">
+    <table class="table dense">
+      <thead>
+        <tr>
+          <th>File Reference Number</th>
+          <th>Subject Line</th>
+          <th>Version</th>
+          <th>Date of Issue</th>
+          <th>Date Uploaded</th>
+          <th>Last Accessed</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in documents %}
+        <tr class="clickable-row" data-href="/knowledge/document/{{ doc.id }}" style="cursor: pointer;">
+          <td><strong>{{ doc.file_reference_number }}</strong></td>
+          <td>{{ doc.subject_line }}</td>
+          <td>{{ doc.version }}</td>
+          <td>{{ doc.date_of_issue }}</td>
+          <td>{{ format_utc(doc.created_at) if format_utc else doc.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ format_utc(doc.last_accessed) if format_utc else doc.last_accessed.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>
+            <a class="ghost small" href="/knowledge/document/{{ doc.id }}">View/Edit</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 30px; color: var(--si-muted); font-style: italic;">No documents uploaded in this category.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".clickable-row").forEach(row => {
+      row.addEventListener("click", (e) => {
+        if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') {
+          window.location.href = row.dataset.href;
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

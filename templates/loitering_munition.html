@@ -45,6 +45,26 @@
           <option value="Simulator" {% if unit.get('srlm_system') == 'Simulator' %}selected{% endif %}>Simulator</option>
         </select>
       </div>
+      <div class="si-incident-field">
+        <label>SAP Part Number <span style="font-size:0.8em;color:#888;">(14 digits)</span></label>
+        <input name="sap_part_number" placeholder="14-digit SAP Part Number" maxlength="14" pattern="\d{14}" value="{{ unit.get('sap_part_number', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>Customer Part No <span style="font-size:0.8em;color:#888;">(8 digits)</span></label>
+        <input name="customer_part_no" placeholder="8-digit Customer Part No" maxlength="8" pattern="\d{8}" value="{{ unit.get('customer_part_no', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>Make</label>
+        <input name="make" placeholder="Manufacturer / Make" value="{{ unit.get('make', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>Model</label>
+        <input name="model" placeholder="Model" value="{{ unit.get('model', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+      <div class="si-incident-field">
+        <label>Software Version</label>
+        <input name="software_version" placeholder="e.g. v1.0.0" value="{{ unit.get('software_version', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
 
       <div class="si-incident-divider"></div>
       <div class="si-incident-section">Customer and contract</div>

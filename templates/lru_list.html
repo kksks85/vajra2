@@ -20,8 +20,13 @@
         <tr>
           <th>LRU Serial Number</th>
           <th>LRU Name</th>
+          <th>SAP Part number</th>
+          <th>Customer Part no</th>
           <th>Related Platform Variant Name</th>
           <th>Sub-system</th>
+          <th>Make</th>
+          <th>Model</th>
+          <th>Software version</th>
           <th>Status</th>
           <th>Actions</th>
         </tr>
@@ -31,8 +36,13 @@
         <tr>
           <td>{{ lru.serial_number }}</td>
           <td>{{ lru.name }}</td>
+          <td>{{ lru.sap_part_number }}</td>
+          <td>{{ lru.customer_part_number }}</td>
           <td>{{ lru.platform_variant }}</td>
           <td>{{ lru.sub_system }}</td>
+          <td>{{ lru.make }}</td>
+          <td>{{ lru.model }}</td>
+          <td>{{ lru.software_version }}</td>
           <td>{{ lru.status }}</td>
           <td>
             <a class="ghost small" href="/admin/lru/{{ lru.id }}">View</a>

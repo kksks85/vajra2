@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% set view_only = mode == "view" %}
+{% set is_new = mode == "create" %}
+{% set doc = doc or {} %}
+{% block content %}
+<section class="si-incident-new">
+  <header class="si-incident-header">
+    <div>
+      <div class="si-incident-title">
+        {% if is_new %}
+          Upload Document
+        {% elif mode == "edit" %}
+          Edit Document Details
+        {% else %}
+          Document Details
+        {% endif %}
+      </div>
+      <div class="si-incident-subtitle">Structured registry and attachments for knowledge resources</div>
+    </div>
+    <div class="si-incident-actions">
+      <a class="si-btn" href="/knowledge/list/{{ doc_type }}">Back</a>
+      {% if view_only %}
+        <a class="si-btn si-btn-primary" href="/knowledge/document/{{ doc.id }}?edit=true">Edit</a>
+      {% else %}
+        <button class="si-btn si-btn-primary" type="submit" form="doc-form">Save</button>
+      {% endif %}
+    </div>
+  </header>
+
+  <form id="doc-form" method="post" enctype="multipart/form-data" action="{% if is_new %}/knowledge/document/new{% else %}/knowledge/document/{{ doc.id }}{% endif %}" class="si-incident-form">
+    <input type="hidden" name="type_param" value="{{ doc_type }}" />
+    <div class="si-incident-grid">
+      <div class="si-incident-section">Administrative values</div>
+      
+      <div class="si-incident-field">
+        <label>Documentation Type</label>
+        <select name="doc_type" {% if view_only or not is_new %}disabled style="background: #f0f4f9;"{% endif %} required>
+          <option value="manual" {% if doc_type == "manual" %}selected{% endif %}>Manual</option>
+          <option value="service_bulletin" {% if doc_type == "service_bulletin" %}selected{% endif %}>Service Bulletin</option>
+          <option value="operator_bulletin" {% if doc_type == "operator_bulletin" %}selected{% endif %}>Operator Bulletin</option>
+          <option value="amendments_leaflet" {% if doc_type == "amendments_leaflet" %}selected{% endif %}>Amendments leaflet</option>
+          <option value="incoming_letter" {% if doc_type == "incoming_letter" %}selected{% endif %}>In-coming Letter</option>
+          <option value="outgoing_letter" {% if doc_type == "outgoing_letter" %}selected{% endif %}>Out-going Letter</option>
+        </select>
+        {% if not is_new %}
+          <input type="hidden" name="doc_type" value="{{ doc.doc_type }}" />
+        {% endif %}
+      </div>
+
+      <div class="si-incident-field">
+        <label>Version</label>
+        <input name="version" placeholder="e.g. v1.2" value="{{ doc.version or '' }}" required {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Date of Issue</label>
+        <input type="date" name="date_of_issue" value="{{ doc.date_of_issue or '' }}" required {% if view_only %}readonly disabled style="background: #f0f4f9;"{% endif %} />
+      </div>
+
+      <div class="si-incident-field">
+        <label>File Reference Number</label>
+        <input name="file_reference_number" placeholder="e.g. FILE-REF-1092" value="{{ doc.file_reference_number or '' }}" required {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field" style="grid-column: 1 / -1;">
+        <label>Subject Line</label>
+        <input name="subject_line" placeholder="Subject / Title of the document" value="{{ doc.subject_line or '' }}" required {% if view_only %}readonly disabled{% endif %} style="width: 100%;" />
+      </div>
+
+      <div class="si-incident-field" style="grid-column: 1 / -1;">
+        <label>Description</label>
+        <textarea name="description" placeholder="Refer to attached document details" required {% if view_only %}readonly disabled{% endif %} style="width: 100%; height: 80px; font-family: inherit;">{{ doc.description or 'Please refer to the attached document' }}</textarea>
+      </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Attachments</div>
+
+      <div class="si-table-container" style="grid-column: 1 / -1; background: var(--si-card); border: 1px solid var(--si-border); border-radius: 6px; padding: 15px;">
+        <h3 style="margin-top: 0; font-size: 13px; font-weight: 600; color: var(--si-text); margin-bottom: 12px;">Files & Reference Documents</h3>
+        
+        <div id="file-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
+          {% for attachment in doc.attachments or [] %}
+            <div class="file-item" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--si-bg); border-radius: 4px; border: 1px solid var(--si-border);">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg style="width: 16px; height: 16px; color: var(--si-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <span style="font-weight: 500;">{{ attachment }}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <a href="/static/uploads/{{ attachment }}" download style="font-size: 11px; font-weight: 600; text-decoration: none; color: var(--si-primary);">Download</a>
+                {% if not view_only %}
+                  <button type="button" class="remove-attachment-btn" data-filename="{{ attachment }}" style="border: none; background: none; color: var(--danger-color, #ef4444); cursor: pointer; font-size: 11px; font-weight: 600;">Remove</button>
+                {% endif %}
+              </div>
+            </div>
+          {% else %}
+            <p style="color: var(--si-muted); font-style: italic; font-size: 12px; margin: 0;">No files attached to this document record.</p>
+          {% endfor %}
+        </div>
+
+        <input type="hidden" name="deleted_attachments" id="deleted-attachments" value="" />
+
+        {% if not view_only %}
+          <div style="border: 1px dashed var(--si-primary); border-radius: 4px; padding: 20px; text-align: center; background: rgba(43, 116, 214, 0.02); position: relative;">
+            <svg style="width: 24px; height: 24px; color: var(--si-primary); margin: 0 auto 8px; display: block;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            <span style="font-weight: 500; font-size: 12px; color: var(--si-text);">Click to select files to attach</span>
+            <input type="file" name="files" multiple style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" />
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const deletedAttachmentsInput = document.getElementById("deleted-attachments");
+    const fileList = document.getElementById("file-list");
+    const deletedList = [];
+
+    document.querySelectorAll(".remove-attachment-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const filename = btn.getAttribute("data-filename");
+        deletedList.push(filename);
+        deletedAttachmentsInput.value = JSON.stringify(deletedList);
+        
+        // Remove item from UI
+        btn.closest(".file-item").remove();
+        if (fileList.children.length === 0) {
+          fileList.innerHTML = '<p style="color: var(--si-muted); font-style: italic; font-size: 12px; margin: 0;">No files attached to this document record.</p>';
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

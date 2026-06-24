@@ -1,0 +1,2 @@
+id,serial_number,unit_name,customer_id,customer_name,contract_id,contract_number,warranty_valid_from,warranty_valid_to,status
+2001,GCS-0101,GCS North,1,Acme Rail Systems,101,CTR-2024-001,2024-01-20,2026-01-20,Active

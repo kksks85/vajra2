@@ -1,0 +1,4 @@
+ight, so how would you document all that? So for that you will create something
+ like knowledge article and you will start creating those knowledge articles over here. And you will create our unique reference number over here named as KM001KM002.
+In the meanwhile, if you can just create one similar tile for knowledge and like knowledge article part of it, if you can.Under knowledge dashboard,
+ create one knowledge articles in the main dashboard as well as in the drop down and in the left panel.

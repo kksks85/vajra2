@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% set article = article or {} %}
+{% block content %}
+<section class="si-incident-new">
+  <header class="si-incident-header">
+    <div>
+      <div class="si-incident-title">
+        {% if mode == "create" %}
+          Publish Knowledge Article
+        {% else %}
+          Edit Knowledge Article
+        {% endif %}
+      </div>
+      <div class="si-incident-subtitle">Document processes, playbooks, and solutions to issues</div>
+    </div>
+    <div class="si-incident-actions">
+      {% if mode == "create" %}
+        <a class="si-btn" href="/knowledge/articles">Cancel</a>
+      {% else %}
+        <a class="si-btn" href="/knowledge/article/{{ article.id }}">Cancel</a>
+      {% endif %}
+      <button class="si-btn si-btn-primary" type="submit" form="article-form">Publish</button>
+    </div>
+  </header>
+
+  <form id="article-form" method="post" action="{% if mode == 'create' %}/knowledge/article/new{% else %}/knowledge/article/{{ article.id }}/edit{% endif %}" class="si-incident-form">
+    <div class="si-incident-grid">
+      <div class="si-incident-section">Article Details</div>
+
+      <div class="si-incident-field">
+        <label>Reference ID</label>
+        <input name="reference_number" value="{{ ref_num }}" readonly style="background: #f0f4f9; font-weight: 600;" required />
+        <span style="font-size: 11px; color: var(--si-muted); margin-top: 4px; display: block;">This identifier is automatically generated.</span>
+      </div>
+
+      <div class="si-incident-field">
+        <label>Tags</label>
+        <input name="tags" placeholder="e.g. guide, avionics, troubleshooting" value="{{ article.tags|join(', ') if article else '' }}" />
+        <span style="font-size: 11px; color: var(--si-muted); margin-top: 4px; display: block;">Separate tags with commas.</span>
+      </div>
+
+      <div class="si-incident-field" style="grid-column: 1 / -1;">
+        <label>Article Title</label>
+        <input name="title" placeholder="Title of the knowledge article..." value="{{ article.title or '' }}" required style="width: 100%; font-size: 15px;" />
+      </div>
+
+      <div class="si-incident-field" style="grid-column: 1 / -1;">
+        <label>Content</label>
+        <textarea name="content" placeholder="Write your article content here. You can use plain text or structured layout..." required style="width: 100%; height: 350px; font-family: inherit; line-height: 1.6; padding: 12px; font-size: 14px;">{{ article.content or '' }}</textarea>
+      </div>
+
+    </div>
+  </form>
+</section>
+{% endblock %}

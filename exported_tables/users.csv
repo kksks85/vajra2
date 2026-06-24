@@ -1,0 +1,6 @@
+id,username,email,full_name,password_hash,role,license_type,department,location,employee_id,specialization,phone,hire_date,status,is_active,created_at
+1,admin,admin@vajra.com,Administrator,$pbkdf2-sha256$29000$ZkypldJayzkn5LwXgvA.Rw$N5fHz36QmK1P4Q0MCxdjVNf8.74S1UYsyP8Klde6mgU,admin,Standard,Management,HQ,EMP001,,,,Active,1,2026-06-08 06:21:06
+2,technician,technician@vajra.com,John Technician,$pbkdf2-sha256$29000$Z.wdQ8jZ2zunlLJ2bg3BmA$wWBRo.EUq1gt1xEdAS1eOn54M9DfRtLS1woUq4UZ68g,technician,Standard,Operations,Field Base 1,EMP002,,,,Active,1,2026-06-08 06:21:06
+3,supervisor,supervisor@vajra.com,Sarah Supervisor,$pbkdf2-sha256$29000$X.sdY6w1hhBCqDUGYCzlnA$5w1a7cxosTMJw1AJtnKRSNUP3PDyXDxa61iHYdhhw10,supervisor,Standard,Management,HQ,EMP003,,,,Active,1,2026-06-08 06:21:06
+4,agent,agent@vajra.com,Alex Agent,$pbkdf2-sha256$29000$9v7fOwcAAOA8x5hzLkXovQ$wpJ.0ZAz/edpfeimUQMZ4JyGATTypX5PJB5GLAMcnKM,agent,Standard,Support,Support Center,EMP004,,,,Active,1,2026-06-08 06:21:06
+5,demo,demo@vajra.com,Demo User,$pbkdf2-sha256$29000$gTCGkPJe630PQYixdq4VIg$qZMjOFw10eRLY1v4FU2mr.GW.H4P.uoi8IrHuqqgQww,agent,Standard,Demo,Demo Office,EMP005,,,,Active,1,2026-06-08 06:21:06

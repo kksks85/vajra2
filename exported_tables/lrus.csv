@@ -1,0 +1,54 @@
+id,serial_number,name,platform_variant,sub_system,status,sap_part_number,customer_part_number,make,model,software_version
+5001,LRU-1001,Guidance Module,LM Alpha - (LM-0001),Navigation,Active,10000000005000,80003000,VajraCorp,VC-Guidance-V1,1.0.4
+5002,LRU-2033,Comm Unit,GCS North - (GCS-0101),Communications,Active,10000000005001,80003001,VajraCorp,VC-Comm-V1,1.0.4
+5003,LRU-1002,Airframe Sensor Pack,LM Alpha - (LM-0001),Airframe,Active,10000000005002,80003002,VajraCorp,VC-Airframe-V1,1.0.4
+5004,LRU-1003,Airframe Control Unit,LM Alpha - (LM-0001),Airframe,Active,10000000005003,80003003,VajraCorp,VC-Airframe-V1,1.0.4
+5005,LRU-1004,Propulsion Pump,LM Alpha - (LM-0001),Propulsion,Active,10000000005004,80003004,VajraCorp,VC-Propulsion-V1,1.0.4
+5006,LRU-1005,Propulsion Controller,LM Alpha - (LM-0001),Propulsion,Active,10000000005005,80003005,VajraCorp,VC-Propulsion-V1,1.0.4
+5007,LRU-1006,Flight Computer,LM Alpha - (LM-0001),Avionics & Flight Control,Active,10000000005006,80003006,VajraCorp,VC-Flight-V1,1.0.4
+5008,LRU-1007,Autopilot Module,LM Alpha - (LM-0001),Avionics & Flight Control,Active,10000000005007,80003007,VajraCorp,VC-Autopilot-V1,1.0.4
+5009,LRU-1008,Data Link Radio,LM Alpha - (LM-0001),Communication,Active,10000000005008,80003008,VajraCorp,VC-Data-V1,1.0.4
+5010,LRU-1009,Antenna Array,LM Alpha - (LM-0001),Communication,Active,10000000005009,80003009,VajraCorp,VC-Antenna-V1,1.0.4
+5011,LRU-1010,Payload Control Unit,LM Alpha - (LM-0001),Payload,Active,10000000005010,80003010,VajraCorp,VC-Payload-V1,1.0.4
+5012,LRU-1011,Payload Sensor,LM Alpha - (LM-0001),Payload,Active,10000000005011,80003011,VajraCorp,VC-Payload-V1,1.0.4
+5013,LRU-2101,Compute Node A,GCS North - (GCS-0101),Computing,Active,10000000005012,80003012,VajraCorp,VC-Compute-V1,1.0.4
+5014,LRU-2102,Compute Node B,GCS North - (GCS-0101),Computing,Active,10000000005013,80003013,VajraCorp,VC-Compute-V1,1.0.4
+5015,LRU-2103,Comms Router,GCS North - (GCS-0101),Communication,Active,10000000005014,80003014,VajraCorp,VC-Comms-V1,1.0.4
+5016,LRU-2104,Comms Gateway,GCS North - (GCS-0101),Communication,Active,10000000005015,80003015,VajraCorp,VC-Comms-V1,1.0.4
+5017,LRU-2105,Display Panel A,GCS North - (GCS-0101),Display,Active,10000000005016,80003016,VajraCorp,VC-Display-V1,1.0.4
+5018,LRU-2106,Display Panel B,GCS North - (GCS-0101),Display,Active,10000000005017,80003017,VajraCorp,VC-Display-V1,1.0.4
+5019,LRU-2107,Control Console,GCS North - (GCS-0101),Control Interface,Active,10000000005018,80003018,VajraCorp,VC-Control-V1,1.0.4
+5020,LRU-2108,Input Device Hub,GCS North - (GCS-0101),Control Interface,Active,10000000005019,80003019,VajraCorp,VC-Input-V1,1.0.4
+5021,LRU-2109,Power Supply A,GCS North - (GCS-0101),Power,Active,10000000005020,80003020,VajraCorp,VC-Power-V1,1.0.4
+5022,LRU-2110,Power Supply B,GCS North - (GCS-0101),Power,Active,10000000005021,80003021,VajraCorp,VC-Power-V1,1.0.4
+5023,LRU-3101,Transmission Module,TMV Ranger - (TMV-2201),Powertrain,Active,10000000005022,80003022,VajraCorp,VC-Transmission-V1,1.0.4
+5024,LRU-3102,Engine Control Unit,TMV Ranger - (TMV-2201),Powertrain,Active,10000000005023,80003023,VajraCorp,VC-Engine-V1,1.0.4
+5025,LRU-3103,Battery Pack,TMV Ranger - (TMV-2201),Electrical,Active,10000000005024,80003024,VajraCorp,VC-Battery-V1,1.0.4
+5026,LRU-3104,Power Distribution Unit,TMV Ranger - (TMV-2201),Electrical,Active,10000000005025,80003025,VajraCorp,VC-Power-V1,1.0.4
+5027,LRU-3105,Vehicle Radio,TMV Ranger - (TMV-2201),Communication,Active,10000000005026,80003026,VajraCorp,VC-Vehicle-V1,1.0.4
+5028,LRU-3106,Satellite Modem,TMV Ranger - (TMV-2201),Communication,Active,10000000005027,80003027,VajraCorp,VC-Satellite-V1,1.0.4
+5029,LRU-3107,Nav Sensor,TMV Ranger - (TMV-2201),Navigation,Active,10000000005028,80003028,VajraCorp,VC-Nav-V1,1.0.4
+5030,LRU-3108,GPS Module,TMV Ranger - (TMV-2201),Navigation,Active,10000000005029,80003029,VajraCorp,VC-GPS-V1,1.0.4
+5031,LRU-3109,Payload Arm,TMV Ranger - (TMV-2201),Payload Handling,Active,10000000005030,80003030,VajraCorp,VC-Payload-V1,1.0.4
+5032,LRU-3110,Payload Lift,TMV Ranger - (TMV-2201),Payload Handling,Active,10000000005031,80003031,VajraCorp,VC-Payload-V1,1.0.4
+5033,LRU-4101,Sim Compute Node,Simulator Prime - (SIM-3001),Computing,Active,10000000005032,80003032,VajraCorp,VC-Sim-V1,1.0.4
+5034,LRU-4102,Sim GPU Module,Simulator Prime - (SIM-3001),Computing,Active,10000000005033,80003033,VajraCorp,VC-Sim-V1,1.0.4
+5035,LRU-4103,Display Controller,Simulator Prime - (SIM-3001),Display,Active,10000000005034,80003034,VajraCorp,VC-Display-V1,1.0.4
+5036,LRU-4104,Projection Unit,Simulator Prime - (SIM-3001),Display,Active,10000000005035,80003035,VajraCorp,VC-Projection-V1,1.0.4
+5037,LRU-4105,Control Console,Simulator Prime - (SIM-3001),Control,Active,10000000005036,80003036,VajraCorp,VC-Control-V1,1.0.4
+5038,LRU-4106,Control Interface Hub,Simulator Prime - (SIM-3001),Control,Active,10000000005037,80003037,VajraCorp,VC-Control-V1,1.0.4
+5039,LRU-4107,Audio Mixer,Simulator Prime - (SIM-3001),Audio,Active,10000000005038,80003038,VajraCorp,VC-Audio-V1,1.0.4
+5040,LRU-4108,Speaker Array,Simulator Prime - (SIM-3001),Audio,Active,10000000005039,80003039,VajraCorp,VC-Speaker-V1,1.0.4
+5041,LRU-4109,Simulation Core,Simulator Prime - (SIM-3001),Software,Active,10000000005040,80003040,VajraCorp,VC-Simulation-V1,1.0.4
+5042,LRU-4110,Scenario Engine,Simulator Prime - (SIM-3001),Software,Active,10000000005041,80003041,VajraCorp,VC-Scenario-V1,1.0.4
+5043,LRU-1201,Guidance Module B,LM Bravo - (LM-0002),Navigation,Active,10000000005042,80003042,VajraCorp,VC-Guidance-V1,1.0.4
+5044,LRU-1202,Airframe Sensor Pack B,LM Bravo - (LM-0002),Airframe,Active,10000000005043,80003043,VajraCorp,VC-Airframe-V1,1.0.4
+5045,LRU-1203,Airframe Control Unit B,LM Bravo - (LM-0002),Airframe,Active,10000000005044,80003044,VajraCorp,VC-Airframe-V1,1.0.4
+5046,LRU-1204,Propulsion Pump B,LM Bravo - (LM-0002),Propulsion,Active,10000000005045,80003045,VajraCorp,VC-Propulsion-V1,1.0.4
+5047,LRU-1205,Propulsion Controller B,LM Bravo - (LM-0002),Propulsion,Active,10000000005046,80003046,VajraCorp,VC-Propulsion-V1,1.0.4
+5048,LRU-1206,Flight Computer B,LM Bravo - (LM-0002),Avionics & Flight Control,Active,10000000005047,80003047,VajraCorp,VC-Flight-V1,1.0.4
+5049,LRU-1207,Autopilot Module B,LM Bravo - (LM-0002),Avionics & Flight Control,Active,10000000005048,80003048,VajraCorp,VC-Autopilot-V1,1.0.4
+5050,LRU-1208,Data Link Radio B,LM Bravo - (LM-0002),Communication,Active,10000000005049,80003049,VajraCorp,VC-Data-V1,1.0.4
+5051,LRU-1209,Antenna Array B,LM Bravo - (LM-0002),Communication,Active,10000000005050,80003050,VajraCorp,VC-Antenna-V1,1.0.4
+5052,LRU-1210,Payload Control Unit B,LM Bravo - (LM-0002),Payload,Active,10000000005051,80003051,VajraCorp,VC-Payload-V1,1.0.4
+5053,LRU-1211,Payload Sensor B,LM Bravo - (LM-0002),Payload,Active,10000000005052,80003052,VajraCorp,VC-Payload-V1,1.0.4
