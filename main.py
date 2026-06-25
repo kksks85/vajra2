@@ -4,6 +4,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from config import settings
 from database import Base, engine
+import models.entities  # Ensure all entity models are loaded into metadata
 from routers.auth import router as auth_router
 from routers.admin import router as admin_router
 from routers.incidents import router as incidents_router

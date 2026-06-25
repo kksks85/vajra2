@@ -29,6 +29,30 @@ uvicorn main:app --reload
 ## Environment
 Copy `.env.example` to `.env` and update values as needed.
 
+## Containerization
+Build the Docker image:
+```bash
+docker build -t vajra-service-management .
+```
+
+Run the app locally using Docker:
+```bash
+docker run -p 8000:8000 --env DATABASE_URL=sqlite:///./vajra.db vajra-service-management
+```
+
+Run with Docker Compose and a MySQL database:
+```bash
+docker compose up --build
+```
+
+Push the container to a registry for cloud deployment:
+```bash
+docker tag vajra-service-management <registry>/<repo>/vajra-service-management:latest
+docker push <registry>/<repo>/vajra-service-management:latest
+```
+
+In cloud deployments, set `DATABASE_URL` to your managed database connection string.
+
 ## Modules (v1)
 - Incident management (task-driven stages)
 - Knowledge management

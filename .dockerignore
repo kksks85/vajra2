@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.env
+.vscode/
+.git/
+vajra.db
+Vajra_Forms_Data_Dictionary.xlsx
+exported_tables/
+*.sqlite
+*.db

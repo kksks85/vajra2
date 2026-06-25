@@ -43,6 +43,7 @@ class User(Base):
     hire_date = Column(DateTime(timezone=True), nullable=True)
     status = Column(String(20), default="Active")
     is_active = Column(Boolean, default=True, nullable=False)
+    data = Column(JSON, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
@@ -54,4 +55,5 @@ class Group(Base):
     description = Column(String(500), default="")
     user_ids = Column(JSON, default=list)
     member_count = Column(Integer, default=0)
+    data = Column(JSON, default=dict, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

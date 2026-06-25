@@ -26,5 +26,6 @@ class KnowledgeDocument(Base):
     subject_line = Column(String(300), nullable=False)
     description = Column(Text, default="Please refer to the attached document")
     attachments = Column(JSON, default=list)  # List of filenames
+    data = Column(JSON, default=dict, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_accessed = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

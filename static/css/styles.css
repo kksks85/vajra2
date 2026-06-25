@@ -1577,7 +1577,7 @@ body.si-app {
 }
 
 .si-sidebar {
-  width: 210px;
+  width: 260px;
   background: linear-gradient(180deg, #0b2a5f 0%, #0a2450 55%, #081c3d 100%);
   color: #fff;
   min-height: 100vh;
@@ -1589,6 +1589,30 @@ body.si-app {
   flex-direction: column;
   z-index: 1030;
   overflow: hidden;
+}
+
+.si-sidebar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.si-sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+}
+
+.si-sidebar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3d6aca, #1f3b8e);
+  border-radius: 999px;
+  border: 2px solid rgba(11, 42, 95, 0.25);
+}
+
+.si-sidebar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #5a7ed4, #3050b4);
+}
+
+.si-sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: #3d6aca rgba(255, 255, 255, 0.08);
 }
 
 .si-brand {
@@ -1635,11 +1659,71 @@ body.si-app {
   overflow-y: auto;
 }
 
+.si-nav-group {
+  border-radius: 10px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.si-nav-group summary {
+  list-style: none;
+  cursor: pointer;
+  margin: 0;
+  padding: 10px 8px;
+}
+
+.si-nav-group summary::-webkit-details-marker {
+  display: none;
+}
+
+.si-nav-group summary::after {
+  content: "▾";
+  float: right;
+  transition: transform 0.2s ease;
+  color: rgba(255,255,255,0.65);
+}
+
+.si-nav-group[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.si-nav-group.open > summary {
+  background: rgba(255,255,255,0.04);
+}
+
+.si-nav-group .si-nav-link,
+.si-nav-group summary.si-nav-link {
+  display: block;
+  padding: 8px 8px;
+  color: rgba(255,255,255,0.9);
+  text-decoration: none;
+  font-size: 11px;
+}
+
+.si-nav-group .si-nav-link:hover,
+.si-nav-group summary.si-nav-link:hover {
+  color: #ffffff;
+}
+
+.si-nav-group.nested {
+  margin: 4px 0 0 10px;
+  background: rgba(255,255,255,0.03);
+}
+
+.si-nav-group.nested summary {
+  font-weight: 700;
+  font-size: 11px;
+  padding-left: 16px;
+}
+
+.si-nav-group.nested .si-nav-sublink {
+  margin-left: 12px;
+}
+
 .si-nav-section {
   font-size: 9px;
   text-transform: uppercase;
   color: rgba(255,255,255,0.55);
-  margin: 12px 0 6px;
   letter-spacing: 0.06em;
 }
 
@@ -1809,7 +1893,7 @@ body.si-app {
 }
 
 .si-main {
-  margin-left: 210px;
+  margin-left: 260px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;

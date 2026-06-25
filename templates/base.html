@@ -20,40 +20,54 @@
       </div>
 
       <nav class="si-nav">
-        <div class="si-nav-section">Self-Service</div>
-        <a class="si-nav-link" href="/">Homepage</a>
-        <a class="si-nav-link" href="/incidents">Incidents</a>
-        <a class="si-nav-link si-nav-sublink" href="/incidents/new">Create New</a>
-        <div class="si-nav-section">Knowledge Management</div>
-        <a class="si-nav-link" href="/knowledge">Knowledge Dashboard</a>
-        <a class="si-nav-link si-nav-sublink" href="/knowledge/list/manual">Manuals</a>
-        <a class="si-nav-link si-nav-sublink" href="/knowledge/list/service_bulletin">Service Bulletins</a>
-        <a class="si-nav-link si-nav-sublink" href="/knowledge/list/operator_bulletin">Operator Bulletins</a>
-        <a class="si-nav-link si-nav-sublink" href="/knowledge/list/amendments_leaflet">Amendments leaflets</a>
-        <a class="si-nav-link si-nav-sublink" href="/knowledge/list/incoming_letter">In-coming Letters</a>
-        <a class="si-nav-link si-nav-sublink" href="/knowledge/list/outgoing_letter">Out-going Letters</a>
-        <a class="si-nav-link si-nav-sublink" href="/knowledge/articles">Knowledge Articles</a>
-        <div class="si-nav-section">Operations</div>
-        <a class="si-nav-link" href="/builder">Workflow Builder</a>
-        <div class="si-nav-section">Administration</div>
-        <a class="si-nav-link" href="/admin">System Administration</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/users">User Management</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/licenses">License Management</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/groups">Group Management</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/customers">Customer Configuration</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/contracts">Contracts</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/lm">Loitering Munition (LM)</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/batteries">Batteries</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/warhead">War Head</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/sam">SAM</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/gcs">Ground Control Systems (GCS)</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/tmv">Tactical Mobility Vehicle (TMV)</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/simulator">Simulator</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/rdv">Rapid Deployment Vehicle (RDV)</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/mrls">MRLS</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/lru">Line Replaceable Unit (LRU)</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/smt-ste">SMT STE</a>
-        <a class="si-nav-link si-nav-sublink" href="/admin/sub-systems">Sub-Systems</a>
+        <details class="si-nav-group open">
+          <summary class="si-nav-section">Self-Service</summary>
+          <a class="si-nav-link" href="/">Homepage</a>
+          <a class="si-nav-link" href="/incidents">Incidents</a>
+          <a class="si-nav-link si-nav-sublink" href="/incidents/new">Create New</a>
+        </details>
+
+        <details class="si-nav-group open">
+          <summary class="si-nav-section">Knowledge Management</summary>
+          <a class="si-nav-link" href="/knowledge">Knowledge Dashboard</a>
+          <a class="si-nav-link si-nav-sublink" href="/knowledge/list/manual">Manuals</a>
+          <a class="si-nav-link si-nav-sublink" href="/knowledge/list/service_bulletin">Service Bulletins</a>
+          <a class="si-nav-link si-nav-sublink" href="/knowledge/list/operator_bulletin">Operator Bulletins</a>
+          <a class="si-nav-link si-nav-sublink" href="/knowledge/list/amendments_leaflet">Amendments leaflets</a>
+          <a class="si-nav-link si-nav-sublink" href="/knowledge/list/incoming_letter">In-coming Letters</a>
+          <a class="si-nav-link si-nav-sublink" href="/knowledge/list/outgoing_letter">Out-going Letters</a>
+          <a class="si-nav-link si-nav-sublink" href="/knowledge/articles">Knowledge Articles</a>
+        </details>
+
+        <details class="si-nav-group open">
+          <summary class="si-nav-section">Operations</summary>
+          <a class="si-nav-link" href="/builder">Workflow Builder</a>
+        </details>
+
+        <details class="si-nav-group open">
+          <summary class="si-nav-section">Administration</summary>
+          <a class="si-nav-link si-nav-sublink" href="/admin/users">User Management</a>
+          <a class="si-nav-link si-nav-sublink" href="/admin/licenses">License Management</a>
+          <a class="si-nav-link si-nav-sublink" href="/admin/groups">Group Management</a>
+          <details class="si-nav-group nested open">
+            <summary class="si-nav-link">Tables</summary>
+            <a class="si-nav-link si-nav-sublink" href="/admin/tables">Tables Overview</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/customers">Customer Configuration</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/contracts">Contracts</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/lm">Loitering Munition (LM)</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/batteries">Batteries</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/warhead">War Head</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/sam">SAM</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/gcs">Ground Control Systems (GCS)</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/tmv">Tactical Mobility Vehicle (TMV)</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/simulator">Simulator</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/rdv">Rapid Deployment Vehicle (RDV)</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/mrls">MRLS</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/lru">Line Replaceable Unit (LRU)</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/smt-ste">SMT STE</a>
+            <a class="si-nav-link si-nav-sublink" href="/admin/sub-systems">Sub-Systems</a>
+          </details>
+        </details>
       </nav>
 
       <div class="si-sidebar-footer">

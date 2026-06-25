@@ -1,9 +1,29 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.templating import Jinja2Templates
+from pathlib import Path
+import re
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
-from database import get_db
+from database import get_db, engine
 from models.admin import Role, User, License, Group
+from models.entities import (
+    Battery,
+    BatteryType,
+    Contract,
+    Customer,
+    GroundControlSystem,
+    LineReplaceableUnit,
+    LoiteringMunition,
+    MRLS,
+    RapidDeploymentVehicle,
+    SAM,
+    SMTSTE,
+    SimulatorUnit,
+    SubSystem,
+    TacticalMobilityVehicle,
+    Warhead,
+)
 from services.auth import create_user
 from utils import build_template_context, redirect_with_flash, paginate
 
@@ -17,6 +37,111 @@ BATTERY_TYPES = [
 ]
 
 
+def parse_form_data(form_data):
+    data = {}
+    for key, value in form_data.multi_items():
+        if hasattr(value, "filename"):
+            value = value.filename
+
+        if key.endswith("[]"):
+            key = key[:-2]
+            data.setdefault(key, []).append(value)
+        elif key in data:
+            if isinstance(data[key], list):
+                data[key].append(value)
+            else:
+                data[key] = [data[key], value]
+        else:
+            data[key] = value
+    return data
+
+
+def parse_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def normalize_list(value):
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        return value
+    return [value]
+
+
+def model_data(obj, top_level_fields=None):
+    result = {}
+    if top_level_fields:
+        for field in top_level_fields:
+            value = getattr(obj, field, None)
+            if value is not None:
+                result[field] = value
+    if getattr(obj, "data", None):
+        result.update(obj.data)
+    return result
+
+
+def entity_to_dict(obj, db: Session | None = None, top_level_fields=None):
+    result = {"id": obj.id}
+    result.update(model_data(obj, top_level_fields=top_level_fields))
+
+    if db is not None:
+        customer_id = parse_int(result.get("customer_id"))
+        if customer_id:
+            customer = db.query(Customer).filter(Customer.id == customer_id).first()
+            if customer:
+                result.setdefault("customer_name", customer.name)
+
+        contract_id = parse_int(result.get("contract_id"))
+        if contract_id:
+            contract = db.query(Contract).filter(Contract.id == contract_id).first()
+            if contract:
+                result.setdefault("contract_number", contract.number)
+
+    return result
+
+
+def list_entities(db: Session, model, top_level_fields=None):
+    items = db.query(model).order_by(model.id).all()
+    return [entity_to_dict(obj, db=db, top_level_fields=top_level_fields) for obj in items]
+
+
+def load_entity(db: Session, model, unit_type: str, unit_id: int, top_level_fields=None):
+    entity = db.query(model).filter(model.id == unit_id).first()
+    if entity:
+        return entity_to_dict(entity, db=db, top_level_fields=top_level_fields)
+    return next((item for item in _get_sample_units(unit_type) if item["id"] == unit_id), None)
+
+
+def persist_entity(db: Session, model, data: dict, top_level_fields=None):
+    kwargs = {}
+    if top_level_fields:
+        for field in top_level_fields:
+            if field in data:
+                value = data.get(field)
+                if field.endswith("_id"):
+                    kwargs[field] = parse_int(value)
+                else:
+                    kwargs[field] = value
+
+    entity = model(**kwargs, data=data)
+    db.add(entity)
+    db.commit()
+    db.refresh(entity)
+    return entity
+
+
+def list_or_sample(db: Session, model, unit_type: str, top_level_fields=None):
+    items = db.query(model).order_by(model.id).all()
+    if items:
+        return [entity_to_dict(obj, db=db, top_level_fields=top_level_fields) for obj in items]
+    return _get_sample_units(unit_type)
+
+
 @router.get("/admin")
 def admin_page(request: Request, db: Session = Depends(get_db)):
     roles = _get_sample_roles()
@@ -28,9 +153,28 @@ def admin_page(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/admin/users")
-def users_list_page(request: Request):
+def users_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_users = _get_sample_users()
+    db_users = db.query(User).order_by(User.id).all()
+    all_users = [
+        {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": user.role,
+            "license_type": user.license_type,
+            "department": user.department,
+            "location": user.location,
+            "employee_id": user.employee_id,
+            "specialization": user.specialization,
+            "phone": user.phone,
+            "status": user.status,
+        }
+        for user in db_users
+    ]
+    if not all_users:
+        all_users = _get_sample_users()
     pagination = paginate(all_users, page=page, per_page=50)
     context = build_template_context(request, users=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "users_list.html", context)
@@ -138,9 +282,21 @@ def user_edit_page(request: Request, user_id: int):
 
 
 @router.get("/admin/licenses")
-def licenses_list_page(request: Request):
+def licenses_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_licenses = _get_sample_licenses()
+    db_licenses = db.query(License).order_by(License.id).all()
+    all_licenses = [
+        {
+            "id": license.id,
+            "name": license.name,
+            "description": license.description,
+            "max_users": license.max_users,
+            "features": license.features,
+        }
+        for license in db_licenses
+    ]
+    if not all_licenses:
+        all_licenses = _get_sample_licenses()
     pagination = paginate(all_licenses, page=page, per_page=50)
     context = build_template_context(request, licenses=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "licenses_list.html", context)
@@ -168,9 +324,21 @@ def license_update_page(request: Request, license_id: int):
 
 
 @router.get("/admin/groups")
-def groups_list_page(request: Request):
+def groups_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_groups = _get_sample_groups()
+    db_groups = db.query(Group).order_by(Group.id).all()
+    all_groups = [
+        {
+            "id": group.id,
+            "name": group.name,
+            "description": group.description,
+            "user_ids": group.user_ids,
+            "member_count": group.member_count,
+        }
+        for group in db_groups
+    ]
+    if not all_groups:
+        all_groups = _get_sample_groups()
     pagination = paginate(all_groups, page=page, per_page=50)
     context = build_template_context(request, groups=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "groups_list.html", context)
@@ -210,22 +378,34 @@ def edit_group_page(request: Request, group_id: int):
 
 
 @router.post("/admin/groups")
-def create_or_update_group(
-    request: Request,
-    name: str = Form(...),
-    description: str = Form(""),
-    group_email: str = Form(""),
-    manager_id: str = Form(""),
-    parent: str = Form(""),
-):
-    # In a real app, save to database with new fields
+async def create_or_update_group(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    group = Group(
+        name=data.get("name", "Untitled Group"),
+        description=data.get("description", ""),
+        user_ids=normalize_list(data.get("user_ids") or data.get("member_ids") or []),
+        member_count=len(normalize_list(data.get("user_ids") or data.get("member_ids") or [])),
+        data=data,
+    )
+    db.add(group)
+    db.commit()
     return redirect_with_flash("/admin/groups", request, "Group saved successfully.", "success")
 
 
 @router.get("/admin/customers")
-def customer_list_page(request: Request):
+def customer_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_customers = _get_sample_customers()
+    db_customers = db.query(Customer).order_by(Customer.id).all()
+    all_customers = [
+        {
+            "id": customer.id,
+            **(customer.data or {}),
+        }
+        for customer in db_customers
+    ]
+    if not all_customers:
+        all_customers = _get_sample_customers()
     pagination = paginate(all_customers, page=page, per_page=50)
     context = build_template_context(request, customers=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "customers_list.html", context)
@@ -238,7 +418,15 @@ def customer_configuration_page(request: Request):
 
 
 @router.post("/admin/customers")
-def create_customer(request: Request):
+async def create_customer(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    customer = Customer(
+        name=data.get("customer_name", data.get("name", "")),
+        data=data,
+    )
+    db.add(customer)
+    db.commit()
     return redirect_with_flash("/admin/customers", request, "Customer saved.", "success")
 
 
@@ -1112,15 +1300,23 @@ def _get_sample_sub_systems():
 
 
 @router.get("/admin/customers/{customer_id}")
-def customer_view_page(request: Request, customer_id: int):
-    customer = next((item for item in _get_sample_customers() if item["id"] == customer_id), None)
+def customer_view_page(request: Request, customer_id: int, db: Session = Depends(get_db)):
+    customer_obj = db.query(Customer).filter(Customer.id == customer_id).first()
+    if customer_obj:
+        customer = {"id": customer_obj.id, **(customer_obj.data or {})}
+    else:
+        customer = next((item for item in _get_sample_customers() if item["id"] == customer_id), None)
     context = build_template_context(request, customer=customer, mode="view")
     return templates.TemplateResponse(request, "customer_config.html", context)
 
 
 @router.get("/admin/customers/{customer_id}/edit")
-def customer_edit_page(request: Request, customer_id: int):
-    customer = next((item for item in _get_sample_customers() if item["id"] == customer_id), None)
+def customer_edit_page(request: Request, customer_id: int, db: Session = Depends(get_db)):
+    customer_obj = db.query(Customer).filter(Customer.id == customer_id).first()
+    if customer_obj:
+        customer = {"id": customer_obj.id, **(customer_obj.data or {})}
+    else:
+        customer = next((item for item in _get_sample_customers() if item["id"] == customer_id), None)
     context = build_template_context(request, customer=customer, mode="edit")
     return templates.TemplateResponse(request, "customer_config.html", context)
 
@@ -1131,12 +1327,134 @@ def customer_disable(request: Request, customer_id: int):
 
 
 @router.get("/admin/contracts")
-def contracts_list_page(request: Request):
+def contracts_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_contracts = _get_sample_contracts()
+    db_contracts = db.query(Contract).order_by(Contract.id).all()
+    all_contracts = [
+        entity_to_dict(contract, db=db, top_level_fields=["number", "customer_id"])
+        for contract in db_contracts
+    ]
+    if not all_contracts:
+        all_contracts = _get_sample_contracts()
     pagination = paginate(all_contracts, page=page, per_page=50)
     context = build_template_context(request, contracts=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "contracts_list.html", context)
+
+
+@router.post("/admin/contracts")
+async def create_contract(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    customer_id = parse_int(data.get("customer") or data.get("customer_id"))
+    contract = Contract(
+        number=data.get("contract_number", ""),
+        customer_id=customer_id,
+        data=data,
+    )
+    db.add(contract)
+    db.commit()
+    return redirect_with_flash("/admin/contracts", request, "Contract saved.", "success")
+
+
+@router.get("/admin/tables")
+def tables_list_page(request: Request):
+    inspector = inspect(engine)
+    tables = inspector.get_table_names()
+    tables = [name for name in tables if not name.startswith("sqlite_")]
+    table_info = []
+    for table_name in tables:
+        columns = inspector.get_columns(table_name)
+        row_count = None
+        try:
+            with engine.connect() as conn:
+                row_count = conn.execute(text(f"SELECT COUNT(*) FROM {table_name}")).scalar_one()
+        except Exception:
+            row_count = None
+
+        table_info.append({
+            "name": table_name,
+            "db_column_count": len(columns),
+            "db_columns": [col["name"] for col in columns],
+            "row_count": row_count,
+        })
+
+    template_dir = Path("templates")
+    form_rules = {
+        "batteries": "battery_config.html",
+        "battery_types": "battery_types.html",
+        "ground_control_systems": "ground_control_system.html",
+        "loitering_munitions": "loitering_munition.html",
+        "contracts": "contract_config.html",
+        "customers": "customer_config.html",
+        "tactical_mobility_vehicles": "tactical_mobility_vehicle.html",
+        "simulators": "simulator.html",
+        "rapid_deployment_vehicles": "rapid_deployment_vehicle.html",
+        "mrls": "mrls_config.html",
+        "warheads": "warhead_config.html",
+        "smt_stes": "smt_ste_config.html",
+        "sams": "sam_config.html",
+        "lrus": "lru_config.html",
+        "sub_systems": "sub_systems_config.html",
+        "groups": "group_config.html",
+        "licenses": "license_detail.html",
+        "users": "user_config.html",
+        "workflows": "builder.html",
+        "stages": "builder.html",
+        "task_definitions": "builder.html",
+        "knowledge_articles": "knowledge_article_form.html",
+        "knowledge_documents": "knowledge_form.html",
+    }
+
+    for info in table_info:
+        template_name = form_rules.get(info["name"])
+        db_cols_set = set(info["db_columns"])
+        
+        # Standard system columns that shouldn't be in forms
+        system_columns = {"id", "created_at", "updated_at", "data"}
+        
+        if template_name:
+            path = template_dir / template_name
+            if path.exists():
+                content = path.read_text(encoding="utf-8")
+                found = re.findall(r'name=(?:"([^"]+)"|\'([^\']+)\')', content)
+                fields = {item[0] or item[1] for item in found if item[0] or item[1]}
+                
+                # Remove array notation (e.g., "name[]" -> "name")
+                clean_fields = set()
+                for field in fields:
+                    clean_field = field.rstrip("[]")
+                    # Skip Jinja2 template syntax
+                    if not clean_field.startswith("{{"):
+                        clean_fields.add(clean_field)
+                
+                info["form_fields"] = sorted(clean_fields)
+                info["form_columns"] = len(info["form_fields"])
+                
+                # If table has a "data" column, all form fields are OK (they go into JSON)
+                explicit_columns = db_cols_set - system_columns
+                
+                if "data" in db_cols_set:
+                    # Form fields can go into the data JSON column - no issues
+                    info["missing_fields"] = []
+                    info["has_issues"] = False
+                else:
+                    # No data column - fields must match explicit columns
+                    missing_in_db = sorted(clean_fields - explicit_columns)
+                    info["missing_fields"] = missing_in_db
+                    info["has_issues"] = len(missing_in_db) > 0
+            else:
+                info["form_fields"] = []
+                info["form_columns"] = None
+                info["missing_fields"] = []
+                info["has_issues"] = False
+        else:
+            info["form_fields"] = []
+            info["form_columns"] = None
+            info["missing_fields"] = []
+            info["has_issues"] = False
+
+    context = build_template_context(request, tables=table_info)
+    return templates.TemplateResponse(request, "tables_list.html", context)
 
 
 @router.get("/admin/contracts/new")
@@ -1147,16 +1465,24 @@ def contract_configuration_page(request: Request):
 
 
 @router.get("/admin/contracts/{contract_id}")
-def contract_view_page(request: Request, contract_id: int):
-    contract = next((item for item in _get_sample_contracts() if item["id"] == contract_id), None)
+def contract_view_page(request: Request, contract_id: int, db: Session = Depends(get_db)):
+    contract_obj = db.query(Contract).filter(Contract.id == contract_id).first()
+    if contract_obj:
+        contract = entity_to_dict(contract_obj, db=db, top_level_fields=["number", "customer_id"])
+    else:
+        contract = next((item for item in _get_sample_contracts() if item["id"] == contract_id), None)
     customers = _get_sample_customers()
     context = build_template_context(request, contract=contract, customers=customers, mode="view")
     return templates.TemplateResponse(request, "contract_config.html", context)
 
 
 @router.get("/admin/contracts/{contract_id}/edit")
-def contract_edit_page(request: Request, contract_id: int):
-    contract = next((item for item in _get_sample_contracts() if item["id"] == contract_id), None)
+def contract_edit_page(request: Request, contract_id: int, db: Session = Depends(get_db)):
+    contract_obj = db.query(Contract).filter(Contract.id == contract_id).first()
+    if contract_obj:
+        contract = entity_to_dict(contract_obj, db=db, top_level_fields=["number", "customer_id"])
+    else:
+        contract = next((item for item in _get_sample_contracts() if item["id"] == contract_id), None)
     customers = _get_sample_customers()
     context = build_template_context(request, contract=contract, customers=customers, mode="edit")
     return templates.TemplateResponse(request, "contract_config.html", context)
@@ -1168,9 +1494,9 @@ def contract_disable(request: Request, contract_id: int):
 
 
 @router.get("/admin/lm")
-def loitering_munition_list_page(request: Request):
+def loitering_munition_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_units = _get_sample_units("LM")
+    all_units = list_or_sample(db, LoiteringMunition, unit_type="LM", top_level_fields=["unit_name", "serial_number"])
     pagination = paginate(all_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="Loitering Munition (LM)", pagination=pagination)
     return templates.TemplateResponse(request, "lm_list.html", context)
@@ -1185,8 +1511,8 @@ def loitering_munition_new_page(request: Request):
 
 
 @router.get("/admin/lm/{unit_id}")
-def loitering_munition_view_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("LM") if item["id"] == unit_id), None)
+def loitering_munition_view_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, LoiteringMunition, unit_type="LM", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="view")
@@ -1194,8 +1520,8 @@ def loitering_munition_view_page(request: Request, unit_id: int):
 
 
 @router.get("/admin/lm/{unit_id}/edit")
-def loitering_munition_edit_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("LM") if item["id"] == unit_id), None)
+def loitering_munition_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, LoiteringMunition, unit_type="LM", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="edit")
@@ -1208,9 +1534,9 @@ def loitering_munition_disable(request: Request, unit_id: int):
 
 
 @router.get("/admin/gcs")
-def ground_control_system_list_page(request: Request):
+def ground_control_system_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_units = _get_sample_units("GCS")
+    all_units = list_or_sample(db, GroundControlSystem, unit_type="GCS", top_level_fields=["unit_name", "serial_number"])
     pagination = paginate(all_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="Ground Control Systems (GCS)", pagination=pagination)
     return templates.TemplateResponse(request, "gcs_list.html", context)
@@ -1225,8 +1551,8 @@ def ground_control_system_new_page(request: Request):
 
 
 @router.get("/admin/gcs/{unit_id}")
-def ground_control_system_view_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("GCS") if item["id"] == unit_id), None)
+def ground_control_system_view_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, GroundControlSystem, unit_type="GCS", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="view")
@@ -1234,8 +1560,8 @@ def ground_control_system_view_page(request: Request, unit_id: int):
 
 
 @router.get("/admin/gcs/{unit_id}/edit")
-def ground_control_system_edit_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("GCS") if item["id"] == unit_id), None)
+def ground_control_system_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, GroundControlSystem, unit_type="GCS", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="edit")
@@ -1248,9 +1574,9 @@ def ground_control_system_disable(request: Request, unit_id: int):
 
 
 @router.get("/admin/tmv")
-def tactical_mobility_vehicle_list_page(request: Request):
+def tactical_mobility_vehicle_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_units = _get_sample_units("TMV")
+    all_units = list_or_sample(db, TacticalMobilityVehicle, unit_type="TMV", top_level_fields=["unit_name", "serial_number"])
     pagination = paginate(all_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="Tactical Mobility Vehicle (TMV)", pagination=pagination)
     return templates.TemplateResponse(request, "tmv_list.html", context)
@@ -1265,8 +1591,8 @@ def tactical_mobility_vehicle_new_page(request: Request):
 
 
 @router.get("/admin/tmv/{unit_id}")
-def tactical_mobility_vehicle_view_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("TMV") if item["id"] == unit_id), None)
+def tactical_mobility_vehicle_view_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, TacticalMobilityVehicle, unit_type="TMV", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="view")
@@ -1274,8 +1600,8 @@ def tactical_mobility_vehicle_view_page(request: Request, unit_id: int):
 
 
 @router.get("/admin/tmv/{unit_id}/edit")
-def tactical_mobility_vehicle_edit_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("TMV") if item["id"] == unit_id), None)
+def tactical_mobility_vehicle_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, TacticalMobilityVehicle, unit_type="TMV", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="edit")
@@ -1288,9 +1614,9 @@ def tactical_mobility_vehicle_disable(request: Request, unit_id: int):
 
 
 @router.get("/admin/simulator")
-def simulator_list_page(request: Request):
+def simulator_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_units = _get_sample_units("SIM")
+    all_units = list_or_sample(db, SimulatorUnit, unit_type="SIM", top_level_fields=["unit_name", "serial_number"])
     pagination = paginate(all_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="Simulator", pagination=pagination)
     return templates.TemplateResponse(request, "simulator_list.html", context)
@@ -1305,8 +1631,8 @@ def simulator_new_page(request: Request):
 
 
 @router.get("/admin/simulator/{unit_id}")
-def simulator_view_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("SIM") if item["id"] == unit_id), None)
+def simulator_view_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, SimulatorUnit, unit_type="SIM", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="view")
@@ -1314,8 +1640,8 @@ def simulator_view_page(request: Request, unit_id: int):
 
 
 @router.get("/admin/simulator/{unit_id}/edit")
-def simulator_edit_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("SIM") if item["id"] == unit_id), None)
+def simulator_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, SimulatorUnit, unit_type="SIM", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="edit")
@@ -1328,9 +1654,9 @@ def simulator_disable(request: Request, unit_id: int):
 
 
 @router.get("/admin/rdv")
-def rdv_list_page(request: Request):
+def rdv_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_units = _get_sample_units("RDV")
+    all_units = list_or_sample(db, RapidDeploymentVehicle, unit_type="RDV", top_level_fields=["unit_name", "serial_number"])
     pagination = paginate(all_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="Rapid Deployment Vehicle (RDV)", pagination=pagination)
     return templates.TemplateResponse(request, "rdv_list.html", context)
@@ -1345,8 +1671,8 @@ def rdv_new_page(request: Request):
 
 
 @router.get("/admin/rdv/{unit_id}")
-def rdv_view_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("RDV") if item["id"] == unit_id), None)
+def rdv_view_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, RapidDeploymentVehicle, unit_type="RDV", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="view")
@@ -1354,8 +1680,8 @@ def rdv_view_page(request: Request, unit_id: int):
 
 
 @router.get("/admin/rdv/{unit_id}/edit")
-def rdv_edit_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("RDV") if item["id"] == unit_id), None)
+def rdv_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, RapidDeploymentVehicle, unit_type="RDV", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="edit")
@@ -1391,9 +1717,9 @@ def delete_battery_type(request: Request, type_idx: int):
 
 
 @router.get("/admin/batteries")
-def batteries_list_page(request: Request):
+def batteries_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_units = _get_sample_units("BATTERY")
+    all_units = list_or_sample(db, Battery, unit_type="BATTERY", top_level_fields=["unit_name", "serial_number"])
     pagination = paginate(all_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="Batteries", pagination=pagination)
     return templates.TemplateResponse(request, "batteries_list.html", context)
@@ -1408,8 +1734,8 @@ def batteries_new_page(request: Request):
 
 
 @router.get("/admin/batteries/{unit_id}")
-def batteries_view_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("BATTERY") if item["id"] == unit_id), None)
+def batteries_view_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, Battery, unit_type="BATTERY", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, battery_types=BATTERY_TYPES, mode="view")
@@ -1417,8 +1743,8 @@ def batteries_view_page(request: Request, unit_id: int):
 
 
 @router.get("/admin/batteries/{unit_id}/edit")
-def batteries_edit_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("BATTERY") if item["id"] == unit_id), None)
+def batteries_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, Battery, unit_type="BATTERY", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, battery_types=BATTERY_TYPES, mode="edit")
@@ -1431,9 +1757,9 @@ def batteries_disable(request: Request, unit_id: int):
 
 
 @router.get("/admin/warhead")
-def warhead_list_page(request: Request):
+def warhead_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_units = _get_sample_units("WARHEAD")
+    all_units = list_or_sample(db, Warhead, unit_type="WARHEAD", top_level_fields=["unit_name"])
     pagination = paginate(all_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="War Head", pagination=pagination)
     return templates.TemplateResponse(request, "warhead_list.html", context)
@@ -1448,8 +1774,8 @@ def warhead_new_page(request: Request):
 
 
 @router.get("/admin/warhead/{unit_id}")
-def warhead_view_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("WARHEAD") if item["id"] == unit_id), None)
+def warhead_view_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, Warhead, unit_type="WARHEAD", unit_id=unit_id, top_level_fields=["unit_name"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="view")
@@ -1457,8 +1783,8 @@ def warhead_view_page(request: Request, unit_id: int):
 
 
 @router.get("/admin/warhead/{unit_id}/edit")
-def warhead_edit_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("WARHEAD") if item["id"] == unit_id), None)
+def warhead_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, Warhead, unit_type="WARHEAD", unit_id=unit_id, top_level_fields=["unit_name"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="edit")
@@ -1471,9 +1797,9 @@ def warhead_disable(request: Request, unit_id: int):
 
 
 @router.get("/admin/mrls")
-def mrls_list_page(request: Request):
+def mrls_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_units = _get_sample_units("MRLS")
+    all_units = list_or_sample(db, MRLS, unit_type="MRLS", top_level_fields=["unit_name"])
     pagination = paginate(all_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="MRLS", pagination=pagination)
     return templates.TemplateResponse(request, "mrls_list.html", context)
@@ -1489,8 +1815,8 @@ def mrls_new_page(request: Request):
 
 
 @router.get("/admin/mrls/{unit_id}")
-def mrls_view_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("MRLS") if item["id"] == unit_id), None)
+def mrls_view_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, MRLS, unit_type="MRLS", unit_id=unit_id, top_level_fields=["unit_name"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     platform_variants = _get_sample_platform_variants()
@@ -1499,8 +1825,8 @@ def mrls_view_page(request: Request, unit_id: int):
 
 
 @router.get("/admin/mrls/{unit_id}/edit")
-def mrls_edit_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("MRLS") if item["id"] == unit_id), None)
+def mrls_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, MRLS, unit_type="MRLS", unit_id=unit_id, top_level_fields=["unit_name"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     platform_variants = _get_sample_platform_variants()
@@ -1514,9 +1840,9 @@ def mrls_disable(request: Request, unit_id: int):
 
 
 @router.get("/admin/smt-ste")
-def smt_ste_list_page(request: Request):
+def smt_ste_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_units = _get_sample_units("SMT_STE")
+    all_units = list_or_sample(db, SMTSTE, unit_type="SMT_STE", top_level_fields=["unit_name"])
     pagination = paginate(all_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="Field Assembly Tools/ SMT/ STE", pagination=pagination)
     return templates.TemplateResponse(request, "smt_ste_list.html", context)
@@ -1532,8 +1858,8 @@ def smt_ste_new_page(request: Request):
 
 
 @router.get("/admin/smt-ste/{unit_id}")
-def smt_ste_view_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("SMT_STE") if item["id"] == unit_id), None)
+def smt_ste_view_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, SMTSTE, unit_type="SMT_STE", unit_id=unit_id, top_level_fields=["unit_name"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     platform_variants = _get_sample_platform_variants()
@@ -1542,8 +1868,8 @@ def smt_ste_view_page(request: Request, unit_id: int):
 
 
 @router.get("/admin/smt-ste/{unit_id}/edit")
-def smt_ste_edit_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("SMT_STE") if item["id"] == unit_id), None)
+def smt_ste_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, SMTSTE, unit_type="SMT_STE", unit_id=unit_id, top_level_fields=["unit_name"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     platform_variants = _get_sample_platform_variants()
@@ -1557,9 +1883,9 @@ def smt_ste_disable(request: Request, unit_id: int):
 
 
 @router.get("/admin/sam")
-def sam_list_page(request: Request):
+def sam_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_units = _get_sample_units("SAM")
+    all_units = list_or_sample(db, SAM, unit_type="SAM", top_level_fields=["unit_name"])
     pagination = paginate(all_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="SAM", pagination=pagination)
     return templates.TemplateResponse(request, "sam_list.html", context)
@@ -1574,8 +1900,8 @@ def sam_new_page(request: Request):
 
 
 @router.get("/admin/sam/{unit_id}")
-def sam_view_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("SAM") if item["id"] == unit_id), None)
+def sam_view_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, SAM, unit_type="SAM", unit_id=unit_id, top_level_fields=["unit_name"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="view")
@@ -1583,8 +1909,8 @@ def sam_view_page(request: Request, unit_id: int):
 
 
 @router.get("/admin/sam/{unit_id}/edit")
-def sam_edit_page(request: Request, unit_id: int):
-    unit = next((item for item in _get_sample_units("SAM") if item["id"] == unit_id), None)
+def sam_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
+    unit = load_entity(db, SAM, unit_type="SAM", unit_id=unit_id, top_level_fields=["unit_name"])
     customers = _get_sample_customers()
     contracts = _get_sample_contracts()
     context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="edit")
@@ -1597,9 +1923,9 @@ def sam_disable(request: Request, unit_id: int):
 
 
 @router.get("/admin/lru")
-def lru_list_page(request: Request):
+def lru_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_lrus = _get_sample_lrus()
+    all_lrus = list_or_sample(db, LineReplaceableUnit, unit_type="LRU", top_level_fields=["name", "serial_number"])
     pagination = paginate(all_lrus, page=page, per_page=50)
     context = build_template_context(request, lrus=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "lru_list.html", context)
@@ -1613,16 +1939,16 @@ def lru_new_page(request: Request):
 
 
 @router.get("/admin/lru/{lru_id}")
-def lru_view_page(request: Request, lru_id: int):
-    lru = next((item for item in _get_sample_lrus() if item["id"] == lru_id), None)
+def lru_view_page(request: Request, lru_id: int, db: Session = Depends(get_db)):
+    lru = load_entity(db, LineReplaceableUnit, unit_type="LRU", unit_id=lru_id, top_level_fields=["name", "serial_number"])
     platform_variants = _get_sample_platform_variants()
     context = build_template_context(request, lru=lru, platform_variants=platform_variants, mode="view")
     return templates.TemplateResponse(request, "lru_config.html", context)
 
 
 @router.get("/admin/lru/{lru_id}/edit")
-def lru_edit_page(request: Request, lru_id: int):
-    lru = next((item for item in _get_sample_lrus() if item["id"] == lru_id), None)
+def lru_edit_page(request: Request, lru_id: int, db: Session = Depends(get_db)):
+    lru = load_entity(db, LineReplaceableUnit, unit_type="LRU", unit_id=lru_id, top_level_fields=["name", "serial_number"])
     platform_variants = _get_sample_platform_variants()
     context = build_template_context(request, lru=lru, platform_variants=platform_variants, mode="edit")
     return templates.TemplateResponse(request, "lru_config.html", context)
@@ -1634,9 +1960,9 @@ def lru_disable(request: Request, lru_id: int):
 
 
 @router.get("/admin/sub-systems")
-def sub_systems_list_page(request: Request):
+def sub_systems_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_sub_systems = _get_sample_sub_systems()
+    all_sub_systems = list_or_sample(db, SubSystem, unit_type="SUB_SYSTEM", top_level_fields=["name"])
     pagination = paginate(all_sub_systems, page=page, per_page=50)
     context = build_template_context(request, sub_systems=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "sub_systems_list.html", context)
@@ -1650,8 +1976,8 @@ def sub_systems_new_page(request: Request):
 
 
 @router.get("/admin/sub-systems/{sub_system_id}")
-def sub_systems_view_page(request: Request, sub_system_id: int):
-    sub_system = next((item for item in _get_sample_sub_systems() if item["id"] == sub_system_id), None)
+def sub_systems_view_page(request: Request, sub_system_id: int, db: Session = Depends(get_db)):
+    sub_system = load_entity(db, SubSystem, unit_type="SUB_SYSTEM", unit_id=sub_system_id, top_level_fields=["name"])
     platform_variants = _get_sample_platform_variants()
     context = build_template_context(
         request,
@@ -1663,8 +1989,8 @@ def sub_systems_view_page(request: Request, sub_system_id: int):
 
 
 @router.get("/admin/sub-systems/{sub_system_id}/edit")
-def sub_systems_edit_page(request: Request, sub_system_id: int):
-    sub_system = next((item for item in _get_sample_sub_systems() if item["id"] == sub_system_id), None)
+def sub_systems_edit_page(request: Request, sub_system_id: int, db: Session = Depends(get_db)):
+    sub_system = load_entity(db, SubSystem, unit_type="SUB_SYSTEM", unit_id=sub_system_id, top_level_fields=["name"])
     platform_variants = _get_sample_platform_variants()
     context = build_template_context(
         request,
@@ -2238,104 +2564,128 @@ def _get_sample_users():
 
 
 @router.post("/admin/roles")
-def create_role(
-    request: Request,
-    name: str = Form(...),
-    permissions: str = Form(""),
-    db: Session = Depends(get_db),
-):
-    role = Role(name=name, permissions=[perm.strip() for perm in permissions.split(",") if perm.strip()])
+async def create_role(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    role = Role(
+        name=data.get("name", ""),
+        permissions=[perm.strip() for perm in data.get("permissions", "").split(",") if perm.strip()],
+        data=data,
+    )
     db.add(role)
     db.commit()
     return redirect_with_flash("/admin", request, "Role created.", "success")
 
 
 @router.post("/admin/users")
-def create_user_form(
-    request: Request,
-    username: str = Form(...),
-    email: str = Form(...),
-    full_name: str = Form(""),
-    role: str = Form("Field Agent"),
-    license_type: str = Form("Standard License"),
-    department: str = Form(""),
-    location: str = Form(""),
-    employee_id: str = Form(""),
-    specialization: str = Form(""),
-    phone: str = Form(""),
-    hire_date: str = Form(""),
-    password: str = Form("Welcome@123"),
-    db: Session = Depends(get_db),
-):
-    # Create user with extended attributes
+async def create_user_form(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
     create_user(
         db,
-        username=username,
-        email=email,
-        password=password,
-        full_name=full_name or username,
-        role=role,
+        username=data.get("username", ""),
+        email=data.get("email", ""),
+        password=data.get("password", "Welcome@123"),
+        full_name=data.get("full_name", data.get("username", "")),
+        role=data.get("role", "Field Agent"),
+        data=data,
     )
     return redirect_with_flash("/admin/users", request, "User created successfully.", "success")
 
 
 @router.post("/admin/lm")
-def create_loitering_munition(request: Request):
+async def create_loitering_munition(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    persist_entity(db, LoiteringMunition, data=data, top_level_fields=["unit_name", "serial_number"])
     return redirect_with_flash("/admin/lm", request, "Unit saved.", "success")
 
 
 @router.post("/admin/gcs")
-def create_ground_control_system(request: Request):
+async def create_ground_control_system(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    persist_entity(db, GroundControlSystem, data=data, top_level_fields=["unit_name", "serial_number"])
     return redirect_with_flash("/admin/gcs", request, "Unit saved.", "success")
 
 
 @router.post("/admin/tmv")
-def create_tactical_mobility_vehicle(request: Request):
+async def create_tactical_mobility_vehicle(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    persist_entity(db, TacticalMobilityVehicle, data=data, top_level_fields=["unit_name", "serial_number"])
     return redirect_with_flash("/admin/tmv", request, "Unit saved.", "success")
 
 
 @router.post("/admin/simulator")
-def create_simulator(request: Request):
+async def create_simulator(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    persist_entity(db, SimulatorUnit, data=data, top_level_fields=["unit_name", "serial_number"])
     return redirect_with_flash("/admin/simulator", request, "Unit saved.", "success")
 
 
 @router.post("/admin/rdv")
-def create_rdv(request: Request):
+async def create_rdv(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    persist_entity(db, RapidDeploymentVehicle, data=data, top_level_fields=["unit_name", "serial_number"])
     return redirect_with_flash("/admin/rdv", request, "Unit saved.", "success")
 
 
 @router.post("/admin/lru")
-def create_lru(request: Request):
+async def create_lru(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    persist_entity(db, LineReplaceableUnit, data=data, top_level_fields=["unit_name", "serial_number"])
     return redirect_with_flash("/admin/lru", request, "LRU saved.", "success")
 
 
 @router.post("/admin/sub-systems")
-def create_sub_system(request: Request):
+async def create_sub_system(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    persist_entity(db, SubSystem, data=data, top_level_fields=["name"])
     return redirect_with_flash("/admin/sub-systems", request, "Sub-system saved.", "success")
 
 
 @router.post("/admin/batteries")
-def create_battery(request: Request):
+async def create_battery(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    persist_entity(db, Battery, data=data, top_level_fields=["unit_name", "serial_number"])
     return redirect_with_flash("/admin/batteries", request, "Unit saved.", "success")
 
 
 @router.post("/admin/warhead")
-def create_warhead(request: Request):
+async def create_warhead(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    persist_entity(db, Warhead, data=data, top_level_fields=["unit_name"])
     return redirect_with_flash("/admin/warhead", request, "Unit saved.", "success")
 
 
 @router.post("/admin/mrls")
-def create_mrls(request: Request):
+async def create_mrls(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    persist_entity(db, MRLS, data=data, top_level_fields=["unit_name"])
     return redirect_with_flash("/admin/mrls", request, "Unit saved.", "success")
 
 
 @router.post("/admin/smt-ste")
-def create_smt_ste(request: Request):
+async def create_smt_ste(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    persist_entity(db, SMTSTE, data=data, top_level_fields=["unit_name"])
     return redirect_with_flash("/admin/smt-ste", request, "Unit saved.", "success")
 
 
 @router.post("/admin/sam")
-def create_sam(request: Request):
+async def create_sam(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    data = parse_form_data(form)
+    persist_entity(db, SAM, data=data, top_level_fields=["unit_name"])
     return redirect_with_flash("/admin/sam", request, "Unit saved.", "success")
 
 

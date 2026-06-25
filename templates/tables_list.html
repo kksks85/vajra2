@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="list-shell">
+  <div class="list-bar">
+    <div class="list-title">
+      <h1>Database Tables & Forms Validation</h1>
+      <span class="pill">{{ tables|length }} tables</span>
+    </div>
+    <p style="font-size: 0.9em; color: #666; margin-top: 8px;">
+      ⚠️ Red rows = Form fields missing database columns (will cause data loss on save)
+    </p>
+  </div>
+
+  <div class="list-card">
+    <table class="table dense">
+      <thead>
+        <tr>
+          <th>Table Name</th>
+          <th>DB Columns</th>
+          <th>Form Fields</th>
+          <th>Status</th>
+          <th>Issues</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for table in tables %}
+        <tr {% if table.has_issues %}style="background-color: #ffe6e6; font-weight: bold;"{% endif %}>
+          <td><strong>{{ table.name }}</strong></td>
+          <td>{{ table.db_column_count }}</td>
+          <td>{{ table.form_columns or 'N/A' }}</td>
+          <td>
+            {% if table.has_issues %}
+              <span style="color: red;">❌ ISSUES</span>
+            {% elif table.form_columns %}
+              <span style="color: green;">✓ OK</span>
+            {% else %}
+              <span style="color: gray;">⊘ No Form</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if table.missing_fields %}
+              <strong style="color: red;">Missing DB columns:</strong>
+              <code style="background: #fff0f0; padding: 2px 4px;">{{ table.missing_fields|join(', ') }}</code>
+            {% else %}
+              {% if table.unused_columns %}
+                <em style="color: #666;">Unused DB columns: {{ table.unused_columns|join(', ') }}</em>
+              {% else %}
+                All fields mapped ✓
+              {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-left: 4px solid #ff9800;">
+    <h3 style="margin-top: 0;">What This Means:</h3>
+    <ul style="margin: 10px 0; padding-left: 20px;">
+      <li><strong style="color: red;">Missing DB columns (RED):</strong> Form has fields that the database doesn't have. Data from these fields will be lost or stored only in the generic "data" JSON field.</li>
+      <li><strong style="color: green;">All fields mapped (GREEN):</strong> Every form field has a matching database column. Safe to save.</li>
+      <li><strong style="color: gray;">Unused DB columns (GRAY):</strong> Database has columns that aren't in the form. These will be NULL or use defaults.</li>
+    </ul>
+  </div>
+</section>
+{% endblock %}

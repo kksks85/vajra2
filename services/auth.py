@@ -23,6 +23,7 @@ def create_user(
     password: str,
     full_name: str,
     role: str = "admin",
+    data: dict | None = None,
 ) -> User:
     user = User(
         username=username,
@@ -31,6 +32,7 @@ def create_user(
         password_hash=hash_password(password),
         role=role,
         is_active=True,
+        data=data or {},
     )
     db.add(user)
     db.commit()

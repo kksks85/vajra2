@@ -1,9 +1,9 @@
 from database import Base, engine
 import models  # noqa: F401
+import models.entities  # noqa: F401
 
 if __name__ == "__main__":
-    # Drop all existing tables
-    Base.metadata.drop_all(bind=engine)
-    # Create tables with current schema
+    # Create missing tables with current schema.
+    # This is non-destructive and preserves existing data.
     Base.metadata.create_all(bind=engine)
-    print("Database initialized.")
+    print("Database initialized. Existing data was preserved.")
