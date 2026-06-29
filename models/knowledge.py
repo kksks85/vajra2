@@ -12,6 +12,7 @@ class KnowledgeArticle(Base):
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
     tags = Column(JSON, default=list)
+    status = Column(String(50), default="draft", nullable=False)  # draft, approved, published
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
@@ -27,5 +28,19 @@ class KnowledgeDocument(Base):
     description = Column(Text, default="Please refer to the attached document")
     attachments = Column(JSON, default=list)  # List of filenames
     data = Column(JSON, default=dict, nullable=False)
+    status = Column(String(50), default="draft", nullable=False)  # draft, approved, published
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_accessed = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ApprovalRequest(Base):
+    __tablename__ = "approval_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    item_type = Column(String(50), nullable=False)  # "article" or "document"
+    item_id = Column(Integer, nullable=False)
+    title = Column(String(200), nullable=False)
+    requested_by = Column(String(100), nullable=False)
+    status = Column(String(50), default="pending", nullable=False)  # pending, approved, rejected
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+

@@ -79,6 +79,7 @@ def build_template_context(request: Request, **kwargs) -> dict:
 
     user_name = request.session.get("user_name")
     user_role = request.session.get("user_role")
+    user_id = request.session.get("user_id")
     current_user = None
     if user_name or user_role:
         display_name = user_name or "User"
@@ -89,11 +90,29 @@ def build_template_context(request: Request, **kwargs) -> dict:
             "initials": build_initials(display_name),
         }
 
+    is_knowledge_approver = False
+    if user_role == "admin":
+        is_knowledge_approver = True
+    elif user_id:
+        from database import SessionLocal
+        from models.admin import Group
+        db = SessionLocal()
+        try:
+            group = db.query(Group).filter(Group.name == "knowledge_management_approver").first()
+            if group and group.user_ids and user_id in group.user_ids:
+                is_knowledge_approver = True
+        except Exception:
+            pass
+        finally:
+            db.close()
+
     context = {
         "request": request,
         "flash_messages": get_flash_messages(request),
         "format_utc": format_utc,
         "current_user": current_user,
+        "is_knowledge_approver": is_knowledge_approver,
     }
     context.update(kwargs)
     return context
+

@@ -9,13 +9,25 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models.knowledge import KnowledgeDocument, KnowledgeArticle
+from models.knowledge import KnowledgeDocument, KnowledgeArticle, ApprovalRequest
 from utils import build_template_context, redirect_with_flash
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 UPLOAD_DIR = "static/uploads"
+
+def check_is_approver(request: Request, db: Session) -> bool:
+    user_role = request.session.get("user_role")
+    user_id = request.session.get("user_id")
+    if user_role == "admin":
+        return True
+    if user_id:
+        from models.admin import Group
+        group = db.query(Group).filter(Group.name == "knowledge_management_approver").first()
+        if group and group.user_ids and user_id in group.user_ids:
+            return True
+    return False
 
 DOC_LABELS = {
     "manual": "Manuals",
@@ -42,7 +54,12 @@ def list_documents(doc_type: str, request: Request, db: Session = Depends(get_db
     if doc_type not in DOC_LABELS:
         return redirect_with_flash("/knowledge", request, "Invalid document category.", "error")
     
-    documents = db.query(KnowledgeDocument).filter(KnowledgeDocument.doc_type == doc_type).order_by(KnowledgeDocument.created_at.desc()).all()
+    is_approver = check_is_approver(request, db)
+    query = db.query(KnowledgeDocument).filter(KnowledgeDocument.doc_type == doc_type)
+    if not is_approver:
+        query = query.filter(KnowledgeDocument.status == "published")
+        
+    documents = query.order_by(KnowledgeDocument.created_at.desc()).all()
     label = DOC_LABELS[doc_type]
     context = build_template_context(request, documents=documents, doc_type=doc_type, label=label)
     return templates.TemplateResponse(request, "knowledge_list.html", context)
@@ -93,12 +110,26 @@ def save_new_document(
         subject_line=subject_line,
         description=description,
         attachments=attachments,
+        status="draft",
         created_at=datetime.utcnow(),
         last_accessed=datetime.utcnow()
     )
     db.add(doc)
     db.commit()
-    return redirect_with_flash(f"/knowledge/list/{doc_type}", request, "Document uploaded successfully.", "success")
+    db.refresh(doc)
+    
+    req_name = request.session.get("user_name") or "System User"
+    approval_req = ApprovalRequest(
+        item_type="document",
+        item_id=doc.id,
+        title=doc.subject_line,
+        requested_by=req_name,
+        status="pending"
+    )
+    db.add(approval_req)
+    db.commit()
+    
+    return redirect_with_flash(f"/knowledge/list/{doc_type}", request, "Document submitted for approval. It is currently in draft mode.", "success")
 
 
 @router.get("/knowledge/document/{doc_id}")
@@ -107,6 +138,10 @@ def view_document_details(doc_id: int, request: Request, db: Session = Depends(g
     if not doc:
         return redirect_with_flash("/knowledge", request, "Document not found.", "error")
     
+    is_approver = check_is_approver(request, db)
+    if doc.status != "published" and not is_approver:
+        return redirect_with_flash("/knowledge", request, "You do not have permission to view this draft document.", "error")
+        
     doc.last_accessed = datetime.utcnow()
     db.commit()
     
@@ -171,7 +206,11 @@ def update_document_details(
 
 @router.get("/knowledge/articles")
 def list_articles(request: Request, search: str = "", db: Session = Depends(get_db)):
+    is_approver = check_is_approver(request, db)
     query = db.query(KnowledgeArticle)
+    if not is_approver:
+        query = query.filter(KnowledgeArticle.status == "published")
+        
     if search:
         query = query.filter(
             (KnowledgeArticle.title.like(f"%{search}%")) |
@@ -226,11 +265,25 @@ def save_new_article(
         title=title,
         content=content,
         tags=tags,
+        status="draft",
         created_at=datetime.utcnow()
     )
     db.add(art)
     db.commit()
-    return redirect_with_flash("/knowledge/articles", request, "Knowledge Article published successfully.", "success")
+    db.refresh(art)
+    
+    req_name = request.session.get("user_name") or "System User"
+    approval_req = ApprovalRequest(
+        item_type="article",
+        item_id=art.id,
+        title=art.title,
+        requested_by=req_name,
+        status="pending"
+    )
+    db.add(approval_req)
+    db.commit()
+    
+    return redirect_with_flash("/knowledge/articles", request, "Knowledge Article submitted for approval. It is currently in draft mode.", "success")
 
 
 @router.get("/knowledge/article/{article_id}")
@@ -238,6 +291,11 @@ def view_article_details(article_id: int, request: Request, db: Session = Depend
     article = db.query(KnowledgeArticle).filter(KnowledgeArticle.id == article_id).first()
     if not article:
         return redirect_with_flash("/knowledge/articles", request, "Article not found.", "error")
+        
+    is_approver = check_is_approver(request, db)
+    if article.status != "published" and not is_approver:
+        return redirect_with_flash("/knowledge/articles", request, "You do not have permission to view this draft article.", "error")
+        
     context = build_template_context(request, article=article)
     return templates.TemplateResponse(request, "knowledge_article_detail.html", context)
 
@@ -281,3 +339,155 @@ def delete_article(article_id: int, request: Request, db: Session = Depends(get_
     db.delete(article)
     db.commit()
     return redirect_with_flash("/knowledge/articles", request, "Article deleted successfully.", "success")
+
+
+# --- Knowledge Approvals Routing ---
+
+@router.get("/knowledge/approvals")
+def list_pending_approvals(request: Request, db: Session = Depends(get_db)):
+    is_approver = check_is_approver(request, db)
+    if not is_approver:
+        return redirect_with_flash("/knowledge", request, "Access denied. Only knowledge approvers can view this page.", "error")
+        
+    requests = db.query(ApprovalRequest).filter(ApprovalRequest.status == "pending").order_by(ApprovalRequest.created_at.desc()).all()
+    context = build_template_context(request, requests=requests)
+    return templates.TemplateResponse(request, "knowledge_approvals.html", context)
+
+
+@router.post("/knowledge/approvals/{request_id}/approve")
+def approve_request(request_id: int, request: Request, db: Session = Depends(get_db)):
+    is_approver = check_is_approver(request, db)
+    if not is_approver:
+        return redirect_with_flash("/knowledge", request, "Access denied.", "error")
+        
+    approval_req = db.query(ApprovalRequest).filter(ApprovalRequest.id == request_id).first()
+    if not approval_req:
+        return redirect_with_flash("/knowledge/approvals", request, "Approval request not found.", "error")
+        
+    approval_req.status = "approved"
+    
+    # Update target item status
+    if approval_req.item_type == "document":
+        doc = db.query(KnowledgeDocument).filter(KnowledgeDocument.id == approval_req.item_id).first()
+        if doc:
+            doc.status = "published"
+    elif approval_req.item_type == "article":
+        art = db.query(KnowledgeArticle).filter(KnowledgeArticle.id == approval_req.item_id).first()
+        if art:
+            art.status = "published"
+            
+    db.commit()
+    return redirect_with_flash("/knowledge/approvals", request, "Item approved and published successfully.", "success")
+
+
+@router.post("/knowledge/approvals/{request_id}/reject")
+def reject_request(request_id: int, request: Request, db: Session = Depends(get_db)):
+    is_approver = check_is_approver(request, db)
+    if not is_approver:
+        return redirect_with_flash("/knowledge", request, "Access denied.", "error")
+        
+    approval_req = db.query(ApprovalRequest).filter(ApprovalRequest.id == request_id).first()
+    if not approval_req:
+        return redirect_with_flash("/knowledge/approvals", request, "Approval request not found.", "error")
+        
+    approval_req.status = "rejected"
+    # Keep item status as draft, but complete the request as rejected
+    db.commit()
+    return redirect_with_flash("/knowledge/approvals", request, "Item approval request rejected.", "success")
+
+
+@router.post("/knowledge/document/{doc_id}/approve")
+def approve_document_direct(doc_id: int, request: Request, db: Session = Depends(get_db)):
+    is_approver = check_is_approver(request, db)
+    if not is_approver:
+        return redirect_with_flash("/knowledge", request, "Access denied.", "error")
+        
+    doc = db.query(KnowledgeDocument).filter(KnowledgeDocument.id == doc_id).first()
+    if not doc:
+        return redirect_with_flash("/knowledge", request, "Document not found.", "error")
+        
+    doc.status = "published"
+    
+    # Update any pending approval request
+    approval_req = db.query(ApprovalRequest).filter(
+        ApprovalRequest.item_type == "document",
+        ApprovalRequest.item_id == doc_id,
+        ApprovalRequest.status == "pending"
+    ).first()
+    if approval_req:
+        approval_req.status = "approved"
+        
+    db.commit()
+    return redirect_with_flash(f"/knowledge/document/{doc_id}", request, "Document approved and published successfully.", "success")
+
+
+@router.post("/knowledge/document/{doc_id}/reject")
+def reject_document_direct(doc_id: int, request: Request, db: Session = Depends(get_db)):
+    is_approver = check_is_approver(request, db)
+    if not is_approver:
+        return redirect_with_flash("/knowledge", request, "Access denied.", "error")
+        
+    doc = db.query(KnowledgeDocument).filter(KnowledgeDocument.id == doc_id).first()
+    if not doc:
+        return redirect_with_flash("/knowledge", request, "Document not found.", "error")
+        
+    # Document status remains draft, update approval request
+    approval_req = db.query(ApprovalRequest).filter(
+        ApprovalRequest.item_type == "document",
+        ApprovalRequest.item_id == doc_id,
+        ApprovalRequest.status == "pending"
+    ).first()
+    if approval_req:
+        approval_req.status = "rejected"
+        
+    db.commit()
+    return redirect_with_flash(f"/knowledge/document/{doc_id}", request, "Document approval request rejected.", "success")
+
+
+@router.post("/knowledge/article/{article_id}/approve")
+def approve_article_direct(article_id: int, request: Request, db: Session = Depends(get_db)):
+    is_approver = check_is_approver(request, db)
+    if not is_approver:
+        return redirect_with_flash("/knowledge", request, "Access denied.", "error")
+        
+    article = db.query(KnowledgeArticle).filter(KnowledgeArticle.id == article_id).first()
+    if not article:
+        return redirect_with_flash("/knowledge/articles", request, "Article not found.", "error")
+        
+    article.status = "published"
+    
+    # Update any pending approval request
+    approval_req = db.query(ApprovalRequest).filter(
+        ApprovalRequest.item_type == "article",
+        ApprovalRequest.item_id == article_id,
+        ApprovalRequest.status == "pending"
+    ).first()
+    if approval_req:
+        approval_req.status = "approved"
+        
+    db.commit()
+    return redirect_with_flash(f"/knowledge/article/{article_id}", request, "Article approved and published successfully.", "success")
+
+
+@router.post("/knowledge/article/{article_id}/reject")
+def reject_article_direct(article_id: int, request: Request, db: Session = Depends(get_db)):
+    is_approver = check_is_approver(request, db)
+    if not is_approver:
+        return redirect_with_flash("/knowledge", request, "Access denied.", "error")
+        
+    article = db.query(KnowledgeArticle).filter(KnowledgeArticle.id == article_id).first()
+    if not article:
+        return redirect_with_flash("/knowledge/articles", request, "Article not found.", "error")
+        
+    # Article status remains draft, update approval request
+    approval_req = db.query(ApprovalRequest).filter(
+        ApprovalRequest.item_type == "article",
+        ApprovalRequest.item_id == article_id,
+        ApprovalRequest.status == "pending"
+    ).first()
+    if approval_req:
+        approval_req.status = "rejected"
+        
+    db.commit()
+    return redirect_with_flash(f"/knowledge/article/{article_id}", request, "Article approval request rejected.", "success")
+

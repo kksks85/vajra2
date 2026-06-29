@@ -3,6 +3,13 @@ Seed script to create default users for the Vajra Service Management system.
 Run this once to populate the database with sample users.
 """
 
+import sys
+# Set output encoding to UTF-8 to prevent console issues on Windows
+if sys.platform.startswith('win'):
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 from database import SessionLocal
 from models.admin import User
 from services.auth import hash_password
@@ -84,14 +91,15 @@ def seed_users():
                 is_active=True,
             )
             db.add(user)
-            print(f"✓ Created user: {user_data['username']}")
+            print(f"[OK] Created user: {user_data['username']}")
         else:
-            print(f"✓ User already exists: {user_data['username']}")
+            print(f"[OK] User already exists: {user_data['username']}")
     
     db.commit()
     db.close()
-    print("\n✓ User seeding completed!")
+    print("\n[OK] User seeding completed!")
 
 
 if __name__ == "__main__":
     seed_users()
+

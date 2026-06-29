@@ -352,33 +352,120 @@ def groups_new_page(request: Request):
 
 
 @router.get("/admin/groups/{group_id}")
-def view_group_page(request: Request, group_id: int):
-    all_groups = _get_sample_groups()
-    all_users = _get_sample_users()
-    group = next((g for g in all_groups if g["id"] == group_id), None)
+def view_group_page(group_id: int, request: Request, db: Session = Depends(get_db)):
+    group = db.query(Group).filter(Group.id == group_id).first()
     if not group:
-        return redirect_with_flash("/admin/groups", request, "Group not found.", "error")
-    # Get full user objects for the group
-    group_users = [u for u in all_users if u["id"] in group.get("user_ids", [])]
-    context = build_template_context(request, group=group, group_users=group_users, mode="view")
+        # Fallback/create from sample group
+        sample_groups = _get_sample_groups()
+        sample_g = next((g for g in sample_groups if g["id"] == group_id), None)
+        if sample_g:
+            group = Group(
+                id=group_id,
+                name=sample_g["name"],
+                description=sample_g["description"],
+                user_ids=sample_g["user_ids"],
+                member_count=sample_g["member_count"],
+                data={},
+            )
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+        else:
+            return redirect_with_flash("/admin/groups", request, "Group not found.", "error")
+            
+    db_users = db.query(User).all()
+    user_map = {u.id: {
+        "id": u.id,
+        "full_name": u.full_name,
+        "role": u.role,
+        "department": u.department,
+        "email": u.email,
+        "status": u.status
+    } for u in db_users}
+    
+    if not user_map:
+        for u in _get_sample_users():
+            user_map[u["id"]] = u
+            
+    group_users = [user_map[uid] for uid in (group.user_ids or []) if uid in user_map]
+    
+    group_dict = {
+        "id": group.id,
+        "name": group.name,
+        "description": group.description,
+        "user_ids": group.user_ids or [],
+        "member_count": group.member_count or 0,
+        **(group.data or {})
+    }
+    
+    context = build_template_context(request, group=group_dict, group_users=group_users, mode="view")
     return templates.TemplateResponse(request, "group_config.html", context)
 
 
 @router.get("/admin/groups/{group_id}/edit")
-def edit_group_page(request: Request, group_id: int):
-    all_groups = _get_sample_groups()
-    all_users = _get_sample_users()
-    managers = _get_sample_managers()
-    group = next((g for g in all_groups if g["id"] == group_id), None)
+def edit_group_page(group_id: int, request: Request, db: Session = Depends(get_db)):
+    group = db.query(Group).filter(Group.id == group_id).first()
     if not group:
-        return redirect_with_flash("/admin/groups", request, "Group not found.", "error")
-    group_users = [u for u in all_users if u["id"] in group.get("user_ids", [])]
-    context = build_template_context(request, group=group, group_users=group_users, managers=managers, mode="edit")
+        # Fallback/create from sample group
+        sample_groups = _get_sample_groups()
+        sample_g = next((g for g in sample_groups if g["id"] == group_id), None)
+        if sample_g:
+            group = Group(
+                id=group_id,
+                name=sample_g["name"],
+                description=sample_g["description"],
+                user_ids=sample_g["user_ids"],
+                member_count=sample_g["member_count"],
+                data={},
+            )
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+        else:
+            return redirect_with_flash("/admin/groups", request, "Group not found.", "error")
+            
+    db_users = db.query(User).all()
+    user_map = {u.id: {
+        "id": u.id,
+        "full_name": u.full_name,
+        "role": u.role,
+        "department": u.department,
+        "email": u.email,
+        "status": u.status
+    } for u in db_users}
+    
+    if not user_map:
+        for u in _get_sample_users():
+            user_map[u["id"]] = u
+            
+    group_users = [user_map[uid] for uid in (group.user_ids or []) if uid in user_map]
+    
+    managers = [
+        {
+            "id": u.id,
+            "full_name": u.full_name,
+            "department": u.department
+        }
+        for u in db_users if u.role.lower() in ("supervisor", "manager", "admin", "administrator")
+    ]
+    if not managers:
+        managers = _get_sample_managers()
+        
+    group_dict = {
+        "id": group.id,
+        "name": group.name,
+        "description": group.description,
+        "user_ids": group.user_ids or [],
+        "member_count": group.member_count or 0,
+        **(group.data or {})
+    }
+    
+    context = build_template_context(request, group=group_dict, group_users=group_users, managers=managers, mode="edit")
     return templates.TemplateResponse(request, "group_config.html", context)
 
 
 @router.post("/admin/groups")
-async def create_or_update_group(request: Request, db: Session = Depends(get_db)):
+async def create_group(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
     data = parse_form_data(form)
     group = Group(
@@ -391,6 +478,131 @@ async def create_or_update_group(request: Request, db: Session = Depends(get_db)
     db.add(group)
     db.commit()
     return redirect_with_flash("/admin/groups", request, "Group saved successfully.", "success")
+
+
+@router.post("/admin/groups/{group_id}")
+async def update_group(group_id: int, request: Request, db: Session = Depends(get_db)):
+    group = db.query(Group).filter(Group.id == group_id).first()
+    if not group:
+        # Fallback/create from sample group
+        sample_groups = _get_sample_groups()
+        sample_g = next((g for g in sample_groups if g["id"] == group_id), None)
+        if sample_g:
+            group = Group(
+                id=group_id,
+                name=sample_g["name"],
+                description=sample_g["description"],
+                user_ids=sample_g["user_ids"],
+                member_count=sample_g["member_count"],
+                data={},
+            )
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+        else:
+            return redirect_with_flash("/admin/groups", request, "Group not found.", "error")
+            
+    form = await request.form()
+    data = parse_form_data(form)
+    
+    group.name = data.get("name", group.name)
+    group.description = data.get("description", group.description)
+    
+    existing_data = dict(group.data) if group.data else {}
+    existing_data.update(data)
+    group.data = existing_data
+    
+    db.commit()
+    return redirect_with_flash(f"/admin/groups/{group_id}", request, "Group updated successfully.", "success")
+
+
+@router.get("/admin/groups/{group_id}/manage-members")
+def manage_group_members_page(group_id: int, request: Request, db: Session = Depends(get_db)):
+    group = db.query(Group).filter(Group.id == group_id).first()
+    if not group:
+        # Fallback/create from sample group
+        sample_groups = _get_sample_groups()
+        sample_g = next((g for g in sample_groups if g["id"] == group_id), None)
+        if sample_g:
+            group = Group(
+                id=group_id,
+                name=sample_g["name"],
+                description=sample_g["description"],
+                user_ids=sample_g["user_ids"],
+                member_count=sample_g["member_count"],
+                data={},
+            )
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+        else:
+            return redirect_with_flash("/admin/groups", request, "Group not found.", "error")
+            
+    db_users = db.query(User).all()
+    all_users = [
+        {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": user.role,
+            "department": user.department,
+            "status": user.status,
+        }
+        for user in db_users
+    ]
+    if not all_users:
+        all_users = _get_sample_users()
+        
+    group_dict = {
+        "id": group.id,
+        "name": group.name,
+        "description": group.description,
+        "user_ids": group.user_ids or [],
+        "member_count": group.member_count or 0,
+        **(group.data or {})
+    }
+    
+    context = build_template_context(request, group=group_dict, all_users=all_users)
+    return templates.TemplateResponse(request, "group_members.html", context)
+
+
+@router.post("/admin/groups/{group_id}/manage-members")
+async def update_group_members(group_id: int, request: Request, db: Session = Depends(get_db)):
+    group = db.query(Group).filter(Group.id == group_id).first()
+    if not group:
+        # Fallback/create from sample group
+        sample_groups = _get_sample_groups()
+        sample_g = next((g for g in sample_groups if g["id"] == group_id), None)
+        if sample_g:
+            group = Group(
+                id=group_id,
+                name=sample_g["name"],
+                description=sample_g["description"],
+                user_ids=sample_g["user_ids"],
+                member_count=sample_g["member_count"],
+                data={},
+            )
+            db.add(group)
+            db.commit()
+            db.refresh(group)
+        else:
+            return redirect_with_flash("/admin/groups", request, "Group not found.", "error")
+            
+    form = await request.form()
+    user_id_strs = form.getlist("user_ids")
+    user_ids = []
+    for uid_str in user_id_strs:
+        try:
+            user_ids.append(int(uid_str))
+        except ValueError:
+            pass
+            
+    group.user_ids = user_ids
+    group.member_count = len(user_ids)
+    db.commit()
+    
+    return redirect_with_flash(f"/admin/groups/{group_id}/edit", request, "Group members updated successfully.", "success")
 
 
 @router.get("/admin/customers")

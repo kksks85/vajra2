@@ -22,6 +22,7 @@
           <th>Subject Line</th>
           <th>Version</th>
           <th>Date of Issue</th>
+          <th>Status</th>
           <th>Date Uploaded</th>
           <th>Last Accessed</th>
           <th>Actions</th>
@@ -34,6 +35,17 @@
           <td>{{ doc.subject_line }}</td>
           <td>{{ doc.version }}</td>
           <td>{{ doc.date_of_issue }}</td>
+          <td>
+            {% if doc.status %}
+              <span class="pill {% if doc.status == 'published' %}success{% elif doc.status == 'approved' %}info{% else %}warning{% endif %}" style="font-weight: 600; padding: 2px 6px; font-size: 10px;">
+                {% if doc.status == 'draft' %}
+                  PENDING
+                {% else %}
+                  {{ doc.status|upper }}
+                {% endif %}
+              </span>
+            {% endif %}
+          </td>
           <td>{{ format_utc(doc.created_at) if format_utc else doc.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
           <td>{{ format_utc(doc.last_accessed) if format_utc else doc.last_accessed.strftime('%Y-%m-%d %H:%M') }}</td>
           <td>
@@ -42,7 +54,7 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="7" style="text-align: center; padding: 30px; color: var(--si-muted); font-style: italic;">No documents uploaded in this category.</td>
+          <td colspan="8" style="text-align: center; padding: 30px; color: var(--si-muted); font-style: italic;">No documents uploaded in this category.</td>
         </tr>
         {% endfor %}
       </tbody>

@@ -26,11 +26,20 @@
     {% for article in articles %}
       <div style="background: var(--si-card); border: 1px solid var(--si-border); border-radius: 8px; padding: 20px; position: relative; transition: all 0.2s ease-in-out;" class="article-card">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <span style="background: rgba(43, 116, 214, 0.08); color: var(--si-primary); font-weight: 700; font-size: 11px; padding: 4px 8px; border-radius: 4px; letter-spacing: 0.5px;">{{ article.reference_number }}</span>
             <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: var(--si-text);">
               <a href="/knowledge/article/{{ article.id }}" style="text-decoration: none; color: inherit; transition: color 0.15s ease;">{{ article.title }}</a>
             </h2>
+            {% if article.status %}
+              <span class="pill {% if article.status == 'published' %}success{% elif article.status == 'approved' %}info{% else %}warning{% endif %}" style="font-size: 10px; font-weight: 600; padding: 2px 6px;">
+                {% if article.status == 'draft' %}
+                  WAITING FOR APPROVAL
+                {% else %}
+                  {{ article.status|upper }}
+                {% endif %}
+              </span>
+            {% endif %}
           </div>
           <span style="font-size: 12px; color: var(--si-muted);">{{ article.created_at.strftime('%Y-%m-%d') if article.created_at else '' }}</span>
         </div>

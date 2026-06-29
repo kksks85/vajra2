@@ -14,6 +14,11 @@
         {% else %}
           Document Details
         {% endif %}
+        {% if not is_new and doc.status %}
+          <span class="pill {% if doc.status == 'published' %}success{% elif doc.status == 'approved' %}info{% else %}warning{% endif %}" style="margin-left: 10px; font-size: 12px; vertical-align: middle;">
+            {{ doc.status|upper }}
+          </span>
+        {% endif %}
       </div>
       <div class="si-incident-subtitle">Structured registry and attachments for knowledge resources</div>
     </div>
@@ -26,6 +31,23 @@
       {% endif %}
     </div>
   </header>
+
+  {% if view_only and doc.status == "draft" and is_knowledge_approver %}
+    <div style="background-color: #fffbeb; border: 1px solid #f59e0b; border-radius: 6px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box;">
+      <div>
+        <h4 style="margin: 0; color: #b45309; font-size: 14px; font-weight: 600;">Pending Approval</h4>
+        <p style="margin: 4px 0 0 0; color: #d97706; font-size: 12px;">This document is currently in draft. As a Knowledge Manager, you can approve it to publish it, or reject the submission.</p>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <form action="/knowledge/document/{{ doc.id }}/approve" method="POST" style="margin: 0;">
+          <button type="submit" class="si-btn si-btn-primary" style="background-color: #059669; border-color: #059669; font-size: 12px; padding: 6px 12px;">Approve & Publish</button>
+        </form>
+        <form action="/knowledge/document/{{ doc.id }}/reject" method="POST" style="margin: 0;">
+          <button type="submit" class="si-btn" style="background-color: #dc2626; border-color: #dc2626; color: white; font-size: 12px; padding: 6px 12px;">Reject</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
 
   <form id="doc-form" method="post" enctype="multipart/form-data" action="{% if is_new %}/knowledge/document/new{% else %}/knowledge/document/{{ doc.id }}{% endif %}" class="si-incident-form">
     <input type="hidden" name="type_param" value="{{ doc_type }}" />

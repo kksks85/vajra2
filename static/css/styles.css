@@ -2155,6 +2155,24 @@ body.si-app {
   font-size: 10px;
 }
 
+.pill.success {
+  background: #e6f7ed;
+  border-color: #a3e6be;
+  color: #137333;
+}
+
+.pill.warning {
+  background: #fef7e0;
+  border-color: #ffe082;
+  color: #b06000;
+}
+
+.pill.info {
+  background: #e8f0fe;
+  border-color: #c2d7fa;
+  color: #1a73e8;
+}
+
 .list-tabs {
   display: inline-flex;
   gap: 6px;

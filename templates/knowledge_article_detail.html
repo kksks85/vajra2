@@ -5,6 +5,11 @@
     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
       <span style="background: rgba(43, 116, 214, 0.08); color: var(--si-primary); font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 4px; letter-spacing: 0.5px;">{{ article.reference_number }}</span>
       <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: var(--si-text);">{{ article.title }}</h1>
+      {% if article.status %}
+        <span class="pill {% if article.status == 'published' %}success{% elif article.status == 'approved' %}info{% else %}warning{% endif %}" style="font-size: 11px; vertical-align: middle;">
+          {{ article.status|upper }}
+        </span>
+      {% endif %}
     </div>
     <div class="si-incident-actions">
       <a class="si-btn" href="/knowledge/articles">Back to Articles</a>
@@ -12,6 +17,23 @@
       <a class="si-btn" href="/knowledge/article/{{ article.id }}/delete" onclick="return confirm('Are you sure you want to delete this article?');" style="color: var(--danger-color, #ef4444); border-color: var(--danger-color, #ef4444);">Delete</a>
     </div>
   </header>
+
+  {% if article.status == "draft" and is_knowledge_approver %}
+    <div style="background-color: #fffbeb; border: 1px solid #f59e0b; border-radius: 6px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box;">
+      <div>
+        <h4 style="margin: 0; color: #b45309; font-size: 14px; font-weight: 600;">Pending Approval</h4>
+        <p style="margin: 4px 0 0 0; color: #d97706; font-size: 12px;">This article is currently in draft. As a Knowledge Manager, you can approve it to publish it, or reject the submission.</p>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <form action="/knowledge/article/{{ article.id }}/approve" method="POST" style="margin: 0;">
+          <button type="submit" class="si-btn si-btn-primary" style="background-color: #059669; border-color: #059669; font-size: 12px; padding: 6px 12px;">Approve & Publish</button>
+        </form>
+        <form action="/knowledge/article/{{ article.id }}/reject" method="POST" style="margin: 0;">
+          <button type="submit" class="si-btn" style="background-color: #dc2626; border-color: #dc2626; color: white; font-size: 12px; padding: 6px 12px;">Reject</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
 
   <div style="background: var(--si-card); border: 1px solid var(--si-border); border-radius: 8px; padding: 30px;">
     <!-- Article Meta Bar -->

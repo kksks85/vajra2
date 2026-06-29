@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="list-shell">
+  <div class="list-bar">
+    <div class="list-title">
+      <h1>Pending Knowledge Approvals</h1>
+      <span class="pill select">Action Required</span>
+    </div>
+    <div class="list-controls">
+      <span class="list-meta">{{ requests|length }} pending approval(s)</span>
+    </div>
+  </div>
+
+  <div class="list-card">
+    <table class="table dense">
+      <thead>
+        <tr>
+          <th>Item Type</th>
+          <th>Reference / ID</th>
+          <th>Title / Subject</th>
+          <th>Submitted By</th>
+          <th>Date Submitted</th>
+          <th style="width: 220px; text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr>
+          <td>
+            <span class="pill {% if req.item_type == 'document' %}info{% else %}success{% endif %}">
+              {{ req.item_type|title }}
+            </span>
+          </td>
+          <td>
+            {% if req.item_type == 'document' %}
+              <a href="/knowledge/document/{{ req.item_id }}"><strong>Document #{{ req.item_id }}</strong></a>
+            {% else %}
+              <a href="/knowledge/article/{{ req.item_id }}"><strong>Article #{{ req.item_id }}</strong></a>
+            {% endif %}
+          </td>
+          <td>{{ req.title }}</td>
+          <td>{{ req.requested_by }}</td>
+          <td>{{ format_utc(req.created_at) if format_utc else req.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td style="text-align: center;">
+            <div style="display: flex; gap: 8px; justify-content: center;">
+              <form action="/knowledge/approvals/{{ req.id }}/approve" method="POST" style="margin: 0;">
+                <button type="submit" class="si-btn si-btn-sm" style="background-color: #059669; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">Approve</button>
+              </form>
+              <form action="/knowledge/approvals/{{ req.id }}/reject" method="POST" style="margin: 0;">
+                <button type="submit" class="si-btn si-btn-sm" style="background-color: #dc2626; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">Reject</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 40px; color: var(--si-muted); font-style: italic;">No pending approval requests.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vajra Service Management</title>
-    <link rel="stylesheet" href="/static/css/styles.css" />
+    <link rel="stylesheet" href="/static/css/styles.css?v=1.1" />
   </head>
   <body class="si-app">
     <aside id="sidebar" class="si-sidebar">
@@ -30,6 +30,9 @@
         <details class="si-nav-group open">
           <summary class="si-nav-section">Knowledge Management</summary>
           <a class="si-nav-link" href="/knowledge">Knowledge Dashboard</a>
+          {% if is_knowledge_approver %}
+            <a class="si-nav-link si-nav-sublink" href="/knowledge/approvals" style="font-weight: bold; color: #4f46e5;">Pending Approvals</a>
+          {% endif %}
           <a class="si-nav-link si-nav-sublink" href="/knowledge/list/manual">Manuals</a>
           <a class="si-nav-link si-nav-sublink" href="/knowledge/list/service_bulletin">Service Bulletins</a>
           <a class="si-nav-link si-nav-sublink" href="/knowledge/list/operator_bulletin">Operator Bulletins</a>
