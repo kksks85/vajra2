@@ -116,13 +116,19 @@ def generate_multi_tab_excel():
         "Loitering Munition": {
             "title": "Loitering Munition (LM) Unit Configuration Form Schema",
             "fields": [
+                ["SAP Part number", "sap_part_number", "String", "Required, Length: 14", "None", "14 Digit part no generated on SAP."],
+                ["Customer Part no", "customer_part_number", "String", "Required, Length: 8", "None", "08 Digit part no generated for customer."],
                 ["Serial Number", "serial_number", "String", "Required", "None", "Unique military grade hardware serial number."],
                 ["Unit Name", "unit_name", "String", "Required", "None", "Descriptive name for the individual unit (e.g. LM Alpha)."],
                 ["SRLM System", "srlm_system", "Dropdown (String)", "Read-only (Default: 'LM')", "LM (Loitering Munition)", "System categorization, fixed to LM."],
                 ["Customer", "customer_id", "Dropdown (String)", "Required", "Acme Rail Systems\nMetroLine Services\nUrban Transit Corp", "Assigns ownership of the unit to a customer."],
                 ["Contract", "contract_id", "Dropdown (String)", "Required", "CTR-2024-001\nCTR-2024-014\nCTR-2023-220", "Links the unit deployment to an active contract. Filtered by selected Customer."],
                 ["Warranty Valid From", "warranty_valid_from", "Date / String", "Required", "None", "Warranty coverage start date (YYYY-MM-DD)."],
-                ["Warranty Valid To", "warranty_valid_to", "Date / String", "Required", "None", "Warranty coverage end date (YYYY-MM-DD)."]
+                ["Warranty Valid To", "warranty_valid_to", "Date / String", "Required", "None", "Warranty coverage end date (YYYY-MM-DD)."],
+                ["Component/LRU", "lm_component[]", "Table Column (String)", "Required for table row", "None", "Associated Component/LRU."],
+                ["Qty aircraft", "lm_qty[]", "Table Column (Integer)", "Required for table row", "None", "Quantity of components."],
+                ["Part No.", "lm_part_no[]", "Table Column (String)", "Required for table row", "None", "Part number of the component."],
+                ["Serial no.", "lm_serial_no[]", "Table Column (String)", "Required for table row", "None", "Serial number of the component."]
             ]
         },
         "Batteries": {
@@ -175,7 +181,10 @@ def generate_multi_tab_excel():
                 ["Warranty Valid To", "warranty_valid_to", "Date / String", "Required", "None", "Warranty coverage end date (YYYY-MM-DD)."],
                 ["Make", "make", "String", "Required", "None", "Manufacturer make."],
                 ["Model", "model", "String", "Required", "None", "Manufacturer model."],
-                ["Software version", "software_version", "String", "Required", "None", "Installed software version."]
+                ["Software version", "software_version", "String", "Required", "None", "Installed software version."],
+                ["Component/LRU", "gcs_component[]", "Table Column (String)", "Required for table row", "None", "Associated Component/LRU."],
+                ["Part No.", "gcs_part_no[]", "Table Column (String)", "Required for table row", "None", "Part number of the component."],
+                ["QTY", "gcs_qty[]", "Table Column (Integer)", "Required for table row", "None", "Quantity of components."]
             ]
         },
         "Tactical Mobility Vehicle": {
@@ -197,13 +206,21 @@ def generate_multi_tab_excel():
         "Simulator": {
             "title": "Simulator Unit Configuration Form Schema",
             "fields": [
+                ["SAP Part number", "sap_part_number", "String", "Required, Length: 14", "None", "14 Digit part no generated on SAP."],
+                ["Customer Part no", "customer_part_number", "String", "Required, Length: 8", "None", "08 Digit part no generated for customer."],
                 ["Serial Number", "serial_number", "String", "Required", "None", "Unique system hardware serial number."],
                 ["Unit Name", "unit_name", "String", "Required", "None", "Descriptive unit name (e.g. Simulator Prime)."],
                 ["SRLM System", "srlm_system", "Dropdown (String)", "Read-only (Default: 'Simulator')", "Simulator", "System categorization, fixed to Simulator."],
                 ["Customer", "customer_id", "Dropdown (String)", "Required", "Acme Rail Systems\nMetroLine Services\nUrban Transit Corp", "Assigns ownership of the simulator to a customer."],
                 ["Contract", "contract_id", "Dropdown (String)", "Required", "CTR-2024-001\nCTR-2024-014\nCTR-2023-220", "Links the unit deployment to an active contract. Filtered by selected Customer."],
                 ["Warranty Valid From", "warranty_valid_from", "Date / String", "Required", "None", "Warranty coverage start date (YYYY-MM-DD)."],
-                ["Warranty Valid To", "warranty_valid_to", "Date / String", "Required", "None", "Warranty coverage end date (YYYY-MM-DD)."]
+                ["Warranty Valid To", "warranty_valid_to", "Date / String", "Required", "None", "Warranty coverage end date (YYYY-MM-DD)."],
+                ["Make", "make", "String", "Required", "None", "Manufacturer make."],
+                ["Model", "model", "String", "Required", "None", "Manufacturer model."],
+                ["Software version", "software_version", "String", "Required", "None", "Installed software version."],
+                ["Component/LRU", "sim_component[]", "Table Column (String)", "Required for table row", "None", "Associated Component/LRU."],
+                ["Part No.", "sim_part_no[]", "Table Column (String)", "Required for table row", "None", "Part number of the component."],
+                ["QTY", "sim_qty[]", "Table Column (Integer)", "Required for table row", "None", "Quantity of components."]
             ]
         },
         "LRU": {
@@ -219,7 +236,11 @@ def generate_multi_tab_excel():
                 ["Related Platform Variant Name", "platform_variant", "Dropdown (String)", "Required", 
                  "LM Alpha - (LM-0001)\nLM Bravo - (LM-0002)\nGCS North - (GCS-0101)\nTMV Ranger - (TMV-2201)\nSimulator Prime - (SIM-3001)", 
                  "Links this specific LRU assembly to a parent platform variant type."],
-                ["Sub-system", "sub_system", "String", "Required", "None", "Associated structural sub-system (e.g. Propulsion, Computing, Electrical)."]
+                ["Sub-system", "sub_system", "String", "Required", "None", "Associated structural sub-system (e.g. Propulsion, Computing, Electrical)."],
+                ["Component/LRU", "lru_component[]", "Table Column (String)", "Required for table row", "None", "Associated Component/LRU."],
+                ["Qty", "lru_qty[]", "Table Column (Integer)", "Required for table row", "None", "Quantity of components."],
+                ["Part No.", "lru_part_no[]", "Table Column (String)", "Required for table row", "None", "Part number of the component."],
+                ["Serial no", "lru_serial_no[]", "Table Column (String)", "Required for table row", "None", "Serial number of the component."]
             ]
         },
         "SAM": {

@@ -102,6 +102,133 @@ def entity_to_dict(obj, db: Session | None = None, top_level_fields=None):
             if contract:
                 result.setdefault("contract_number", contract.number)
 
+    # Compatibilities and dynamic mappings for list sub-tables
+    # 1. LRU Name/Serial/UnitName mappings
+    if "lru_serial_number" in result and "serial_number" not in result:
+        result["serial_number"] = result["lru_serial_number"]
+    if "lru_name" in result and "name" not in result:
+        result["name"] = result["lru_name"]
+    if "serial_number" in result and "lru_serial_number" not in result:
+        result["lru_serial_number"] = result["serial_number"]
+    if "name" in result and "lru_name" not in result:
+        result["lru_name"] = result["name"]
+    if "unit_name" in result and "name" not in result:
+        result["name"] = result["unit_name"]
+    if "name" in result and "unit_name" not in result:
+        result["unit_name"] = result["name"]
+
+    # 2. LM Components
+    if "lm_component" in result:
+        components = normalize_list(result.get("lm_component"))
+        part_nos = normalize_list(result.get("lm_part_no"))
+        qtys = normalize_list(result.get("lm_qty"))
+        serial_nos = normalize_list(result.get("lm_serial_no"))
+        comps = []
+        for i in range(max(len(components), len(part_nos), len(qtys), len(serial_nos))):
+            comp = components[i] if i < len(components) else ""
+            pn = part_nos[i] if i < len(part_nos) else ""
+            qty = qtys[i] if i < len(qtys) else 1
+            sn = serial_nos[i] if i < len(serial_nos) else ""
+            try:
+                qty = int(qty)
+            except (TypeError, ValueError):
+                qty = 1
+            comps.append({"component_lru": comp, "part_no": pn, "qty": qty, "serial_no": sn})
+        result["components"] = comps
+
+    # 3. GCS Components
+    if "gcs_component" in result:
+        components = normalize_list(result.get("gcs_component"))
+        part_nos = normalize_list(result.get("gcs_part_no"))
+        qtys = normalize_list(result.get("gcs_qty"))
+        comps = []
+        for i in range(max(len(components), len(part_nos), len(qtys))):
+            comp = components[i] if i < len(components) else ""
+            pn = part_nos[i] if i < len(part_nos) else ""
+            qty = qtys[i] if i < len(qtys) else 1
+            try:
+                qty = int(qty)
+            except (TypeError, ValueError):
+                qty = 1
+            comps.append({"component_lru": comp, "part_no": pn, "qty": qty})
+        result["components"] = comps
+
+    # 4. Simulator Components
+    if "sim_component" in result:
+        components = normalize_list(result.get("sim_component"))
+        part_nos = normalize_list(result.get("sim_part_no"))
+        qtys = normalize_list(result.get("sim_qty"))
+        comps = []
+        for i in range(max(len(components), len(part_nos), len(qtys))):
+            comp = components[i] if i < len(components) else ""
+            pn = part_nos[i] if i < len(part_nos) else ""
+            qty = qtys[i] if i < len(qtys) else 1
+            try:
+                qty = int(qty)
+            except (TypeError, ValueError):
+                qty = 1
+            comps.append({"component_lru": comp, "part_no": pn, "qty": qty})
+        result["components"] = comps
+
+    # 5. LRU Components
+    if "lru_component" in result:
+        components = normalize_list(result.get("lru_component"))
+        part_nos = normalize_list(result.get("lru_part_no"))
+        qtys = normalize_list(result.get("lru_qty"))
+        serial_nos = normalize_list(result.get("lru_serial_no"))
+        comps = []
+        for i in range(max(len(components), len(part_nos), len(qtys), len(serial_nos))):
+            comp = components[i] if i < len(components) else ""
+            pn = part_nos[i] if i < len(part_nos) else ""
+            qty = qtys[i] if i < len(qtys) else 1
+            sn = serial_nos[i] if i < len(serial_nos) else ""
+            try:
+                qty = int(qty)
+            except (TypeError, ValueError):
+                qty = 1
+            comps.append({"component_lru": comp, "part_no": pn, "qty": qty, "serial_no": sn})
+        result["components"] = comps
+
+    # 6. SMT_STE Tools compatibility
+    if "tool_component" in result:
+        components = normalize_list(result.get("tool_component"))
+        part_nos = normalize_list(result.get("tool_part_no"))
+        qtys = normalize_list(result.get("tool_qty"))
+        tools = []
+        for i in range(max(len(components), len(part_nos), len(qtys))):
+            comp = components[i] if i < len(components) else ""
+            pn = part_nos[i] if i < len(part_nos) else ""
+            qty = qtys[i] if i < len(qtys) else 1
+            try:
+                qty = int(qty)
+            except (TypeError, ValueError):
+                qty = 1
+            tools.append({"component_lru": comp, "part_no": pn, "qty": qty})
+        result["tools"] = tools
+
+    # 7. MRLS Spares compatibility
+    if "spare_nomenclature" in result:
+        noms = normalize_list(result.get("spare_nomenclature"))
+        part_nos = normalize_list(result.get("spare_part_no"))
+        qtys_inst = normalize_list(result.get("spare_qty_installed"))
+        qtys_prov = normalize_list(result.get("spare_qty_provided"))
+        spares = []
+        for i in range(max(len(noms), len(part_nos), len(qtys_inst), len(qtys_prov))):
+            nom = noms[i] if i < len(noms) else ""
+            pn = part_nos[i] if i < len(part_nos) else ""
+            qi = qtys_inst[i] if i < len(qtys_inst) else 1
+            qp = qtys_prov[i] if i < len(qtys_prov) else 1
+            try:
+                qi = int(qi)
+            except (TypeError, ValueError):
+                qi = 1
+            try:
+                qp = int(qp)
+            except (TypeError, ValueError):
+                qp = 1
+            spares.append({"nomenclature": nom, "part_no": pn, "qty_installed": qi, "qty_provided": qp})
+        result["spares"] = spares
+
     return result
 
 
@@ -730,6 +857,12 @@ def _get_sample_units(unit_type: str):
                 "contract_number": "CTR-2024-001",
                 "warranty_valid_from": "2024-02-01",
                 "warranty_valid_to": "2026-02-01",
+                "sap_part_number": "10000000001001",
+                "customer_part_number": "80001001",
+                "customer_part_no": "80001001",
+                "make": "VajraCorp",
+                "model": "VC-LM-V1",
+                "software_version": "1.0.4",
                 "status": "Active",
             },
             {
@@ -742,6 +875,12 @@ def _get_sample_units(unit_type: str):
                 "contract_number": "CTR-2024-014",
                 "warranty_valid_from": "2024-04-10",
                 "warranty_valid_to": "2026-04-10",
+                "sap_part_number": "10000000001002",
+                "customer_part_number": "80001002",
+                "customer_part_no": "80001002",
+                "make": "VajraCorp",
+                "model": "VC-LM-V2",
+                "software_version": "1.0.4",
                 "status": "Active",
             },
         ],
@@ -793,6 +932,12 @@ def _get_sample_units(unit_type: str):
                 "contract_number": "CTR-2023-220",
                 "warranty_valid_from": "2023-08-01",
                 "warranty_valid_to": "2024-08-01",
+                "sap_part_number": "10000000004001",
+                "customer_part_number": "80004001",
+                "customer_part_no": "80004001",
+                "make": "VajraCorp",
+                "model": "VC-SIM-V1",
+                "software_version": "1.0.4",
                 "status": "Expired",
             },
         ],
@@ -2137,7 +2282,7 @@ def sam_disable(request: Request, unit_id: int):
 @router.get("/admin/lru")
 def lru_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
-    all_lrus = list_or_sample(db, LineReplaceableUnit, unit_type="LRU", top_level_fields=["name", "serial_number"])
+    all_lrus = list_or_sample(db, LineReplaceableUnit, unit_type="LRU", top_level_fields=["unit_name"])
     pagination = paginate(all_lrus, page=page, per_page=50)
     context = build_template_context(request, lrus=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "lru_list.html", context)
@@ -2152,7 +2297,7 @@ def lru_new_page(request: Request):
 
 @router.get("/admin/lru/{lru_id}")
 def lru_view_page(request: Request, lru_id: int, db: Session = Depends(get_db)):
-    lru = load_entity(db, LineReplaceableUnit, unit_type="LRU", unit_id=lru_id, top_level_fields=["name", "serial_number"])
+    lru = load_entity(db, LineReplaceableUnit, unit_type="LRU", unit_id=lru_id, top_level_fields=["unit_name"])
     platform_variants = _get_sample_platform_variants()
     context = build_template_context(request, lru=lru, platform_variants=platform_variants, mode="view")
     return templates.TemplateResponse(request, "lru_config.html", context)
@@ -2160,7 +2305,7 @@ def lru_view_page(request: Request, lru_id: int, db: Session = Depends(get_db)):
 
 @router.get("/admin/lru/{lru_id}/edit")
 def lru_edit_page(request: Request, lru_id: int, db: Session = Depends(get_db)):
-    lru = load_entity(db, LineReplaceableUnit, unit_type="LRU", unit_id=lru_id, top_level_fields=["name", "serial_number"])
+    lru = load_entity(db, LineReplaceableUnit, unit_type="LRU", unit_id=lru_id, top_level_fields=["unit_name"])
     platform_variants = _get_sample_platform_variants()
     context = build_template_context(request, lru=lru, platform_variants=platform_variants, mode="edit")
     return templates.TemplateResponse(request, "lru_config.html", context)
@@ -2849,7 +2994,9 @@ async def create_rdv(request: Request, db: Session = Depends(get_db)):
 async def create_lru(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
     data = parse_form_data(form)
-    persist_entity(db, LineReplaceableUnit, data=data, top_level_fields=["unit_name", "serial_number"])
+    if "lru_name" in data:
+        data["unit_name"] = data["lru_name"]
+    persist_entity(db, LineReplaceableUnit, data=data, top_level_fields=["unit_name"])
     return redirect_with_flash("/admin/lru", request, "LRU saved.", "success")
 
 

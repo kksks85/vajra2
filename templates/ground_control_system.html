@@ -104,6 +104,31 @@
         <label>Software version</label>
         <input name="software_version" placeholder="Software version" value="{{ unit.get('software_version', '') }}" {% if view_only %}readonly disabled{% endif %} />
       </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Component / LRU Configuration</div>
+      
+      <div class="si-table-container" style="grid-column: 1 / -1; margin-top: 15px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 15px;">
+        <table class="table dense" id="components-table" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="text-align: left; padding: 8px; border-bottom: 2px solid var(--border-color);">Component/LRU</th>
+              <th style="text-align: left; padding: 8px; border-bottom: 2px solid var(--border-color);">Part No.</th>
+              <th style="text-align: left; padding: 8px; border-bottom: 2px solid var(--border-color); width: 100px;">QTY</th>
+              {% if not view_only %}<th style="text-align: center; padding: 8px; border-bottom: 2px solid var(--border-color); width: 80px;">Action</th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Dynamic rows -->
+          </tbody>
+        </table>
+        {% if not view_only %}
+          <button type="button" class="si-btn ghost small" id="add-component-btn" style="margin-top: 12px; display: inline-flex; align-items: center;">
+            <svg style="width: 14px; height: 14px; margin-right: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Add Component
+          </button>
+        {% endif %}
+      </div>
     </div>
   </form>
 </section>
@@ -135,5 +160,51 @@
 
   customerSelect.addEventListener("change", syncContracts);
   syncContracts();
+
+  // Components Table logic
+  const viewOnly = {{ 'true' if view_only else 'false' }};
+  const componentsTableBody = document.querySelector("#components-table tbody");
+  const addComponentBtn = document.getElementById("add-component-btn");
+
+  const initialComponents = {{ (unit.get('components') or [
+    {"component_lru": "Getac Laptop", "part_no": "GCS-LAP-01", "qty": 1},
+    {"component_lru": "Getac Laptop Spare Battery", "part_no": "GCS-BATT-02", "qty": 1},
+    {"component_lru": "Getac Laptop Charger", "part_no": "GCS-CHG-03", "qty": 1},
+    {"component_lru": "Joystick (Thrust Master)", "part_no": "GCS-JOY-04", "qty": 1},
+    {"component_lru": "Monitor", "part_no": "GCS-MON-05", "qty": 1},
+    {"component_lru": "Mast", "part_no": "GCS-MST-06", "qty": 1},
+    {"component_lru": "Omni Antenna", "part_no": "GCS-ANT-07", "qty": 1}
+  ]) | tojson }};
+
+  const createRow = (component = "", partNo = "", qty = 1) => {
+    const tr = document.createElement("tr");
+    tr.style.borderBottom = "1px solid var(--border-color)";
+    
+    tr.innerHTML = `
+      <td style="padding: 6px;"><input type="text" name="gcs_component[]" value="${component}" placeholder="e.g. Getac Laptop" style="width: 95%;" ${viewOnly ? 'readonly disabled' : ''} required /></td>
+      <td style="padding: 6px;"><input type="text" name="gcs_part_no[]" value="${partNo}" placeholder="e.g. GCS-XYZ" style="width: 95%;" ${viewOnly ? 'readonly disabled' : ''} required /></td>
+      <td style="padding: 6px;"><input type="number" name="gcs_qty[]" value="${qty}" min="1" style="width: 80px;" ${viewOnly ? 'readonly disabled' : ''} required /></td>
+      ${!viewOnly ? `<td style="padding: 6px; text-align: center;"><button type="button" class="si-btn ghost small remove-row-btn" style="color: var(--danger-color); padding: 2px 6px;">Delete</button></td>` : ''}
+    `;
+
+    if (!viewOnly) {
+      tr.querySelector(".remove-row-btn").addEventListener("click", () => {
+        tr.remove();
+      });
+    }
+    
+    return tr;
+  };
+
+  // Load initial components
+  initialComponents.forEach(comp => {
+    componentsTableBody.appendChild(createRow(comp.component_lru, comp.part_no, comp.qty));
+  });
+
+  if (addComponentBtn) {
+    addComponentBtn.addEventListener("click", () => {
+      componentsTableBody.appendChild(createRow("", "", 1));
+    });
+  }
 </script>
 {% endblock %}

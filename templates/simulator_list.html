@@ -20,9 +20,14 @@
         <tr>
           <th>Serial Number</th>
           <th>Unit Name</th>
+          <th>SAP Part number</th>
+          <th>Customer Part no</th>
           <th>Customer</th>
           <th>Contract</th>
           <th>Warranty Valid To</th>
+          <th>Make</th>
+          <th>Model</th>
+          <th>Software version</th>
           <th>Status</th>
           <th>Actions</th>
         </tr>
@@ -32,9 +37,14 @@
         <tr>
           <td>{{ unit.serial_number }}</td>
           <td>{{ unit.unit_name }}</td>
+          <td>{{ unit.sap_part_number }}</td>
+          <td>{{ unit.customer_part_number }}</td>
           <td>{{ unit.customer_name }}</td>
           <td>{{ unit.contract_number }}</td>
           <td>{{ unit.warranty_valid_to }}</td>
+          <td>{{ unit.make }}</td>
+          <td>{{ unit.model }}</td>
+          <td>{{ unit.software_version }}</td>
           <td>{{ unit.status }}</td>
           <td>
             <a class="ghost small" href="/admin/simulator/{{ unit.id }}">View</a>
