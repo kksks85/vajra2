@@ -94,6 +94,13 @@
         <textarea name="description" placeholder="Refer to attached document details" required {% if view_only %}readonly disabled{% endif %} style="width: 100%; height: 80px; font-family: inherit;">{{ doc.description or 'Please refer to the attached document' }}</textarea>
       </div>
 
+      {% if doc_type in ['manual', 'service_bulletin', 'operator_bulletin', 'amendments_leaflet'] and not is_new %}
+      <div class="si-incident-field" style="grid-column: 1 / -1;">
+        <label>Reason for Change</label>
+        <textarea name="change_notes" placeholder="Why are you uploading/editing this version? Enter change notes." {% if view_only %}readonly disabled{% endif %} style="width: 100%; height: 60px; font-family: inherit;">{{ doc.change_notes or '' }}</textarea>
+      </div>
+      {% endif %}
+
       <div class="si-incident-divider"></div>
       <div class="si-incident-section">Attachments</div>
 
@@ -131,6 +138,60 @@
       </div>
     </div>
   </form>
+
+  {% if doc_type in ['manual', 'service_bulletin', 'operator_bulletin', 'amendments_leaflet'] and not is_new %}
+    <div class="si-incident-divider" style="margin-top: 30px;"></div>
+    <div class="si-incident-section" style="margin-top: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+      <svg style="width: 20px; height: 20px; color: var(--si-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      Version History
+    </div>
+    
+    <div class="si-table-container" style="background: var(--si-card); border: 1px solid var(--si-border); border-radius: 8px; padding: 20px; box-shadow: var(--si-shadow-sm); margin-top: 15px;">
+      {% if versions %}
+        <table class="table dense" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--si-border);">
+              <th style="text-align: left; padding: 10px 8px; font-weight: 600; color: var(--si-text-muted); font-size: 13px;">Version</th>
+              <th style="text-align: left; padding: 10px 8px; font-weight: 600; color: var(--si-text-muted); font-size: 13px;">File Ref Number</th>
+              <th style="text-align: left; padding: 10px 8px; font-weight: 600; color: var(--si-text-muted); font-size: 13px;">Date of Issue</th>
+              <th style="text-align: left; padding: 10px 8px; font-weight: 600; color: var(--si-text-muted); font-size: 13px;">Subject Line</th>
+              <th style="text-align: left; padding: 10px 8px; font-weight: 600; color: var(--si-text-muted); font-size: 13px;">Reason for Change</th>
+              <th style="text-align: left; padding: 10px 8px; font-weight: 600; color: var(--si-text-muted); font-size: 13px;">Retired On</th>
+              <th style="text-align: left; padding: 10px 8px; font-weight: 600; color: var(--si-text-muted); font-size: 13px;">Attachments</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ver in versions %}
+              <tr style="border-bottom: 1px solid var(--si-border);">
+                <td style="padding: 12px 8px; font-weight: 600; color: var(--si-text);">{{ ver.version }}</td>
+                <td style="padding: 12px 8px; color: var(--si-text);">{{ ver.file_reference_number }}</td>
+                <td style="padding: 12px 8px; color: var(--si-text);">{{ ver.date_of_issue }}</td>
+                <td style="padding: 12px 8px; color: var(--si-text);">{{ ver.subject_line }}</td>
+                <td style="padding: 12px 8px; color: var(--si-text); max-width: 250px; word-wrap: break-word;">{{ ver.change_notes or '' }}</td>
+                <td style="padding: 12px 8px; color: var(--si-muted); font-size: 12px;">{{ ver.retired.strftime('%Y-%m-%d %H:%M:%S') if ver.retired else 'N/A' }}</td>
+                <td style="padding: 12px 8px;">
+                  {% for attachment in ver.attachments or [] %}
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                      <svg style="width: 14px; height: 14px; color: var(--si-primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                      <a href="/static/uploads/{{ attachment }}" download style="font-size: 11px; font-weight: 600; text-decoration: none; color: var(--si-primary);">
+                        {{ attachment }}
+                      </a>
+                    </div>
+                  {% else %}
+                    <span style="font-size: 11px; color: var(--si-muted); font-style: italic;">No files attached</span>
+                  {% endfor %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div style="text-align: center; padding: 30px; color: var(--si-muted); font-style: italic; font-size: 13px;">
+          No previous versions of this document exist in the version history database.
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
 </section>
 
 <script>

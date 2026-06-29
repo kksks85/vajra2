@@ -31,6 +31,7 @@ class KnowledgeDocument(Base):
     status = Column(String(50), default="draft", nullable=False)  # draft, approved, published
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_accessed = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    change_notes = Column(Text, nullable=True)
 
 
 class ApprovalRequest(Base):
@@ -43,4 +44,24 @@ class ApprovalRequest(Base):
     requested_by = Column(String(100), nullable=False)
     status = Column(String(50), default="pending", nullable=False)  # pending, approved, rejected
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class KnowledgeDocumentVersion(Base):
+    __tablename__ = "knowledge_document_versions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    doc_id = Column(Integer, nullable=True)  # Reference to active document ID
+    doc_type = Column(String(50), nullable=False)  # manual, service_bulletin, operator_bulletin, amendments_leaflet
+    file_reference_number = Column(String(100), nullable=False)
+    version = Column(String(50), nullable=False)
+    date_of_issue = Column(String(50), nullable=False)  # YYYY-MM-DD
+    subject_line = Column(String(300), nullable=False)
+    description = Column(Text, default="Please refer to the attached document")
+    attachments = Column(JSON, default=list)  # List of filenames
+    data = Column(JSON, default=dict, nullable=False)
+    status = Column(String(50), default="published", nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    retired = Column(DateTime(timezone=True), nullable=True)  # Timestamp when it was retired/replaced
+    change_notes = Column(Text, nullable=True)
+
 

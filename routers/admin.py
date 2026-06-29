@@ -796,7 +796,7 @@ def _get_sample_customers():
             "contact_name": "Arjun Mehta",
             "contact_email": "arjun.mehta@urban.example",
             "contact_phone": "+91 99887 66554",
-            "status": "Disabled",
+            "status": "Expended",
         },
     ]
 
@@ -1680,7 +1680,7 @@ def customer_edit_page(request: Request, customer_id: int, db: Session = Depends
 
 @router.get("/admin/customers/{customer_id}/disable")
 def customer_disable(request: Request, customer_id: int):
-    return redirect_with_flash("/admin/customers", request, "Customer disabled.", "success")
+    return redirect_with_flash("/admin/customers", request, "Customer expended.", "success")
 
 
 @router.get("/admin/contracts")
@@ -1847,7 +1847,7 @@ def contract_edit_page(request: Request, contract_id: int, db: Session = Depends
 
 @router.get("/admin/contracts/{contract_id}/disable")
 def contract_disable(request: Request, contract_id: int):
-    return redirect_with_flash("/admin/contracts", request, "Contract disabled.", "success")
+    return redirect_with_flash("/admin/contracts", request, "Contract expended.", "success")
 
 
 @router.get("/admin/lm")
@@ -1887,7 +1887,7 @@ def loitering_munition_edit_page(request: Request, unit_id: int, db: Session = D
 
 @router.get("/admin/lm/{unit_id}/disable")
 def loitering_munition_disable(request: Request, unit_id: int):
-    return redirect_with_flash("/admin/lm", request, "Unit disabled.", "success")
+    return redirect_with_flash("/admin/lm", request, "Unit expended.", "success")
 
 
 @router.get("/admin/gcs")
@@ -1927,7 +1927,7 @@ def ground_control_system_edit_page(request: Request, unit_id: int, db: Session 
 
 @router.get("/admin/gcs/{unit_id}/disable")
 def ground_control_system_disable(request: Request, unit_id: int):
-    return redirect_with_flash("/admin/gcs", request, "Unit disabled.", "success")
+    return redirect_with_flash("/admin/gcs", request, "Unit expended.", "success")
 
 
 @router.get("/admin/tmv")
@@ -1967,7 +1967,7 @@ def tactical_mobility_vehicle_edit_page(request: Request, unit_id: int, db: Sess
 
 @router.get("/admin/tmv/{unit_id}/disable")
 def tactical_mobility_vehicle_disable(request: Request, unit_id: int):
-    return redirect_with_flash("/admin/tmv", request, "Unit disabled.", "success")
+    return redirect_with_flash("/admin/tmv", request, "Unit expended.", "success")
 
 
 @router.get("/admin/simulator")
@@ -2007,7 +2007,7 @@ def simulator_edit_page(request: Request, unit_id: int, db: Session = Depends(ge
 
 @router.get("/admin/simulator/{unit_id}/disable")
 def simulator_disable(request: Request, unit_id: int):
-    return redirect_with_flash("/admin/simulator", request, "Unit disabled.", "success")
+    return redirect_with_flash("/admin/simulator", request, "Unit expended.", "success")
 
 
 @router.get("/admin/rdv")
@@ -2047,7 +2047,7 @@ def rdv_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db))
 
 @router.get("/admin/rdv/{unit_id}/disable")
 def rdv_disable(request: Request, unit_id: int):
-    return redirect_with_flash("/admin/rdv", request, "Unit disabled.", "success")
+    return redirect_with_flash("/admin/rdv", request, "Unit expended.", "success")
 
 
 @router.get("/admin/batteries/types")
@@ -2110,7 +2110,7 @@ def batteries_edit_page(request: Request, unit_id: int, db: Session = Depends(ge
 
 @router.get("/admin/batteries/{unit_id}/disable")
 def batteries_disable(request: Request, unit_id: int):
-    return redirect_with_flash("/admin/batteries", request, "Unit disabled.", "success")
+    return redirect_with_flash("/admin/batteries", request, "Unit expended.", "success")
 
 
 @router.get("/admin/warhead")
@@ -2150,7 +2150,7 @@ def warhead_edit_page(request: Request, unit_id: int, db: Session = Depends(get_
 
 @router.get("/admin/warhead/{unit_id}/disable")
 def warhead_disable(request: Request, unit_id: int):
-    return redirect_with_flash("/admin/warhead", request, "Unit disabled.", "success")
+    return redirect_with_flash("/admin/warhead", request, "Unit expended.", "success")
 
 
 @router.get("/admin/mrls")
@@ -2193,7 +2193,7 @@ def mrls_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)
 
 @router.get("/admin/mrls/{unit_id}/disable")
 def mrls_disable(request: Request, unit_id: int):
-    return redirect_with_flash("/admin/mrls", request, "Unit disabled.", "success")
+    return redirect_with_flash("/admin/mrls", request, "Unit expended.", "success")
 
 
 @router.get("/admin/smt-ste")
@@ -2236,7 +2236,7 @@ def smt_ste_edit_page(request: Request, unit_id: int, db: Session = Depends(get_
 
 @router.get("/admin/smt-ste/{unit_id}/disable")
 def smt_ste_disable(request: Request, unit_id: int):
-    return redirect_with_flash("/admin/smt-ste", request, "Unit disabled.", "success")
+    return redirect_with_flash("/admin/smt-ste", request, "Unit expended.", "success")
 
 
 @router.get("/admin/sam")
@@ -2276,7 +2276,7 @@ def sam_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db))
 
 @router.get("/admin/sam/{unit_id}/disable")
 def sam_disable(request: Request, unit_id: int):
-    return redirect_with_flash("/admin/sam", request, "Unit disabled.", "success")
+    return redirect_with_flash("/admin/sam", request, "Unit expended.", "success")
 
 
 @router.get("/admin/lru")
@@ -2313,7 +2313,7 @@ def lru_edit_page(request: Request, lru_id: int, db: Session = Depends(get_db)):
 
 @router.get("/admin/lru/{lru_id}/disable")
 def lru_disable(request: Request, lru_id: int):
-    return redirect_with_flash("/admin/lru", request, "LRU disabled.", "success")
+    return redirect_with_flash("/admin/lru", request, "LRU expended.", "success")
 
 
 @router.get("/admin/sub-systems")
@@ -2360,7 +2360,7 @@ def sub_systems_edit_page(request: Request, sub_system_id: int, db: Session = De
 
 @router.get("/admin/sub-systems/{sub_system_id}/disable")
 def sub_systems_disable(request: Request, sub_system_id: int):
-    return redirect_with_flash("/admin/sub-systems", request, "Sub-system disabled.", "success")
+    return redirect_with_flash("/admin/sub-systems", request, "Sub-system expended.", "success")
 
 
 def _get_sample_roles():

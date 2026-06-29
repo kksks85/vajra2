@@ -9,13 +9,83 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models.knowledge import KnowledgeDocument, KnowledgeArticle, ApprovalRequest
+from models.knowledge import KnowledgeDocument, KnowledgeArticle, ApprovalRequest, KnowledgeDocumentVersion
 from utils import build_template_context, redirect_with_flash
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 UPLOAD_DIR = "static/uploads"
+
+import re
+
+def parse_version(v_str):
+    if not v_str:
+        return (0,)
+    # Remove leading 'v' or 'V'
+    clean = re.sub(r'^[vV]', '', v_str.strip())
+    # Find all groups of digits
+    nums = re.findall(r'\d+', clean)
+    if not nums:
+        return (0,)
+    return tuple(int(x) for x in nums)
+
+def archive_older_versions(db: Session, doc: KnowledgeDocument):
+    if doc.doc_type not in ["manual", "service_bulletin", "operator_bulletin", "amendments_leaflet"]:
+        return
+
+    # Find other active published documents of the same type and file reference number
+    other_docs = db.query(KnowledgeDocument).filter(
+        KnowledgeDocument.doc_type == doc.doc_type,
+        KnowledgeDocument.file_reference_number == doc.file_reference_number,
+        KnowledgeDocument.id != doc.id,
+        KnowledgeDocument.status == "published"
+    ).all()
+
+    for other in other_docs:
+        # Compare versions. If new doc is newer or equal, move existing to history
+        if parse_version(doc.version) >= parse_version(other.version):
+            archived = KnowledgeDocumentVersion(
+                doc_id=doc.id,
+                doc_type=other.doc_type,
+                file_reference_number=other.file_reference_number,
+                version=other.version,
+                date_of_issue=other.date_of_issue,
+                subject_line=other.subject_line,
+                description=other.description,
+                attachments=other.attachments,
+                data=other.data,
+                status="published",
+                created_at=other.created_at,
+                retired=datetime.now(),
+                change_notes=other.change_notes
+            )
+            db.add(archived)
+            db.delete(other)
+        else:
+            # If the existing one is newer than the newly approved one,
+            # the newly approved one goes directly to history!
+            archived = KnowledgeDocumentVersion(
+                doc_id=other.id,
+                doc_type=doc.doc_type,
+                file_reference_number=doc.file_reference_number,
+                version=doc.version,
+                date_of_issue=doc.date_of_issue,
+                subject_line=doc.subject_line,
+                description=doc.description,
+                attachments=doc.attachments,
+                data=doc.data,
+                status="published",
+                created_at=doc.created_at,
+                retired=datetime.now(),
+                change_notes=doc.change_notes
+            )
+            db.add(archived)
+            db.delete(doc)
+            break
+
+    db.commit()
+
 
 def check_is_approver(request: Request, db: Session) -> bool:
     user_role = request.session.get("user_role")
@@ -84,6 +154,7 @@ def save_new_document(
     file_reference_number: str = Form(...),
     subject_line: str = Form(...),
     description: str = Form("Please refer to the attached document"),
+    change_notes: str = Form(""),
     files: List[UploadFile] = File([]),
     db: Session = Depends(get_db),
 ):
@@ -102,6 +173,38 @@ def save_new_document(
                 shutil.copyfileobj(upload_file.file, f)
             attachments.append(filename)
             
+    # Check if this is a version controlled doc type and there is an existing published document
+    if doc_type in ["manual", "service_bulletin", "operator_bulletin", "amendments_leaflet"]:
+        existing = db.query(KnowledgeDocument).filter(
+            KnowledgeDocument.doc_type == doc_type,
+            KnowledgeDocument.file_reference_number == file_reference_number,
+            KnowledgeDocument.status == "published"
+        ).first()
+        if existing and parse_version(version) < parse_version(existing.version):
+            # Save directly to version table
+            version_doc = KnowledgeDocumentVersion(
+                doc_id=existing.id,
+                doc_type=doc_type,
+                file_reference_number=file_reference_number,
+                version=version,
+                date_of_issue=date_of_issue,
+                subject_line=subject_line,
+                description=description,
+                attachments=attachments,
+                status="published",
+                created_at=datetime.utcnow(),
+                retired=datetime.now(),
+                change_notes=change_notes
+            )
+            db.add(version_doc)
+            db.commit()
+            return redirect_with_flash(
+                f"/knowledge/document/{existing.id}",
+                request,
+                "Document version uploaded as an older version and saved directly to the version history.",
+                "success"
+            )
+
     doc = KnowledgeDocument(
         doc_type=doc_type,
         file_reference_number=file_reference_number,
@@ -112,7 +215,8 @@ def save_new_document(
         attachments=attachments,
         status="draft",
         created_at=datetime.utcnow(),
-        last_accessed=datetime.utcnow()
+        last_accessed=datetime.utcnow(),
+        change_notes=change_notes
     )
     db.add(doc)
     db.commit()
@@ -145,8 +249,21 @@ def view_document_details(doc_id: int, request: Request, db: Session = Depends(g
     doc.last_accessed = datetime.utcnow()
     db.commit()
     
+    versions = []
+    if doc.doc_type in ["manual", "service_bulletin", "operator_bulletin", "amendments_leaflet"]:
+        versions = db.query(KnowledgeDocumentVersion).filter(
+            KnowledgeDocumentVersion.doc_type == doc.doc_type,
+            KnowledgeDocumentVersion.file_reference_number == doc.file_reference_number
+        ).order_by(KnowledgeDocumentVersion.retired.desc()).all()
+    
     edit_mode = request.query_params.get("edit", "").lower() == "true"
-    context = build_template_context(request, doc=doc, doc_type=doc.doc_type, mode="edit" if edit_mode else "view")
+    context = build_template_context(
+        request, 
+        doc=doc, 
+        doc_type=doc.doc_type, 
+        mode="edit" if edit_mode else "view",
+        versions=versions
+    )
     return templates.TemplateResponse(request, "knowledge_form.html", context)
 
 
@@ -159,6 +276,7 @@ def update_document_details(
     file_reference_number: str = Form(...),
     subject_line: str = Form(...),
     description: str = Form(...),
+    change_notes: str = Form(""),
     deleted_attachments: str = Form(""),
     files: List[UploadFile] = File([]),
     db: Session = Depends(get_db),
@@ -190,6 +308,26 @@ def update_document_details(
                 shutil.copyfileobj(upload_file.file, f)
             current_attachments.append(filename)
             
+    if doc.doc_type in ["manual", "service_bulletin", "operator_bulletin", "amendments_leaflet"] and doc.status == "published":
+        if doc.version != version:
+            # Archive the old state before updating
+            archived = KnowledgeDocumentVersion(
+                doc_id=doc.id,
+                doc_type=doc.doc_type,
+                file_reference_number=doc.file_reference_number,
+                version=doc.version,
+                date_of_issue=doc.date_of_issue,
+                subject_line=doc.subject_line,
+                description=doc.description,
+                attachments=doc.attachments,
+                data=doc.data,
+                status="published",
+                created_at=doc.created_at,
+                retired=datetime.now(),
+                change_notes=doc.change_notes
+            )
+            db.add(archived)
+
     doc.version = version
     doc.date_of_issue = date_of_issue
     doc.file_reference_number = file_reference_number
@@ -197,8 +335,13 @@ def update_document_details(
     doc.description = description
     doc.attachments = current_attachments
     doc.last_accessed = datetime.utcnow()
+    doc.change_notes = change_notes
     
     db.commit()
+    
+    if doc.status == "published":
+        archive_older_versions(db, doc)
+        
     return redirect_with_flash(f"/knowledge/document/{doc.id}", request, "Document updated successfully.", "success")
 
 
@@ -371,12 +514,14 @@ def approve_request(request_id: int, request: Request, db: Session = Depends(get
         doc = db.query(KnowledgeDocument).filter(KnowledgeDocument.id == approval_req.item_id).first()
         if doc:
             doc.status = "published"
+            db.commit()
+            archive_older_versions(db, doc)
     elif approval_req.item_type == "article":
         art = db.query(KnowledgeArticle).filter(KnowledgeArticle.id == approval_req.item_id).first()
         if art:
             art.status = "published"
+            db.commit()
             
-    db.commit()
     return redirect_with_flash("/knowledge/approvals", request, "Item approved and published successfully.", "success")
 
 
@@ -418,6 +563,7 @@ def approve_document_direct(doc_id: int, request: Request, db: Session = Depends
         approval_req.status = "approved"
         
     db.commit()
+    archive_older_versions(db, doc)
     return redirect_with_flash(f"/knowledge/document/{doc_id}", request, "Document approved and published successfully.", "success")
 
 

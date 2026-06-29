@@ -16,13 +16,14 @@ from models.entities import (
     TacticalMobilityVehicle,
 )
 from models.incident import Incident
-from models.knowledge import KnowledgeArticle, KnowledgeDocument, ApprovalRequest
+from models.knowledge import KnowledgeArticle, KnowledgeDocument, ApprovalRequest, KnowledgeDocumentVersion
 from models.lowcode import Stage, TaskDefinition, Workflow
 
 __all__ = [
     "Incident",
     "KnowledgeArticle",
     "KnowledgeDocument",
+    "KnowledgeDocumentVersion",
     "ApprovalRequest",
     "Role",
     "User",
