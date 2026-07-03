@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, Request, File, UploadFile
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 import re
@@ -23,6 +23,7 @@ from models.entities import (
     SubSystem,
     TacticalMobilityVehicle,
     Warhead,
+    KittingItem,
 )
 from services.auth import create_user
 from utils import build_template_context, redirect_with_flash, paginate
@@ -799,6 +800,25 @@ def _get_sample_customers():
             "status": "Expended",
         },
     ]
+
+
+def _load_customers_and_contracts(db: Session):
+    db_customers = db.query(Customer).order_by(Customer.id).all()
+    customers = [{"id": c.id, **(c.data or {})} for c in db_customers]
+    if not customers:
+        customers = _get_sample_customers()
+    db_contracts = db.query(Contract).order_by(Contract.id).all()
+    contracts = []
+    for c in db_contracts:
+        cdata = c.data or {}
+        if "customer_name" not in cdata and c.customer_id:
+            cust = db.query(Customer).filter(Customer.id == c.customer_id).first()
+            if cust:
+                cdata["customer_name"] = (cust.data or {}).get("customer_name", cust.name)
+        contracts.append({"id": c.id, **cdata})
+    if not contracts:
+        contracts = _get_sample_contracts()
+    return customers, contracts
 
 
 def _get_sample_contracts():
@@ -1693,6 +1713,19 @@ def contracts_list_page(request: Request, db: Session = Depends(get_db)):
     ]
     if not all_contracts:
         all_contracts = _get_sample_contracts()
+        
+    import datetime
+    today = datetime.date.today()
+    for contract in all_contracts:
+        valid_till = contract.get("valid_till")
+        if valid_till:
+            try:
+                vt_date = datetime.datetime.strptime(valid_till, "%Y-%m-%d").date()
+                if vt_date < today:
+                    contract["status"] = "Expired"
+            except Exception:
+                pass
+                
     pagination = paginate(all_contracts, page=page, per_page=50)
     context = build_template_context(request, contracts=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "contracts_list.html", context)
@@ -1702,6 +1735,18 @@ def contracts_list_page(request: Request, db: Session = Depends(get_db)):
 async def create_contract(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
     data = parse_form_data(form)
+    
+    # Auto-expire if date is in the past
+    valid_till = data.get("valid_till")
+    if valid_till:
+        try:
+            import datetime
+            vt_date = datetime.datetime.strptime(valid_till, "%Y-%m-%d").date()
+            if vt_date < datetime.date.today():
+                data["status"] = "Expired"
+        except Exception:
+            pass
+            
     customer_id = parse_int(data.get("customer") or data.get("customer_id"))
     contract = Contract(
         number=data.get("contract_number", ""),
@@ -1711,6 +1756,36 @@ async def create_contract(request: Request, db: Session = Depends(get_db)):
     db.add(contract)
     db.commit()
     return redirect_with_flash("/admin/contracts", request, "Contract saved.", "success")
+
+
+@router.post("/admin/contracts/{contract_id}")
+async def update_contract(request: Request, contract_id: int, db: Session = Depends(get_db)):
+    contract = db.query(Contract).filter(Contract.id == contract_id).first()
+    if not contract:
+        return redirect_with_flash("/admin/contracts", request, "Contract not found.", "error")
+    
+    form = await request.form()
+    data = parse_form_data(form)
+    
+    # Auto-expire if date is in the past
+    valid_till = data.get("valid_till")
+    if valid_till:
+        try:
+            import datetime
+            vt_date = datetime.datetime.strptime(valid_till, "%Y-%m-%d").date()
+            if vt_date < datetime.date.today():
+                data["status"] = "Expired"
+        except Exception:
+            pass
+            
+    customer_id = parse_int(data.get("customer") or data.get("customer_id"))
+    
+    contract.number = data.get("contract_number", contract.number)
+    contract.customer_id = customer_id
+    contract.data = data
+    
+    db.commit()
+    return redirect_with_flash("/admin/contracts", request, "Contract updated.", "success")
 
 
 @router.get("/admin/tables")
@@ -1828,6 +1903,18 @@ def contract_view_page(request: Request, contract_id: int, db: Session = Depends
         contract = entity_to_dict(contract_obj, db=db, top_level_fields=["number", "customer_id"])
     else:
         contract = next((item for item in _get_sample_contracts() if item["id"] == contract_id), None)
+        
+    if contract:
+        valid_till = contract.get("valid_till")
+        if valid_till:
+            try:
+                import datetime
+                vt_date = datetime.datetime.strptime(valid_till, "%Y-%m-%d").date()
+                if vt_date < datetime.date.today():
+                    contract["status"] = "Expired"
+            except Exception:
+                pass
+                
     customers = _get_sample_customers()
     context = build_template_context(request, contract=contract, customers=customers, mode="view")
     return templates.TemplateResponse(request, "contract_config.html", context)
@@ -1840,6 +1927,18 @@ def contract_edit_page(request: Request, contract_id: int, db: Session = Depends
         contract = entity_to_dict(contract_obj, db=db, top_level_fields=["number", "customer_id"])
     else:
         contract = next((item for item in _get_sample_contracts() if item["id"] == contract_id), None)
+        
+    if contract:
+        valid_till = contract.get("valid_till")
+        if valid_till:
+            try:
+                import datetime
+                vt_date = datetime.datetime.strptime(valid_till, "%Y-%m-%d").date()
+                if vt_date < datetime.date.today():
+                    contract["status"] = "Expired"
+            except Exception:
+                pass
+                
     customers = _get_sample_customers()
     context = build_template_context(request, contract=contract, customers=customers, mode="edit")
     return templates.TemplateResponse(request, "contract_config.html", context)
@@ -1854,34 +1953,157 @@ def contract_disable(request: Request, contract_id: int):
 def loitering_munition_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
     all_units = list_or_sample(db, LoiteringMunition, unit_type="LM", top_level_fields=["unit_name", "serial_number"])
+    
+    # Load contracts to override warranty dates dynamically
+    _, contracts = _load_customers_and_contracts(db)
+    import datetime
+    today = datetime.date.today()
+    for u in all_units:
+        c_id = u.get("contract_id")
+        c_num = u.get("contract_number")
+        con = None
+        if c_id:
+            con = next((c for c in contracts if str(c.get("id")) == str(c_id)), None)
+        if not con and c_num:
+            con = next((c for c in contracts if str(c.get("number")) == str(c_num)), None)
+        if con:
+            u["warranty_valid_from"] = con.get("executed_on", "")
+            u["warranty_valid_to"] = con.get("valid_till", "")
+            
+            vt = con.get("valid_till")
+            if vt:
+                try:
+                    vt_date = datetime.datetime.strptime(vt, "%Y-%m-%d").date()
+                    if vt_date < today:
+                        u["status"] = "Expired"
+                except Exception:
+                    pass
+
     pagination = paginate(all_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="Loitering Munition (LM)", pagination=pagination)
     return templates.TemplateResponse(request, "lm_list.html", context)
 
 
 @router.get("/admin/lm/new")
-def loitering_munition_new_page(request: Request):
-    customers = _get_sample_customers()
-    contracts = _get_sample_contracts()
-    context = build_template_context(request, customers=customers, contracts=contracts)
+def loitering_munition_new_page(request: Request, db: Session = Depends(get_db)):
+    customers, contracts = _load_customers_and_contracts(db)
+    context = build_template_context(
+        request, 
+        customers=customers, 
+        contracts=contracts,
+        route_cards=LM_ROUTE_CARDS,
+        kitting_items=[]
+    )
     return templates.TemplateResponse(request, "loitering_munition.html", context)
+
+
+LM_ROUTE_CARDS = [
+    "LH Side Wing Integration Assembly",
+    "RH Side Wing Integration Assembly",
+    "LH Empennage Integration Assembly",
+    "RH Empennage Integration Assembly",
+    "VTOL Boom Bracket Integration Assembly LH",
+    "VTOL Boom Bracket Integration Assembly RH",
+    "Centre Wing Integration Assembly",
+    "Fuselage Integration Assembly",
+    "Aircraft ERLM Assembly"
+]
+
+GCS_ROUTE_CARDS = [
+    "GCS Shelter Integration Assembly",
+    "GCS Ground Antenna Integration Assembly"
+]
 
 
 @router.get("/admin/lm/{unit_id}")
 def loitering_munition_view_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
     unit = load_entity(db, LoiteringMunition, unit_type="LM", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
-    customers = _get_sample_customers()
-    contracts = _get_sample_contracts()
-    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="view")
+    customers, contracts = _load_customers_and_contracts(db)
+    if unit and unit.get("contract_id"):
+        con = next((c for c in contracts if str(c.get("id")) == str(unit.get("contract_id"))), None)
+        if con:
+            unit["warranty_valid_from"] = con.get("executed_on", "")
+            unit["warranty_valid_to"] = con.get("valid_till", "")
+    
+    kitting_items = []
+    if unit and "serial_number" in unit:
+        db_items = db.query(KittingItem).filter(
+            KittingItem.product_serial_no == unit["serial_number"],
+            KittingItem.product_category == "LM"
+        ).all()
+        kitting_items = [
+            {
+                "id": item.id,
+                "part_number": item.part_number,
+                "sap_part_number": item.sap_part_number,
+                "material_description": item.material_description,
+                "batch_no_po_no": item.batch_no_po_no,
+                "material_serial_no": item.material_serial_no,
+                "weight_in_grams": item.weight_in_grams,
+                "required_quantity": item.required_quantity,
+                "uom": item.uom,
+                "remarks": item.remarks,
+                "subsystems": item.subsystems,
+                "route_card_description": item.route_card_description,
+            }
+            for item in db_items
+        ]
+        
+    context = build_template_context(
+        request, 
+        unit=unit, 
+        customers=customers, 
+        contracts=contracts, 
+        mode="view",
+        route_cards=LM_ROUTE_CARDS,
+        kitting_items=kitting_items
+    )
     return templates.TemplateResponse(request, "loitering_munition.html", context)
 
 
 @router.get("/admin/lm/{unit_id}/edit")
 def loitering_munition_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
     unit = load_entity(db, LoiteringMunition, unit_type="LM", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
-    customers = _get_sample_customers()
-    contracts = _get_sample_contracts()
-    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="edit")
+    customers, contracts = _load_customers_and_contracts(db)
+    if unit and unit.get("contract_id"):
+        con = next((c for c in contracts if str(c.get("id")) == str(unit.get("contract_id"))), None)
+        if con:
+            unit["warranty_valid_from"] = con.get("executed_on", "")
+            unit["warranty_valid_to"] = con.get("valid_till", "")
+    
+    kitting_items = []
+    if unit and "serial_number" in unit:
+        db_items = db.query(KittingItem).filter(
+            KittingItem.product_serial_no == unit["serial_number"],
+            KittingItem.product_category == "LM"
+        ).all()
+        kitting_items = [
+            {
+                "id": item.id,
+                "part_number": item.part_number,
+                "sap_part_number": item.sap_part_number,
+                "material_description": item.material_description,
+                "batch_no_po_no": item.batch_no_po_no,
+                "material_serial_no": item.material_serial_no,
+                "weight_in_grams": item.weight_in_grams,
+                "required_quantity": item.required_quantity,
+                "uom": item.uom,
+                "remarks": item.remarks,
+                "subsystems": item.subsystems,
+                "route_card_description": item.route_card_description,
+            }
+            for item in db_items
+        ]
+        
+    context = build_template_context(
+        request, 
+        unit=unit, 
+        customers=customers, 
+        contracts=contracts, 
+        mode="edit",
+        route_cards=LM_ROUTE_CARDS,
+        kitting_items=kitting_items
+    )
     return templates.TemplateResponse(request, "loitering_munition.html", context)
 
 
@@ -1894,40 +2116,585 @@ def loitering_munition_disable(request: Request, unit_id: int):
 def ground_control_system_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
     all_units = list_or_sample(db, GroundControlSystem, unit_type="GCS", top_level_fields=["unit_name", "serial_number"])
+    
+    # Load contracts to override warranty dates dynamically
+    _, contracts = _load_customers_and_contracts(db)
+    import datetime
+    today = datetime.date.today()
+    for u in all_units:
+        c_id = u.get("contract_id")
+        c_num = u.get("contract_number")
+        con = None
+        if c_id:
+            con = next((c for c in contracts if str(c.get("id")) == str(c_id)), None)
+        if not con and c_num:
+            con = next((c for c in contracts if str(c.get("number")) == str(c_num)), None)
+        if con:
+            u["warranty_valid_from"] = con.get("executed_on", "")
+            u["warranty_valid_to"] = con.get("valid_till", "")
+            
+            vt = con.get("valid_till")
+            if vt:
+                try:
+                    vt_date = datetime.datetime.strptime(vt, "%Y-%m-%d").date()
+                    if vt_date < today:
+                        u["status"] = "Expired"
+                except Exception:
+                    pass
+
     pagination = paginate(all_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="Ground Control Systems (GCS)", pagination=pagination)
     return templates.TemplateResponse(request, "gcs_list.html", context)
 
 
 @router.get("/admin/gcs/new")
-def ground_control_system_new_page(request: Request):
-    customers = _get_sample_customers()
-    contracts = _get_sample_contracts()
-    context = build_template_context(request, customers=customers, contracts=contracts)
+def ground_control_system_new_page(request: Request, db: Session = Depends(get_db)):
+    customers, contracts = _load_customers_and_contracts(db)
+    context = build_template_context(
+        request, 
+        customers=customers, 
+        contracts=contracts,
+        route_cards=GCS_ROUTE_CARDS,
+        kitting_items=[]
+    )
     return templates.TemplateResponse(request, "ground_control_system.html", context)
 
 
 @router.get("/admin/gcs/{unit_id}")
 def ground_control_system_view_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
     unit = load_entity(db, GroundControlSystem, unit_type="GCS", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
-    customers = _get_sample_customers()
-    contracts = _get_sample_contracts()
-    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="view")
+    customers, contracts = _load_customers_and_contracts(db)
+    if unit and unit.get("contract_id"):
+        con = next((c for c in contracts if str(c.get("id")) == str(unit.get("contract_id"))), None)
+        if con:
+            unit["warranty_valid_from"] = con.get("executed_on", "")
+            unit["warranty_valid_to"] = con.get("valid_till", "")
+    
+    kitting_items = []
+    if unit and "serial_number" in unit:
+        db_items = db.query(KittingItem).filter(
+            KittingItem.product_serial_no == unit["serial_number"],
+            KittingItem.product_category == "GCS"
+        ).all()
+        kitting_items = [
+            {
+                "id": item.id,
+                "part_number": item.part_number,
+                "sap_part_number": item.sap_part_number,
+                "material_description": item.material_description,
+                "batch_no_po_no": item.batch_no_po_no,
+                "material_serial_no": item.material_serial_no,
+                "weight_in_grams": item.weight_in_grams,
+                "required_quantity": item.required_quantity,
+                "uom": item.uom,
+                "remarks": item.remarks,
+                "subsystems": item.subsystems,
+                "route_card_description": item.route_card_description,
+            }
+            for item in db_items
+        ]
+        
+    context = build_template_context(
+        request, 
+        unit=unit, 
+        customers=customers, 
+        contracts=contracts, 
+        mode="view",
+        route_cards=GCS_ROUTE_CARDS,
+        kitting_items=kitting_items
+    )
     return templates.TemplateResponse(request, "ground_control_system.html", context)
 
 
 @router.get("/admin/gcs/{unit_id}/edit")
 def ground_control_system_edit_page(request: Request, unit_id: int, db: Session = Depends(get_db)):
     unit = load_entity(db, GroundControlSystem, unit_type="GCS", unit_id=unit_id, top_level_fields=["unit_name", "serial_number"])
-    customers = _get_sample_customers()
-    contracts = _get_sample_contracts()
-    context = build_template_context(request, unit=unit, customers=customers, contracts=contracts, mode="edit")
+    customers, contracts = _load_customers_and_contracts(db)
+    if unit and unit.get("contract_id"):
+        con = next((c for c in contracts if str(c.get("id")) == str(unit.get("contract_id"))), None)
+        if con:
+            unit["warranty_valid_from"] = con.get("executed_on", "")
+            unit["warranty_valid_to"] = con.get("valid_till", "")
+    
+    kitting_items = []
+    if unit and "serial_number" in unit:
+        db_items = db.query(KittingItem).filter(
+            KittingItem.product_serial_no == unit["serial_number"],
+            KittingItem.product_category == "GCS"
+        ).all()
+        kitting_items = [
+            {
+                "id": item.id,
+                "part_number": item.part_number,
+                "sap_part_number": item.sap_part_number,
+                "material_description": item.material_description,
+                "batch_no_po_no": item.batch_no_po_no,
+                "material_serial_no": item.material_serial_no,
+                "weight_in_grams": item.weight_in_grams,
+                "required_quantity": item.required_quantity,
+                "uom": item.uom,
+                "remarks": item.remarks,
+                "subsystems": item.subsystems,
+                "route_card_description": item.route_card_description,
+            }
+            for item in db_items
+        ]
+        
+    context = build_template_context(
+        request, 
+        unit=unit, 
+        customers=customers, 
+        contracts=contracts, 
+        mode="edit",
+        route_cards=GCS_ROUTE_CARDS,
+        kitting_items=kitting_items
+    )
     return templates.TemplateResponse(request, "ground_control_system.html", context)
 
 
 @router.get("/admin/gcs/{unit_id}/disable")
 def ground_control_system_disable(request: Request, unit_id: int):
     return redirect_with_flash("/admin/gcs", request, "Unit expended.", "success")
+
+
+# LM Kitting list, search, and pagination
+@router.get("/admin/lm-kitting")
+def lm_kitting_list_page(request: Request, db: Session = Depends(get_db)):
+    page = int(request.query_params.get("page", 1))
+    q = request.query_params.get("q", "").strip()
+    
+    query = db.query(KittingItem).filter(KittingItem.product_category == "LM")
+    if q:
+        query = query.filter(
+            (KittingItem.part_number.ilike(f"%{q}%")) |
+            (KittingItem.sap_part_number.ilike(f"%{q}%")) |
+            (KittingItem.material_description.ilike(f"%{q}%")) |
+            (KittingItem.product_serial_no.ilike(f"%{q}%")) |
+            (KittingItem.route_card_description.ilike(f"%{q}%")) |
+            (KittingItem.subsystems.ilike(f"%{q}%"))
+        )
+    
+    all_items = query.order_by(KittingItem.id.desc()).all()
+    pagination = paginate(all_items, page=page, per_page=50)
+    
+    lm_units = db.query(LoiteringMunition).all()
+    lm_serials = [u.serial_number for u in lm_units if u.serial_number]
+    for s in ["LM-0001", "LM-0002"]:
+        if s not in lm_serials:
+            lm_serials.append(s)
+
+    context = build_template_context(
+        request, 
+        items=pagination["items"], 
+        category="LM", 
+        title="LM Kitting", 
+        pagination=pagination, 
+        q=q,
+        route_cards=LM_ROUTE_CARDS,
+        serials=lm_serials
+    )
+    return templates.TemplateResponse(request, "kitting_table.html", context)
+
+
+# Add single kitting item manually
+@router.post("/admin/lm-kitting")
+def create_lm_kitting_item(
+    request: Request,
+    db: Session = Depends(get_db),
+    product_serial_no: str = Form(...),
+    route_card_description: str = Form(...),
+    part_number: str = Form(""),
+    sap_part_number: str = Form(""),
+    material_description: str = Form(""),
+    batch_no_po_no: str = Form(""),
+    material_serial_no: str = Form(""),
+    weight_in_grams: str = Form(""),
+    required_quantity: str = Form(""),
+    uom: str = Form(""),
+    remarks: str = Form(""),
+    subsystems: str = Form("")
+):
+    item = KittingItem(
+        product_serial_no=product_serial_no,
+        product_category="LM",
+        route_card_description=route_card_description,
+        part_number=part_number,
+        sap_part_number=sap_part_number,
+        material_description=material_description,
+        batch_no_po_no=batch_no_po_no,
+        material_serial_no=material_serial_no,
+        weight_in_grams=weight_in_grams,
+        required_quantity=required_quantity,
+        uom=uom,
+        remarks=remarks,
+        subsystems=subsystems
+    )
+    db.add(item)
+    db.commit()
+    return redirect_with_flash("/admin/lm-kitting", request, "Kitting item added successfully.", "success")
+
+
+# CSV Import
+@router.post("/admin/lm-kitting/import")
+async def import_lm_kitting(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    import csv
+    try:
+        contents = await file.read()
+        decoded = contents.decode("utf-8-sig").splitlines()
+        reader = csv.reader(decoded)
+        
+        first_row = next(reader, None)
+        if not first_row:
+            return redirect_with_flash("/admin/lm-kitting", request, "The uploaded file is empty.", "error")
+            
+        is_header = any("part" in cell.lower() or "serial" in cell.lower() or "material" in cell.lower() or "route" in cell.lower() for cell in first_row)
+        rows_to_process = reader if is_header else [first_row] + list(reader)
+        
+        count = 0
+        for row in rows_to_process:
+            if not row or len(row) < 3:
+                continue
+            
+            psn = row[0].strip() if len(row) > 0 else ""
+            pcat = row[1].strip() if len(row) > 1 else "LM"
+            rcd = row[2].strip() if len(row) > 2 else ""
+            pn = row[3].strip() if len(row) > 3 else ""
+            spn = row[4].strip() if len(row) > 4 else ""
+            md = row[5].strip() if len(row) > 5 else ""
+            bn = row[6].strip() if len(row) > 6 else ""
+            msn = row[7].strip() if len(row) > 7 else ""
+            wg = row[8].strip() if len(row) > 8 else ""
+            rq = row[9].strip() if len(row) > 9 else ""
+            uom = row[10].strip() if len(row) > 10 else ""
+            rem = row[11].strip() if len(row) > 11 else ""
+            subs = row[12].strip() if len(row) > 12 else ""
+            
+            if not psn or not rcd:
+                continue
+                
+            item = KittingItem(
+                product_serial_no=psn,
+                product_category="LM",
+                route_card_description=rcd,
+                part_number=pn,
+                sap_part_number=spn,
+                material_description=md,
+                batch_no_po_no=bn,
+                material_serial_no=msn,
+                weight_in_grams=wg,
+                required_quantity=rq,
+                uom=uom,
+                remarks=rem,
+                subsystems=subs
+            )
+            db.add(item)
+            count += 1
+            
+        db.commit()
+        return redirect_with_flash("/admin/lm-kitting", request, f"Successfully imported {count} items.", "success")
+    except Exception as e:
+        return redirect_with_flash("/admin/lm-kitting", request, f"Failed to import CSV: {str(e)}", "error")
+
+
+# Delete kitting item
+@router.post("/admin/lm-kitting/{id}/delete")
+def delete_lm_kitting_item(request: Request, id: int, db: Session = Depends(get_db)):
+    item = db.query(KittingItem).filter(KittingItem.id == id, KittingItem.product_category == "LM").first()
+    if item:
+        db.delete(item)
+        db.commit()
+        return redirect_with_flash("/admin/lm-kitting", request, "Kitting item deleted.", "success")
+    return redirect_with_flash("/admin/lm-kitting", request, "Kitting item not found.", "error")
+
+
+# View and Edit Kitting Item
+@router.get("/admin/lm-kitting/{id}")
+def lm_kitting_detail_page(request: Request, id: int, db: Session = Depends(get_db)):
+    item = db.query(KittingItem).filter(KittingItem.id == id, KittingItem.product_category == "LM").first()
+    if not item:
+        return redirect_with_flash("/admin/lm-kitting", request, "Kitting item not found.", "error")
+    context = build_template_context(
+        request,
+        item=item,
+        category="LM",
+        route_cards=LM_ROUTE_CARDS,
+        mode="edit",
+        title="LM Kitting Item"
+    )
+    return templates.TemplateResponse(request, "kitting_config.html", context)
+
+
+@router.post("/admin/lm-kitting/{id}")
+async def update_lm_kitting_item(request: Request, id: int, db: Session = Depends(get_db)):
+    item = db.query(KittingItem).filter(KittingItem.id == id, KittingItem.product_category == "LM").first()
+    if not item:
+        return redirect_with_flash("/admin/lm-kitting", request, "Kitting item not found.", "error")
+    
+    form = await request.form()
+    data = parse_form_data(form)
+    
+    # Audit log change tracking
+    change_log = (item.data or {}).get("change_log", []) if item.data else []
+    fields_to_track = [
+        "product_serial_no", "route_card_description",
+        "part_number", "sap_part_number", "material_description",
+        "batch_no_po_no", "material_serial_no", "weight_in_grams",
+        "required_quantity", "uom", "remarks", "subsystems"
+    ]
+    
+    import datetime
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    for field in fields_to_track:
+        old_val = getattr(item, field, "")
+        new_val = data.get(field, "")
+        if str(old_val).strip() != str(new_val).strip():
+            change_log.append({
+                "timestamp": timestamp,
+                "user": "admin",
+                "field": field.replace("_", " ").title(),
+                "old_value": str(old_val),
+                "new_value": str(new_val)
+            })
+            
+    # Update properties
+    item.product_serial_no = data.get("product_serial_no", item.product_serial_no)
+    item.route_card_description = data.get("route_card_description", item.route_card_description)
+    item.part_number = data.get("part_number", item.part_number)
+    item.sap_part_number = data.get("sap_part_number", item.sap_part_number)
+    item.material_description = data.get("material_description", item.material_description)
+    item.batch_no_po_no = data.get("batch_no_po_no", item.batch_no_po_no)
+    item.material_serial_no = data.get("material_serial_no", item.material_serial_no)
+    item.weight_in_grams = data.get("weight_in_grams", item.weight_in_grams)
+    item.required_quantity = data.get("required_quantity", item.required_quantity)
+    item.uom = data.get("uom", item.uom)
+    item.remarks = data.get("remarks", item.remarks)
+    item.subsystems = data.get("subsystems", item.subsystems)
+    
+    item.data = {"change_log": change_log}
+    db.commit()
+    db.refresh(item)
+    return redirect_with_flash("/admin/lm-kitting", request, "Kitting item updated.", "success")
+
+
+# GCS Kitting list, search, and pagination
+@router.get("/admin/gcs-kitting")
+def gcs_kitting_list_page(request: Request, db: Session = Depends(get_db)):
+    page = int(request.query_params.get("page", 1))
+    q = request.query_params.get("q", "").strip()
+    
+    query = db.query(KittingItem).filter(KittingItem.product_category == "GCS")
+    if q:
+        query = query.filter(
+            (KittingItem.part_number.ilike(f"%{q}%")) |
+            (KittingItem.sap_part_number.ilike(f"%{q}%")) |
+            (KittingItem.material_description.ilike(f"%{q}%")) |
+            (KittingItem.product_serial_no.ilike(f"%{q}%")) |
+            (KittingItem.route_card_description.ilike(f"%{q}%")) |
+            (KittingItem.subsystems.ilike(f"%{q}%"))
+        )
+    
+    all_items = query.order_by(KittingItem.id.desc()).all()
+    pagination = paginate(all_items, page=page, per_page=50)
+    
+    gcs_units = db.query(GroundControlSystem).all()
+    gcs_serials = [u.serial_number for u in gcs_units if u.serial_number]
+    for s in ["GCS-0101"]:
+        if s not in gcs_serials:
+            gcs_serials.append(s)
+
+    context = build_template_context(
+        request, 
+        items=pagination["items"], 
+        category="GCS", 
+        title="GCS Kitting", 
+        pagination=pagination, 
+        q=q,
+        route_cards=GCS_ROUTE_CARDS,
+        serials=gcs_serials
+    )
+    return templates.TemplateResponse(request, "kitting_table.html", context)
+
+
+# Add single kitting item manually
+@router.post("/admin/gcs-kitting")
+def create_gcs_kitting_item(
+    request: Request,
+    db: Session = Depends(get_db),
+    product_serial_no: str = Form(...),
+    route_card_description: str = Form(...),
+    part_number: str = Form(""),
+    sap_part_number: str = Form(""),
+    material_description: str = Form(""),
+    batch_no_po_no: str = Form(""),
+    material_serial_no: str = Form(""),
+    weight_in_grams: str = Form(""),
+    required_quantity: str = Form(""),
+    uom: str = Form(""),
+    remarks: str = Form(""),
+    subsystems: str = Form("")
+):
+    item = KittingItem(
+        product_serial_no=product_serial_no,
+        product_category="GCS",
+        route_card_description=route_card_description,
+        part_number=part_number,
+        sap_part_number=sap_part_number,
+        material_description=material_description,
+        batch_no_po_no=batch_no_po_no,
+        material_serial_no=material_serial_no,
+        weight_in_grams=weight_in_grams,
+        required_quantity=required_quantity,
+        uom=uom,
+        remarks=remarks,
+        subsystems=subsystems
+    )
+    db.add(item)
+    db.commit()
+    return redirect_with_flash("/admin/gcs-kitting", request, "Kitting item added successfully.", "success")
+
+
+# CSV Import
+@router.post("/admin/gcs-kitting/import")
+async def import_gcs_kitting(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    import csv
+    try:
+        contents = await file.read()
+        decoded = contents.decode("utf-8-sig").splitlines()
+        reader = csv.reader(decoded)
+        
+        first_row = next(reader, None)
+        if not first_row:
+            return redirect_with_flash("/admin/gcs-kitting", request, "The uploaded file is empty.", "error")
+            
+        is_header = any("part" in cell.lower() or "serial" in cell.lower() or "material" in cell.lower() or "route" in cell.lower() for cell in first_row)
+        rows_to_process = reader if is_header else [first_row] + list(reader)
+        
+        count = 0
+        for row in rows_to_process:
+            if not row or len(row) < 3:
+                continue
+            
+            psn = row[0].strip() if len(row) > 0 else ""
+            pcat = row[1].strip() if len(row) > 1 else "GCS"
+            rcd = row[2].strip() if len(row) > 2 else ""
+            pn = row[3].strip() if len(row) > 3 else ""
+            spn = row[4].strip() if len(row) > 4 else ""
+            md = row[5].strip() if len(row) > 5 else ""
+            bn = row[6].strip() if len(row) > 6 else ""
+            msn = row[7].strip() if len(row) > 7 else ""
+            wg = row[8].strip() if len(row) > 8 else ""
+            rq = row[9].strip() if len(row) > 9 else ""
+            uom = row[10].strip() if len(row) > 10 else ""
+            rem = row[11].strip() if len(row) > 11 else ""
+            subs = row[12].strip() if len(row) > 12 else ""
+            
+            if not psn or not rcd:
+                continue
+                
+            item = KittingItem(
+                product_serial_no=psn,
+                product_category="GCS",
+                route_card_description=rcd,
+                part_number=pn,
+                sap_part_number=spn,
+                material_description=md,
+                batch_no_po_no=bn,
+                material_serial_no=msn,
+                weight_in_grams=wg,
+                required_quantity=rq,
+                uom=uom,
+                remarks=rem,
+                subsystems=subs
+            )
+            db.add(item)
+            count += 1
+            
+        db.commit()
+        return redirect_with_flash("/admin/gcs-kitting", request, f"Successfully imported {count} items.", "success")
+    except Exception as e:
+        return redirect_with_flash("/admin/gcs-kitting", request, f"Failed to import CSV: {str(e)}", "error")
+
+
+# Delete kitting item
+@router.post("/admin/gcs-kitting/{id}/delete")
+def delete_gcs_kitting_item(request: Request, id: int, db: Session = Depends(get_db)):
+    item = db.query(KittingItem).filter(KittingItem.id == id, KittingItem.product_category == "GCS").first()
+    if item:
+        db.delete(item)
+        db.commit()
+        return redirect_with_flash("/admin/gcs-kitting", request, "Kitting item deleted.", "success")
+    return redirect_with_flash("/admin/gcs-kitting", request, "Kitting item not found.", "error")
+
+
+# View and Edit GCS Kitting Item
+@router.get("/admin/gcs-kitting/{id}")
+def gcs_kitting_detail_page(request: Request, id: int, db: Session = Depends(get_db)):
+    item = db.query(KittingItem).filter(KittingItem.id == id, KittingItem.product_category == "GCS").first()
+    if not item:
+        return redirect_with_flash("/admin/gcs-kitting", request, "Kitting item not found.", "error")
+    context = build_template_context(
+        request,
+        item=item,
+        category="GCS",
+        route_cards=GCS_ROUTE_CARDS,
+        mode="edit",
+        title="GCS Kitting Item"
+    )
+    return templates.TemplateResponse(request, "kitting_config.html", context)
+
+
+@router.post("/admin/gcs-kitting/{id}")
+async def update_gcs_kitting_item(request: Request, id: int, db: Session = Depends(get_db)):
+    item = db.query(KittingItem).filter(KittingItem.id == id, KittingItem.product_category == "GCS").first()
+    if not item:
+        return redirect_with_flash("/admin/gcs-kitting", request, "Kitting item not found.", "error")
+    
+    form = await request.form()
+    data = parse_form_data(form)
+    
+    # Audit log change tracking
+    change_log = (item.data or {}).get("change_log", []) if item.data else []
+    fields_to_track = [
+        "product_serial_no", "route_card_description",
+        "part_number", "sap_part_number", "material_description",
+        "batch_no_po_no", "material_serial_no", "weight_in_grams",
+        "required_quantity", "uom", "remarks", "subsystems"
+    ]
+    
+    import datetime
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    for field in fields_to_track:
+        old_val = getattr(item, field, "")
+        new_val = data.get(field, "")
+        if str(old_val).strip() != str(new_val).strip():
+            change_log.append({
+                "timestamp": timestamp,
+                "user": "admin",
+                "field": field.replace("_", " ").title(),
+                "old_value": str(old_val),
+                "new_value": str(new_val)
+            })
+            
+    # Update properties
+    item.product_serial_no = data.get("product_serial_no", item.product_serial_no)
+    item.route_card_description = data.get("route_card_description", item.route_card_description)
+    item.part_number = data.get("part_number", item.part_number)
+    item.sap_part_number = data.get("sap_part_number", item.sap_part_number)
+    item.material_description = data.get("material_description", item.material_description)
+    item.batch_no_po_no = data.get("batch_no_po_no", item.batch_no_po_no)
+    item.material_serial_no = data.get("material_serial_no", item.material_serial_no)
+    item.weight_in_grams = data.get("weight_in_grams", item.weight_in_grams)
+    item.required_quantity = data.get("required_quantity", item.required_quantity)
+    item.uom = data.get("uom", item.uom)
+    item.remarks = data.get("remarks", item.remarks)
+    item.subsystems = data.get("subsystems", item.subsystems)
+    
+    item.data = {"change_log": change_log}
+    db.commit()
+    db.refresh(item)
+    return redirect_with_flash("/admin/gcs-kitting", request, "Kitting item updated.", "success")
 
 
 @router.get("/admin/tmv")
@@ -2954,16 +3721,65 @@ async def create_user_form(request: Request, db: Session = Depends(get_db)):
 async def create_loitering_munition(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
     data = parse_form_data(form)
-    persist_entity(db, LoiteringMunition, data=data, top_level_fields=["unit_name", "serial_number"])
-    return redirect_with_flash("/admin/lm", request, "Unit saved.", "success")
+    
+    # Check if there is an existing unit
+    serial_no = data.get("serial_number")
+    existing = db.query(LoiteringMunition).filter(LoiteringMunition.serial_number == serial_no).first()
+    
+    if existing:
+        old_data = existing.data or {}
+        change_log = old_data.get("change_log", [])
+        
+        fields_to_track = [
+            "unit_name", "customer_id", "contract_id", "sap_part_number", 
+            "warranty_valid_from", "warranty_valid_to", "status", "model", 
+            "software_version", "last_service_on", "next_service_due", "service_notes"
+        ]
+        
+        import datetime
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        for field in fields_to_track:
+            old_val = old_data.get(field, "")
+            new_val = data.get(field, "")
+            if str(old_val).strip() != str(new_val).strip():
+                change_log.append({
+                    "timestamp": timestamp,
+                    "user": "admin",
+                    "field": field.replace("_", " ").title(),
+                    "old_value": str(old_val),
+                    "new_value": str(new_val)
+                })
+        
+        # Save change log in data
+        data["change_log"] = change_log
+        existing.unit_name = data.get("unit_name", existing.unit_name)
+        existing.data = data
+        db.commit()
+        db.refresh(existing)
+        return redirect_with_flash("/admin/lm", request, "Unit updated and changes logged.", "success")
+    else:
+        # Create new
+        persist_entity(db, LoiteringMunition, data=data, top_level_fields=["unit_name", "serial_number"])
+        return redirect_with_flash("/admin/lm", request, "Unit saved.", "success")
 
 
 @router.post("/admin/gcs")
 async def create_ground_control_system(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
     data = parse_form_data(form)
-    persist_entity(db, GroundControlSystem, data=data, top_level_fields=["unit_name", "serial_number"])
-    return redirect_with_flash("/admin/gcs", request, "Unit saved.", "success")
+    serial_no = data.get("serial_number")
+    existing = db.query(GroundControlSystem).filter(GroundControlSystem.serial_number == serial_no).first()
+    
+    if existing:
+        existing.unit_name = data.get("unit_name", existing.unit_name)
+        existing.data = data
+        db.commit()
+        db.refresh(existing)
+        return redirect_with_flash("/admin/gcs", request, "Unit updated.", "success")
+    else:
+        persist_entity(db, GroundControlSystem, data=data, top_level_fields=["unit_name", "serial_number"])
+        return redirect_with_flash("/admin/gcs", request, "Unit saved.", "success")
 
 
 @router.post("/admin/tmv")

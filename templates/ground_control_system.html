@@ -72,7 +72,7 @@
         <select name="contract_id" id="gcs-contract" {% if view_only %}disabled{% endif %}>
           <option value="">-- None --</option>
           {% for contract in contracts or [] %}
-          <option value="{{ contract.id }}" data-customer-id="{{ contract.customer_id }}" {% if contract.id == unit.get('contract_id') %}selected{% endif %}>
+          <option value="{{ contract.id }}" data-customer-id="{{ contract.customer_id }}" data-valid-from="{{ contract.executed_on }}" data-valid-to="{{ contract.valid_till }}" {% if contract.id == unit.get('contract_id') %}selected{% endif %}>
             {{ contract.number }}
           </option>
           {% endfor %}
@@ -83,11 +83,11 @@
       <div class="si-incident-section">Warranty</div>
       <div class="si-incident-field">
         <label>Warranty Valid From</label>
-        <input name="warranty_valid_from" placeholder="YYYY-MM-DD" value="{{ unit.get('warranty_valid_from', '') }}" {% if view_only %}readonly disabled{% endif %} />
+        <input type="date" name="warranty_valid_from" value="{{ unit.get('warranty_valid_from', '') }}" {% if view_only %}readonly disabled{% endif %} style="width: 100%; padding: 8px; border: 1px solid var(--si-border); border-radius: 4px; background: #ffffff;" />
       </div>
       <div class="si-incident-field">
         <label>Warranty Valid To</label>
-        <input name="warranty_valid_to" placeholder="YYYY-MM-DD" value="{{ unit.get('warranty_valid_to', '') }}" {% if view_only %}readonly disabled{% endif %} />
+        <input type="date" name="warranty_valid_to" value="{{ unit.get('warranty_valid_to', '') }}" {% if view_only %}readonly disabled{% endif %} style="width: 100%; padding: 8px; border: 1px solid var(--si-border); border-radius: 4px; background: #ffffff;" />
       </div>
 
       <div class="si-incident-divider"></div>
@@ -105,35 +105,215 @@
         <input name="software_version" placeholder="Software version" value="{{ unit.get('software_version', '') }}" {% if view_only %}readonly disabled{% endif %} />
       </div>
 
+      <style>
+        .tabs-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 2px;
+          border-bottom: 2px solid var(--border-color);
+          margin-bottom: 20px;
+          padding-bottom: 0px !important;
+        }
+        .tab-btn {
+          border: 1px solid var(--border-color) !important;
+          border-bottom: none !important;
+          background: #f1f5f9 !important;
+          color: #475569 !important;
+          padding: 8px 16px !important;
+          font-size: 13px !important;
+          font-weight: 600 !important;
+          cursor: pointer !important;
+          border-top-left-radius: 4px;
+          border-top-right-radius: 4px;
+          margin-bottom: -2px !important;
+          transition: all 0.15s ease;
+        }
+        .tab-btn:hover {
+          background: #e2e8f0 !important;
+          color: #1e293b !important;
+        }
+        .tab-btn.active {
+          background: #ffffff !important;
+          color: var(--primary-color) !important;
+          border-color: var(--border-color) !important;
+          border-bottom: 2px solid #ffffff !important;
+          box-shadow: inset 0 3px 0 var(--primary-color);
+        }
+      </style>
+
       <div class="si-incident-divider"></div>
-      <div class="si-incident-section">Component / LRU Configuration</div>
+      <div class="si-incident-section">Component / Route Cards Configuration</div>
       
-      <div class="si-table-container" style="grid-column: 1 / -1; margin-top: 15px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 15px;">
-        <table class="table dense" id="components-table" style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr>
-              <th style="text-align: left; padding: 8px; border-bottom: 2px solid var(--border-color);">Component/LRU</th>
-              <th style="text-align: left; padding: 8px; border-bottom: 2px solid var(--border-color);">Part No.</th>
-              <th style="text-align: left; padding: 8px; border-bottom: 2px solid var(--border-color); width: 100px;">QTY</th>
-              {% if not view_only %}<th style="text-align: center; padding: 8px; border-bottom: 2px solid var(--border-color); width: 80px;">Action</th>{% endif %}
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Dynamic rows -->
-          </tbody>
-        </table>
-        {% if not view_only %}
-          <button type="button" class="si-btn ghost small" id="add-component-btn" style="margin-top: 12px; display: inline-flex; align-items: center;">
-            <svg style="width: 14px; height: 14px; margin-right: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            Add Component
+      <div class="si-table-container" style="grid-column: 1 / -1; margin-top: 15px; background: var(--si-card, #ffffff); border: 1px solid var(--si-border, #e2e9f5); border-radius: 6px; padding: 20px;">
+        
+        <!-- Tab list headers -->
+        <div class="tabs-container">
+          {% for card in route_cards %}
+            <button type="button" class="tab-btn {% if loop.first %}active{% endif %}" data-tab="tab-{{ loop.index }}">
+              {{ card }}
+            </button>
+          {% endfor %}
+          <button type="button" class="tab-btn" data-tab="tab-subsystems">
+            Subsystems View
           </button>
-        {% endif %}
+        </div>
+
+        <!-- Search bar for filtering parts (ServiceNow Style below tabs) -->
+        <div style="display: flex; align-items: center; gap: 4px; padding: 6px 12px; background: #f8fafc; border: 1px solid var(--si-border, #cbd5e1); border-radius: 4px; margin-bottom: 20px;">
+          <div style="position: relative; display: inline-block;">
+            <button type="button" id="filter-menu-btn" style="background: none; border: none; font-size: 16px; font-weight: bold; color: #64748b; padding: 0 6px; cursor: pointer; display: flex; align-items: center;" onclick="toggleFilterMenu(event)">
+              ≡
+            </button>
+            <div id="filter-presets-menu" style="display: none; position: absolute; top: 100%; left: 0; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; min-width: 160px; padding: 6px 0;">
+              <a href="#" onclick="applyPresetFilter('all', event)" style="display: block; padding: 6px 12px; color: #334155; text-decoration: none; font-size: 12px;">All Subsystems</a>
+              <div style="border-top: 1px solid #e2e8f0; margin: 4px 0;"></div>
+              <a href="#" onclick="applyPresetFilter('Payload', event)" style="display: block; padding: 6px 12px; color: #334155; text-decoration: none; font-size: 12px;">Payload</a>
+              <a href="#" onclick="applyPresetFilter('Avionics', event)" style="display: block; padding: 6px 12px; color: #334155; text-decoration: none; font-size: 12px;">Avionics</a>
+              <a href="#" onclick="applyPresetFilter('Airframe', event)" style="display: block; padding: 6px 12px; color: #334155; text-decoration: none; font-size: 12px;">Airframe</a>
+              <a href="#" onclick="applyPresetFilter('Flight Control', event)" style="display: block; padding: 6px 12px; color: #334155; text-decoration: none; font-size: 12px;">Flight Control</a>
+              <a href="#" onclick="applyPresetFilter('Propulsion', event)" style="display: block; padding: 6px 12px; color: #334155; text-decoration: none; font-size: 12px;">Propulsion</a>
+            </div>
+          </div>
+          <select id="filter-column" style="padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 3px; background: #ffffff; font-size: 12px; color: #334155; outline: none; cursor: pointer;">
+            <option value="all">All Fields</option>
+            <option value="part_number">Part Number</option>
+            <option value="sap_part_number">SAP Part Number</option>
+            <option value="material_description">Material Description</option>
+            <option value="batch_no_po_no">Batch/PO No</option>
+            <option value="subsystems">Subsystems</option>
+          </select>
+          <input type="text" id="parts-search" placeholder="Search..." style="flex: 1; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 3px; background: #ffffff; font-size: 12px; color: #334155; outline: none;" />
+        </div>
+
+        <!-- Tab contents (tables) -->
+        {% for card in route_cards %}
+          <div id="tab-{{ loop.index }}" class="tab-content" style="display: {% if loop.first %}block{% else %}none{% endif %};">
+            <div style="overflow-x: auto;">
+              <table class="table dense parts-table" style="width: 100%; border-collapse: collapse; min-width: 1000px;">
+                <thead>
+                  <tr style="border-bottom: 2px solid var(--border-color);">
+                    <th>Part Number</th>
+                    <th>SAP Part Number</th>
+                    <th>Material Description</th>
+                    <th>Batch No / PO No</th>
+                    <th>Material Serial No</th>
+                    <th>Weight in Grams</th>
+                    <th>Required Quantity</th>
+                    <th>Unit of Measurement (UOM)</th>
+                    <th>Remarks</th>
+                    <th>Subsystems</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% set count = namespace(value=0) %}
+                  {% for item in kitting_items %}
+                    {% if item.route_card_description == card %}
+                      {% set count.value = count.value + 1 %}
+                      <tr class="part-row" style="border-bottom: 1px solid var(--border-color); cursor: pointer;" onclick="handlePartRowClick(event, '/admin/gcs-kitting/{{ item.id }}')">
+                        <td class="searchable col-part_number">
+                          <a href="/admin/gcs-kitting/{{ item.id }}" style="color: var(--si-primary); font-weight: 500; text-decoration: none;">{{ item.part_number }}</a>
+                        </td>
+                        <td class="searchable col-sap_part_number">
+                          <a href="/admin/gcs-kitting/{{ item.id }}" style="color: var(--si-primary); font-weight: 500; text-decoration: none;">{{ item.sap_part_number }}</a>
+                        </td>
+                        <td class="searchable col-material_description"><strong>{{ item.material_description }}</strong></td>
+                        <td class="searchable col-batch_no_po_no">{{ item.batch_no_po_no }}</td>
+                        <td class="searchable col-material_serial_no">{{ item.material_serial_no or '-' }}</td>
+                        <td class="searchable col-weight_in_grams">{{ item.weight_in_grams or '-' }}</td>
+                        <td class="searchable col-required_quantity">{{ item.required_quantity }}</td>
+                        <td class="searchable col-uom">{{ item.uom }}</td>
+                        <td class="searchable col-remarks" style="color: var(--si-muted);">{{ item.remarks or '-' }}</td>
+                        <td class="searchable col-subsystems">
+                          <a href="/admin/gcs-kitting?q={{ item.subsystems }}" class="pill" style="font-size: 0.85em; text-decoration: none;">{{ item.subsystems or '-' }}</a>
+                        </td>
+                      </tr>
+                    {% endif %}
+                  {% endfor %}
+                  {% if count.value == 0 %}
+                    <tr class="no-parts-row">
+                      <td colspan="10" style="text-align: center; padding: 25px; color: var(--si-muted);">
+                        No parts found for this route card. Populate data in the GCS Kitting master table.
+                      </td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% endfor %}
+
+        <!-- Subsystems view tab content -->
+        <div id="tab-subsystems" class="tab-content" style="display: none;">
+          {% set subsystems_list = [] %}
+          {% for item in kitting_items %}
+            {% if item.subsystems and item.subsystems not in subsystems_list %}
+              {% set _ = subsystems_list.append(item.subsystems) %}
+            {% endif %}
+          {% endfor %}
+          
+          {% for sub in subsystems_list %}
+            <div style="margin-top: 15px; margin-bottom: 25px;">
+              <h3 style="margin-bottom: 10px; color: var(--si-primary); border-left: 3px solid var(--si-primary); padding-left: 8px; font-size: 15px; font-weight: 600;">
+                {{ sub }}
+              </h3>
+              <div style="overflow-x: auto;">
+                <table class="table dense parts-table" style="width: 100%; border-collapse: collapse; min-width: 1000px;">
+                  <thead>
+                    <tr style="border-bottom: 2px solid var(--border-color);">
+                      <th>Part Number</th>
+                      <th>SAP Part Number</th>
+                      <th>Material Description</th>
+                      <th>Batch No / PO No</th>
+                      <th>Material Serial No</th>
+                      <th>Weight in Grams</th>
+                      <th>Required Quantity</th>
+                      <th>Unit of Measurement (UOM)</th>
+                      <th>Remarks</th>
+                      <th>Route Card Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in kitting_items %}
+                      {% if item.subsystems == sub %}
+                        <tr class="part-row" style="border-bottom: 1px solid var(--border-color); cursor: pointer;" onclick="handlePartRowClick(event, '/admin/gcs-kitting/{{ item.id }}')">
+                          <td class="searchable col-part_number">
+                            <a href="/admin/gcs-kitting/{{ item.id }}" style="color: var(--si-primary); font-weight: 500; text-decoration: none;">{{ item.part_number }}</a>
+                          </td>
+                          <td class="searchable col-sap_part_number">
+                            <a href="/admin/gcs-kitting/{{ item.id }}" style="color: var(--si-primary); font-weight: 500; text-decoration: none;">{{ item.sap_part_number }}</a>
+                          </td>
+                          <td class="searchable col-material_description"><strong>{{ item.material_description }}</strong></td>
+                          <td class="searchable col-batch_no_po_no">{{ item.batch_no_po_no }}</td>
+                          <td class="searchable col-material_serial_no">{{ item.material_serial_no or '-' }}</td>
+                          <td class="searchable col-weight_in_grams">{{ item.weight_in_grams or '-' }}</td>
+                          <td class="searchable col-required_quantity">{{ item.required_quantity }}</td>
+                          <td class="searchable col-uom">{{ item.uom }}</td>
+                          <td class="searchable col-remarks" style="color: var(--si-muted);">{{ item.remarks or '-' }}</td>
+                          <td class="searchable col-route_card_description">
+                            <a href="/admin/gcs-kitting?q={{ item.route_card_description }}" class="pill" style="font-size: 0.85em; text-decoration: none;">{{ item.route_card_description or '-' }}</a>
+                          </td>
+                        </tr>
+                      {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          {% endfor %}
+          {% if not subsystems_list %}
+            <div style="text-align: center; padding: 25px; color: var(--si-muted);">
+              No subsystems found. Populate data in the GCS Kitting master table.
+            </div>
+          {% endif %}
+        </div>
+
       </div>
     </div>
   </form>
 </section>
 
 <script>
+  // Customer-Contract sync logic
   const customerSelect = document.getElementById("gcs-customer");
   const contractSelect = document.getElementById("gcs-contract");
 
@@ -161,50 +341,130 @@
   customerSelect.addEventListener("change", syncContracts);
   syncContracts();
 
-  // Components Table logic
-  const viewOnly = {{ 'true' if view_only else 'false' }};
-  const componentsTableBody = document.querySelector("#components-table tbody");
-  const addComponentBtn = document.getElementById("add-component-btn");
-
-  const initialComponents = {{ (unit.get('components') or [
-    {"component_lru": "Getac Laptop", "part_no": "GCS-LAP-01", "qty": 1},
-    {"component_lru": "Getac Laptop Spare Battery", "part_no": "GCS-BATT-02", "qty": 1},
-    {"component_lru": "Getac Laptop Charger", "part_no": "GCS-CHG-03", "qty": 1},
-    {"component_lru": "Joystick (Thrust Master)", "part_no": "GCS-JOY-04", "qty": 1},
-    {"component_lru": "Monitor", "part_no": "GCS-MON-05", "qty": 1},
-    {"component_lru": "Mast", "part_no": "GCS-MST-06", "qty": 1},
-    {"component_lru": "Omni Antenna", "part_no": "GCS-ANT-07", "qty": 1}
-  ]) | tojson }};
-
-  const createRow = (component = "", partNo = "", qty = 1) => {
-    const tr = document.createElement("tr");
-    tr.style.borderBottom = "1px solid var(--border-color)";
-    
-    tr.innerHTML = `
-      <td style="padding: 6px;"><input type="text" name="gcs_component[]" value="${component}" placeholder="e.g. Getac Laptop" style="width: 95%;" ${viewOnly ? 'readonly disabled' : ''} required /></td>
-      <td style="padding: 6px;"><input type="text" name="gcs_part_no[]" value="${partNo}" placeholder="e.g. GCS-XYZ" style="width: 95%;" ${viewOnly ? 'readonly disabled' : ''} required /></td>
-      <td style="padding: 6px;"><input type="number" name="gcs_qty[]" value="${qty}" min="1" style="width: 80px;" ${viewOnly ? 'readonly disabled' : ''} required /></td>
-      ${!viewOnly ? `<td style="padding: 6px; text-align: center;"><button type="button" class="si-btn ghost small remove-row-btn" style="color: var(--danger-color); padding: 2px 6px;">Delete</button></td>` : ''}
-    `;
-
-    if (!viewOnly) {
-      tr.querySelector(".remove-row-btn").addEventListener("click", () => {
-        tr.remove();
-      });
+  // Auto-populate warranty dates based on selected contract
+  const warrantyFromInput = document.querySelector('input[name="warranty_valid_from"]');
+  const warrantyToInput = document.querySelector('input[name="warranty_valid_to"]');
+  
+  const updateWarrantyDates = () => {
+    if (contractSelect.selectedOptions.length) {
+      const selected = contractSelect.selectedOptions[0];
+      const validFrom = selected.getAttribute("data-valid-from");
+      const validTo = selected.getAttribute("data-valid-to");
+      if (validFrom) warrantyFromInput.value = validFrom;
+      if (validTo) warrantyToInput.value = validTo;
     }
-    
-    return tr;
   };
+  
+  contractSelect.addEventListener("change", updateWarrantyDates);
 
-  // Load initial components
-  initialComponents.forEach(comp => {
-    componentsTableBody.appendChild(createRow(comp.component_lru, comp.part_no, comp.qty));
+  // Tab switching logic
+  const tabButtons = document.querySelectorAll(".tab-btn");
+  const tabContents = document.querySelectorAll(".tab-content");
+
+  tabButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      // Deactivate all buttons
+      tabButtons.forEach(b => b.classList.remove("active"));
+      // Hide all contents
+      tabContents.forEach(c => c.style.display = "none");
+      
+      // Activate clicked button and show target content
+      btn.classList.add("active");
+      const targetId = btn.getAttribute("data-tab");
+      document.getElementById(targetId).style.display = "block";
+    });
   });
 
-  if (addComponentBtn) {
-    addComponentBtn.addEventListener("click", () => {
-      componentsTableBody.appendChild(createRow("", "", 1));
+  // Search/Filter logic for parts table (ServiceNow Column-specific search)
+  const searchInput = document.getElementById("parts-search");
+  const columnSelect = document.getElementById("filter-column");
+
+  const filterParts = () => {
+    const filter = searchInput.value.toLowerCase().trim();
+    const selectedCol = columnSelect.value;
+    
+    tabContents.forEach(content => {
+      const rows = content.querySelectorAll(".parts-table tbody tr.part-row");
+      const noPartsRow = content.querySelector(".no-parts-row");
+      let visibleCount = 0;
+      
+      rows.forEach(row => {
+        let textFound = false;
+        
+        if (selectedCol === "all") {
+          const searchableCells = row.querySelectorAll(".searchable");
+          searchableCells.forEach(cell => {
+            if (cell.textContent.toLowerCase().includes(filter)) {
+              textFound = true;
+            }
+          });
+        } else {
+          const cell = row.querySelector(`.col-${selectedCol}`);
+          if (cell && cell.textContent.toLowerCase().includes(filter)) {
+            textFound = true;
+          }
+        }
+        
+        if (textFound) {
+          row.style.display = "";
+          visibleCount++;
+        } else {
+          row.style.display = "none";
+        }
+      });
+
+      // Handle "No parts" dynamic notice
+      if (noPartsRow) {
+        if (visibleCount === 0 && filter !== "") {
+          noPartsRow.style.display = "";
+          noPartsRow.querySelector("td").textContent = "No matching parts found for search query.";
+        } else if (visibleCount === 0 && filter === "") {
+          noPartsRow.style.display = "";
+          noPartsRow.querySelector("td").textContent = "No parts found for this route card. Populate data in the GCS Kitting master table.";
+        } else {
+          noPartsRow.style.display = "none";
+        }
+      }
     });
+  };
+
+  searchInput.addEventListener("input", filterParts);
+  columnSelect.addEventListener("change", filterParts);
+
+  // Subsystem filter presets dropdown logic
+  window.toggleFilterMenu = function(event) {
+    event.stopPropagation();
+    const menu = document.getElementById("filter-presets-menu");
+    menu.style.display = menu.style.display === "none" ? "block" : "none";
+  };
+
+  window.applyPresetFilter = function(subsystem, event) {
+    if (event) event.preventDefault();
+    document.getElementById("filter-presets-menu").style.display = "none";
+    
+    if (subsystem === "all") {
+      columnSelect.value = "all";
+      searchInput.value = "";
+    } else {
+      columnSelect.value = "subsystems";
+      searchInput.value = subsystem;
+    }
+    
+    filterParts();
+  };
+
+  document.addEventListener("click", function() {
+    const menu = document.getElementById("filter-presets-menu");
+    if (menu) menu.style.display = "none";
+  });
+
+  function handlePartRowClick(event, url) {
+    const target = event.target;
+    // Don't trigger navigation if they clicked on a link/button/input
+    if (target.closest('a') || target.closest('button') || target.closest('input')) {
+      return;
+    }
+    window.location.href = url;
   }
 </script>
 {% endblock %}

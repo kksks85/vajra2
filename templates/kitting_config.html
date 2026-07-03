@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% set view_only = mode == "view" %}
+{% set item = item or {} %}
+{% block content %}
+<section class="si-incident-new">
+  <header class="si-incident-header">
+    <div>
+      <div class="si-incident-title">
+        {{ title or "Kitting Item Details" }}
+      </div>
+      <div class="si-incident-subtitle">View and update kitting item configuration</div>
+    </div>
+    <div class="si-incident-actions">
+      <a class="si-btn" href="/admin/{{ category.lower() }}-kitting">Back</a>
+      {% if not view_only %}
+        <button class="si-btn si-btn-primary" type="submit" form="kitting-config-form">Save</button>
+      {% endif %}
+    </div>
+  </header>
+
+  <form id="kitting-config-form" method="post" action="/admin/{{ category.lower() }}-kitting/{{ item.id }}" class="si-incident-form">
+    <div class="si-incident-grid">
+      <div class="si-incident-section">Master Data details</div>
+      
+      <div class="si-incident-field">
+        <label>Product Category</label>
+        <input name="product_category" value="{{ item.product_category }}" readonly style="background: #f1f5f9; color: #64748b;" />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Product Serial Number</label>
+        <input name="product_serial_no" value="{{ item.product_serial_no }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Route Card Description</label>
+        <select name="route_card_description" {% if view_only %}disabled{% endif %}>
+          {% for rcard in route_cards %}
+            <option value="{{ rcard }}" {% if rcard == item.route_card_description %}selected{% endif %}>{{ rcard }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="si-incident-field">
+        <label>Part Number</label>
+        <input name="part_number" value="{{ item.part_number or '' }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field">
+        <label>SAP Part Number</label>
+        <input name="sap_part_number" value="{{ item.sap_part_number or '' }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Material Description</label>
+        <input name="material_description" value="{{ item.material_description or '' }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Batch No / PO No</label>
+        <input name="batch_no_po_no" value="{{ item.batch_no_po_no or '' }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Material Serial No</label>
+        <input name="material_serial_no" value="{{ item.material_serial_no or '' }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Weight in Grams</label>
+        <input name="weight_in_grams" value="{{ item.weight_in_grams or '' }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Required Quantity</label>
+        <input name="required_quantity" value="{{ item.required_quantity or '' }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Unit of Measurement (UOM)</label>
+        <input name="uom" value="{{ item.uom or '' }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Subsystems</label>
+        <input name="subsystems" value="{{ item.subsystems or '' }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
+      <div class="si-incident-field" style="grid-column: 1 / -1;">
+        <label>Remarks</label>
+        <textarea name="remarks" placeholder="Enter remarks..." rows="2" {% if view_only %}readonly disabled{% endif %} style="width: 100%; padding: 8px; border: 1px solid var(--si-border); border-radius: 4px; resize: vertical;">{{ item.remarks or '' }}</textarea>
+      </div>
+
+      <!-- Change History Log Table -->
+      <div class="si-incident-divider" style="grid-column: 1 / -1;"></div>
+      <div class="si-incident-section" style="grid-column: 1 / -1;">Kitting Record Change History Log</div>
+      <div class="si-table-container" style="grid-column: 1 / -1; margin-top: 15px; background: var(--si-card, #ffffff); border: 1px solid var(--si-border, #e2e9f5); border-radius: 6px; padding: 20px; overflow-x: auto;">
+        <table class="table dense" style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); background: #f8fafc;">
+              <th style="text-align: left; padding: 8px; font-weight: 600; color: #475569;">Date & Time</th>
+              <th style="text-align: left; padding: 8px; font-weight: 600; color: #475569;">Changed By</th>
+              <th style="text-align: left; padding: 8px; font-weight: 600; color: #475569;">Field</th>
+              <th style="text-align: left; padding: 8px; font-weight: 600; color: #475569;">Old Value</th>
+              <th style="text-align: left; padding: 8px; font-weight: 600; color: #475569;">New Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if item.data and item.data.get('change_log') %}
+              {% for log in item.data.get('change_log') | reverse %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                  <td style="padding: 8px; color: #475569; font-size: 13px;">{{ log.timestamp }}</td>
+                  <td style="padding: 8px; font-weight: 600; color: #1e293b; font-size: 13px;">{{ log.user }}</td>
+                  <td style="padding: 8px; font-size: 13px;"><span class="pill" style="font-size: 0.85em; background: #e2e8f0; color: #475569;">{{ log.field }}</span></td>
+                  <td style="padding: 8px; color: #64748b; font-size: 13px;">{{ log.old_value or '-' }}</td>
+                  <td style="padding: 8px; color: var(--si-primary, #0b1f3b); font-weight: 600; font-size: 13px;">{{ log.new_value or '-' }}</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 25px; color: var(--si-muted, #64748b);">
+                  No changes logged yet for this kitting record.
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </form>
+</section>
+{% endblock %}

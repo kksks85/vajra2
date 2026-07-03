@@ -14,6 +14,7 @@ from models.entities import (
     SimulatorUnit,
     SubSystem,
     TacticalMobilityVehicle,
+    KittingItem,
 )
 from models.incident import Incident
 from models.knowledge import KnowledgeArticle, KnowledgeDocument, ApprovalRequest, KnowledgeDocumentVersion
@@ -41,6 +42,7 @@ __all__ = [
     "SMTSTE",
     "SAM",
     "SubSystem",
+    "KittingItem",
     "Workflow",
     "Stage",
     "TaskDefinition",

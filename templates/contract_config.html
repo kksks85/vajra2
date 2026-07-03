@@ -24,7 +24,7 @@
     </div>
   </header>
 
-  <form id="contract-config-form" method="post" action="/admin/contracts" class="si-incident-form">
+  <form id="contract-config-form" method="post" action="{% if contract %}/admin/contracts/{{ contract.id }}{% else %}/admin/contracts{% endif %}" class="si-incident-form">
     <div class="si-incident-grid">
       <div class="si-incident-section">Contract details</div>
       <div class="si-incident-field">
@@ -55,9 +55,9 @@
       <div class="si-incident-field">
         <label>Status</label>
         <select name="status" {% if view_only %}disabled{% endif %}>
-          <option value="active" {% if contract.get('status') == 'Active' %}selected{% endif %}>Active</option>
-          <option value="expired" {% if contract.get('status') == 'Expired' %}selected{% endif %}>Expired</option>
-          <option value="disabled" {% if contract.get('status') == 'Disabled' %}selected{% endif %}>Disabled</option>
+          <option value="Active" {% if contract.get('status') | lower == 'active' %}selected{% endif %}>Active</option>
+          <option value="Expired" {% if contract.get('status') | lower == 'expired' %}selected{% endif %}>Expired</option>
+          <option value="Disabled" {% if contract.get('status') | lower == 'disabled' %}selected{% endif %}>Disabled</option>
         </select>
       </div>
       <div class="si-incident-field">

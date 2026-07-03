@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .kitting-modal-content {
+    background: #ffffff !important; 
+    border: 1px solid #cbd5e1 !important; 
+    box-shadow: 0 12px 28px rgba(15, 40, 90, 0.18) !important;
+    color: #0b1f3b !important;
+  }
+  .kitting-modal-content h2 {
+    color: #0b1f3b !important;
+    font-weight: 600;
+  }
+  .kitting-modal-content label {
+    color: #334155 !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .kitting-modal-content input, .kitting-modal-content select {
+    background: #ffffff !important;
+    color: #0b1f3b !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 8px 12px !important;
+    border-radius: 4px !important;
+    font-size: 13px !important;
+  }
+  .kitting-modal-content input:focus, .kitting-modal-content select:focus {
+    border-color: var(--si-primary) !important;
+    box-shadow: 0 0 0 2px rgba(43, 116, 214, 0.1) !important;
+    outline: none;
+  }
+</style>
+<section class="list-shell">
+  <div class="list-bar">
+    <div class="list-title" style="display: flex; align-items: center; gap: 12px;">
+      <a href="/admin/{{ category.lower() }}" class="si-btn ghost" style="text-decoration: none; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--si-border); border-radius: 4px; font-weight: 600;">
+        <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Back
+      </a>
+      <h1>{{ title }}</h1>
+      <span class="pill">13 Columns Master Data</span>
+    </div>
+    <div class="list-controls">
+      <form method="get" action="/admin/{{ category.lower() }}-kitting" class="search-form" style="display: flex; gap: 8px;">
+        <input type="text" name="q" value="{{ q or '' }}" placeholder="Search part, SAP no, serial..." style="padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-card); color: var(--text-color);" />
+        <button type="submit" class="si-btn">Search</button>
+        {% if q %}
+          <a href="/admin/{{ category.lower() }}-kitting" class="si-btn ghost" style="text-decoration: none; padding: 6px 12px; display: inline-flex; align-items: center;">Clear</a>
+        {% endif %}
+      </form>
+      <div class="list-actions" style="display: flex; gap: 10px;">
+        <button type="button" class="si-btn" onclick="openModal('importModal')">Upload CSV</button>
+        <button type="button" class="si-btn si-btn-primary" onclick="openModal('addModal')">Add Item Manually</button>
+      </div>
+      <span class="list-meta">{{ pagination.total }} total items</span>
+    </div>
+  </div>
+
+  <div class="list-card" style="overflow-x: auto;">
+    <table class="table dense" style="width: 100%; border-collapse: collapse; min-width: 1200px;">
+      <thead>
+        <tr>
+          <th>Product Serial Number</th>
+          <th>Product Category</th>
+          <th>Route Card Description</th>
+          <th>Part Number</th>
+          <th>SAP Part Number</th>
+          <th>Material Description</th>
+          <th>Batch No / PO No</th>
+          <th>Material Serial No</th>
+          <th>Weight in Grams</th>
+          <th>Required Quantity</th>
+          <th>Unit of Measurement (UOM)</th>
+          <th>Remarks</th>
+          <th>Subsystems</th>
+          <th style="text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if items %}
+          {% for item in items %}
+          <tr style="border-bottom: 1px solid var(--border-color); cursor: pointer;" onclick="handleRowClick(event, '/admin/{{ category.lower() }}-kitting/{{ item.id }}')">
+            <td style="font-weight: 600; color: var(--si-primary);">
+              {{ item.product_serial_no }}
+            </td>
+            <td><strong>{{ item.product_category }}</strong></td>
+            <td>
+              <a href="/admin/{{ category.lower() }}-kitting?q={{ item.route_card_description }}" class="pill" style="font-size: 0.85em; background: rgba(0,0,0,0.05); font-weight: 500; text-decoration: none; color: inherit;">{{ item.route_card_description }}</a>
+            </td>
+            <td>
+              <a href="/admin/{{ category.lower() }}-kitting/{{ item.id }}" style="color: var(--si-primary); text-decoration: none; font-weight: 500;">{{ item.part_number }}</a>
+            </td>
+            <td>
+              <a href="/admin/{{ category.lower() }}-kitting/{{ item.id }}" style="color: var(--si-primary); text-decoration: none; font-weight: 500;">{{ item.sap_part_number }}</a>
+            </td>
+            <td>{{ item.material_description }}</td>
+            <td>{{ item.batch_no_po_no }}</td>
+            <td>{{ item.material_serial_no or '-' }}</td>
+            <td>{{ item.weight_in_grams or '-' }}</td>
+            <td>{{ item.required_quantity }}</td>
+            <td>{{ item.uom }}</td>
+            <td><span style="font-size: 0.9em; color: var(--si-muted);">{{ item.remarks or '-' }}</span></td>
+            <td>
+              <a href="/admin/{{ category.lower() }}-kitting?q={{ item.subsystems }}" style="font-size: 0.95em; color: var(--primary-color); font-weight: 600; text-decoration: none;">{{ item.subsystems or '-' }}</a>
+            </td>
+            <td class="no-click" style="text-align: center; white-space: nowrap; cursor: default;">
+              <a href="/admin/{{ category.lower() }}-kitting/{{ item.id }}" class="si-btn ghost small" style="color: var(--si-primary); padding: 2px 6px; text-decoration: none; display: inline-block; margin-right: 4px;">Edit</a>
+              <form method="post" action="/admin/{{ category.lower() }}-kitting/{{ item.id }}/delete" onsubmit="return confirm('Are you sure you want to delete this item?');" style="margin: 0; display: inline;">
+                <button type="submit" class="si-btn ghost small" style="color: var(--danger-color); padding: 2px 6px;">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="14" style="text-align: center; padding: 30px; color: var(--si-muted);">
+              No kitting items found. Click <strong>Upload CSV</strong> or <strong>Add Item Manually</strong> to load data.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination and pagination.total_pages > 1 %}
+  <div class="pagination" style="margin-top: 15px; display: flex; align-items: center; gap: 8px;">
+    <span class="pagination-info" style="font-size: 0.9em; color: var(--si-muted);">Showing {{ pagination.start_index }}-{{ pagination.end_index }} of {{ pagination.total }}</span>
+    
+    {% if pagination.has_previous %}
+      <a class="pagination-item" href="/admin/{{ category.lower() }}-kitting?page=1{% if q %}&q={{ q }}{% endif %}">«</a>
+      <a class="pagination-item" href="/admin/{{ category.lower() }}-kitting?page={{ pagination.previous_page }}{% if q %}&q={{ q }}{% endif %}">← Prev</a>
+    {% endif %}
+
+    {% for page_num in range(1, pagination.total_pages + 1) %}
+      {% if page_num == pagination.page %}
+        <span class="pagination-item pagination-current" style="background: var(--si-primary); font-weight: bold; border-radius: 4px; padding: 4px 8px; color: #ffffff;">{{ page_num }}</span>
+      {% elif page_num == 1 or page_num == pagination.total_pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
+        <a class="pagination-item" href="/admin/{{ category.lower() }}-kitting?page={{ page_num }}{% if q %}&q={{ q }}{% endif %}" style="padding: 4px 8px; border: 1px solid var(--si-border); border-radius: 4px; text-decoration: none;">{{ page_num }}</a>
+      {% elif page_num == 2 or page_num == pagination.total_pages - 1 %}
+        <span class="pagination-separator">...</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+      <a class="pagination-item" href="/admin/{{ category.lower() }}-kitting?page={{ pagination.next_page }}{% if q %}&q={{ q }}{% endif %}">Next →</a>
+      <a class="pagination-item" href="/admin/{{ category.lower() }}-kitting?page={{ pagination.total_pages }}{% if q %}&q={{ q }}{% endif %}">»</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<!-- IMPORT CSV MODAL -->
+<div id="importModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+  <div class="kitting-modal-content" style="padding: 25px; border-radius: 8px; width: 500px; max-width: 90%;">
+    <h2 style="margin-top: 0; margin-bottom: 15px;">Import Kitting CSV</h2>
+    <p style="font-size: 0.9em; color: var(--si-muted); margin-bottom: 20px; line-height: 1.4;">
+      Upload a CSV file containing exactly the 13 columns in order:<br />
+      <code style="display: block; background: #f1f5f9; color: #0b1f3b; padding: 10px; border-radius: 4px; font-size: 0.85em; margin-top: 8px; border: 1px solid #cbd5e1; word-break: break-all;">
+        1. Product Serial Number, 2. Product Category, 3. Route Card Description, 4. Part Number, 5. SAP Part Number, 6. Material Description, 7. Batch No/PO No, 8. Material Serial No, 9. Weight in Grams, 10. Required Quantity, 11. UOM, 12. Remarks, 13. Subsystems
+      </code>
+    </p>
+    <form method="post" action="/admin/{{ category.lower() }}-kitting/import" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 15px;">
+      <input type="file" name="file" accept=".csv" required style="padding: 12px; border: 2px dashed #cbd5e1; border-radius: 6px; cursor: pointer; background: #f8fafc;" />
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+        <button type="button" class="si-btn ghost" onclick="closeModal('importModal')">Cancel</button>
+        <button type="submit" class="si-btn si-btn-primary">Upload & Import</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ADD MANUAL ITEM MODAL -->
+<div id="addModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+  <div class="kitting-modal-content" style="padding: 25px; border-radius: 8px; width: 600px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+    <h2 style="margin-top: 0; margin-bottom: 20px;">Add Kitting Item</h2>
+    <form method="post" action="/admin/{{ category.lower() }}-kitting" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+      
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label>Product Serial Number *</label>
+        <select name="product_serial_no" required>
+          {% for serial in serials %}
+            <option value="{{ serial }}">{{ serial }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label>Product Category</label>
+        <input type="text" value="{{ category }}" readonly disabled style="background: #f1f5f9 !important; color: #64748b !important; cursor: not-allowed; border-color: #e2e8f0 !important;" />
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px; grid-column: 1 / -1;">
+        <label>Route Card Description *</label>
+        <select name="route_card_description" required>
+          {% for card in route_cards %}
+            <option value="{{ card }}">{{ card }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label>Part Number</label>
+        <input type="text" name="part_number" />
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label>SAP Part Number</label>
+        <input type="text" name="sap_part_number" />
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px; grid-column: 1 / -1;">
+        <label>Material Description</label>
+        <input type="text" name="material_description" />
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label>Batch No / PO No</label>
+        <input type="text" name="batch_no_po_no" />
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label>Material Serial No</label>
+        <input type="text" name="material_serial_no" />
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label>Weight in Grams</label>
+        <input type="text" name="weight_in_grams" />
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label>Required Quantity</label>
+        <input type="text" name="required_quantity" value="1" />
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label>Unit of Measurement (UOM)</label>
+        <input type="text" name="uom" value="EA" />
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <label>Subsystems</label>
+        <input type="text" name="subsystems" />
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 5px; grid-column: 1 / -1;">
+        <label>Remarks</label>
+        <input type="text" name="remarks" />
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; grid-column: 1 / -1; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+        <button type="button" class="si-btn ghost" onclick="closeModal('addModal')">Cancel</button>
+        <button type="submit" class="si-btn si-btn-primary">Save Item</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openModal(id) {
+    document.getElementById(id).style.display = 'flex';
+  }
+  function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+  function handleRowClick(event, url) {
+    const target = event.target;
+    // Check if the click target is the Product Serial Number cell, Actions cell, or a link/form/button/input
+    if (target.closest('.no-click') || target.closest('form') || target.closest('button') || target.closest('a') || target.closest('input')) {
+      return;
+    }
+    window.location.href = url;
+  }
+</script>
+{% endblock %}

@@ -281,6 +281,253 @@ def on_startup():
         else:
             print(f"[OK] Database already has {existing_articles} knowledge article(s)")
             
+        # Seed default Kitting items
+        from models.entities import KittingItem
+        existing_kitting = db.query(KittingItem).count()
+        if existing_kitting == 0:
+            print("[SEED] Seeding default kitting items...")
+            default_kitting = [
+                # LM-0001 route cards
+                ("LM-0001", "LM", "LH Side Wing Integration Assembly", "12345678", "12345678901234", "Propeller", "B-001", "S-201", "150g", "2", "EA", "Check balance", "Propulsion"),
+                ("LM-0001", "LM", "LH Side Wing Integration Assembly", "87654321", "43210987654321", "Carbon Wing Skin", "B-002", "S-202", "500g", "1", "EA", "Fragile", "Airframe"),
+                ("LM-0001", "LM", "RH Side Wing Integration Assembly", "12345679", "12345678901235", "Propeller Motor", "B-003", "S-203", "350g", "1", "EA", "Calibrated", "Propulsion"),
+                ("LM-0001", "LM", "LH Empennage Integration Assembly", "11223344", "10101010101010", "Tail Fin Carbon Fiber", "B-004", "S-204", "800g", "1", "EA", "Verify alignment", "Airframe"),
+                ("LM-0001", "LM", "RH Empennage Integration Assembly", "55667788", "20202020202020", "Elevator Servo Motor", "B-005", "S-205", "80g", "1", "EA", "Testing OK", "Flight Control"),
+                ("LM-0001", "LM", "VTOL Boom Bracket Integration Assembly LH", "99001122", "30303030303030", "VTOL Boom Carbon tube", "B-006", "S-206", "1200g", "1", "EA", "Structural", "Airframe"),
+                ("LM-0001", "LM", "VTOL Boom Bracket Integration Assembly RH", "33445566", "40404040404040", "Boom Bracket Titanium", "B-007", "S-207", "450g", "2", "EA", "Heavy duty", "Airframe"),
+                ("LM-0001", "LM", "Centre Wing Integration Assembly", "77889900", "50505050505050", "Central Spar Carbon", "B-008", "S-208", "2500g", "1", "EA", "Main structural element", "Airframe"),
+                ("LM-0001", "LM", "Fuselage Integration Assembly", "88990011", "60606060606060", "Autopilot Flight Computer", "B-009", "S-209", "320g", "1", "EA", "Firmware v1.0.4 preloaded", "Avionics"),
+                ("LM-0001", "LM", "Aircraft ERLM Assembly", "99001133", "70707070707070", "Main Payload Camera", "B-010", "S-210", "950g", "1", "EA", "Gimbal assembly included", "Payload"),
+                
+                # GCS-0101 route cards
+                ("GCS-0101", "GCS", "GCS Shelter Integration Assembly", "22334455", "80808080808080", "Getac Rugged Laptop", "B-G01", "S-G01", "3200g", "1", "EA", "OS pre-installed", "Computing"),
+                ("GCS-0101", "GCS", "GCS Shelter Integration Assembly", "44556677", "90909090909090", "Display Panel 24 inch", "B-G02", "S-G02", "4500g", "2", "EA", "High brightness", "Display"),
+                ("GCS-0101", "GCS", "GCS Ground Antenna Integration Assembly", "66778899", "11111111111111", "Omni Antenna Mast", "B-G03", "S-G03", "8500g", "1", "EA", "Deployable", "Communication"),
+                ("GCS-0101", "GCS", "GCS Ground Antenna Integration Assembly", "88990022", "22222222222222", "RF Cable Assembly 10m", "B-G04", "S-G04", "1200g", "2", "EA", "Low loss", "Communication")
+            ]
+            for psn, pcat, rcd, pn, spn, md, bn, msn, wg, rq, uom, rem, subs in default_kitting:
+                try:
+                    item = KittingItem(
+                        product_serial_no=psn,
+                        product_category=pcat,
+                        route_card_description=rcd,
+                        part_number=pn,
+                        sap_part_number=spn,
+                        material_description=md,
+                        batch_no_po_no=bn,
+                        material_serial_no=msn,
+                        weight_in_grams=wg,
+                        required_quantity=rq,
+                        uom=uom,
+                        remarks=rem,
+                        subsystems=subs
+                    )
+                    db.add(item)
+                except Exception as e:
+                    print(f"  [ERROR] Seeding kitting: {e}")
+            db.commit()
+            print("[OK] Kitting item seeding completed")
+        else:
+            print(f"[OK] Database already has {existing_kitting} kitting item(s)")
+
+        # Seed default Customers
+        from models.entities import Customer
+        existing_customers = db.query(Customer).count()
+        if existing_customers == 0:
+            print("[SEED] Seeding default customers...")
+            default_customers = [
+                (1, "Acme Rail Systems", "Plot 12, Industrial Estate, Pune", "Ravi Kumar", "ravi.kumar@acme.example", "+91 98765 43210", "Active"),
+                (2, "MetroLine Services", "47 Transit Park, Mumbai", "Neha Singh", "neha.singh@metroline.example", "+91 91234 56789", "Active"),
+                (3, "Urban Transit Corp", "88 City Loop Rd, Delhi", "Arjun Mehta", "arjun.mehta@urban.example", "+91 99887 66554", "Expended")
+            ]
+            for cid, name, addr, cname, cemail, cphone, status in default_customers:
+                cust = Customer(
+                    id=cid,
+                    name=name,
+                    data={
+                        "customer_name": name,
+                        "primary_address": addr,
+                        "contact_name": cname,
+                        "contact_email": cemail,
+                        "contact_phone": cphone,
+                        "status": status
+                    }
+                )
+                db.add(cust)
+            db.commit()
+            print("[OK] Customer seeding completed")
+        else:
+            print(f"[OK] Database already has {existing_customers} customer(s)")
+
+        # Seed default Contracts
+        from models.entities import Contract
+        existing_contracts = db.query(Contract).count()
+        if existing_contracts == 0:
+            print("[SEED] Seeding default contracts...")
+            default_contracts = [
+                (101, "CTR-2024-001", 1, "2024-01-15", "2026-12-15", "Active"),
+                (102, "CTR-2024-014", 2, "2024-03-02", "2025-03-01", "Expired"),
+                (103, "CTR-2023-220", 3, "2023-07-10", "2024-07-09", "Expired")
+            ]
+            for con_id, number, cust_id, executed_on, valid_till, status in default_contracts:
+                con = Contract(
+                    id=con_id,
+                    number=number,
+                    customer_id=cust_id,
+                    data={
+                        "id": con_id,
+                        "contract_number": number,
+                        "customer_id": cust_id,
+                        "executed_on": executed_on,
+                        "valid_till": valid_till,
+                        "status": status,
+                        "main_deliverables": "LM: 10, GCS: 2, TMV: 4, Simulator: 1, LRU: 15",
+                        "main_warranty": True,
+                        "main_manuals": "User Manual v1.2 (2024-01-15), Maintenance Manual v1.0 (2024-01-20)",
+                        "sub_scheduled_maintenance": True,
+                        "sub_unscheduled_maintenance": True,
+                        "sub_calibration": True,
+                        "sub_software_upgrade": True,
+                        "sub_visits_record": "Monthly status reports and support",
+                        "sub_refresher_training": True
+                    }
+                )
+                db.add(con)
+            db.commit()
+            print("[OK] Contract seeding completed")
+        else:
+            print(f"[OK] Database already has {existing_contracts} contract(s)")
+
+        # Seed default LoiteringMunition units
+        from models.entities import LoiteringMunition
+        existing_lms = db.query(LoiteringMunition).count()
+        if existing_lms == 0:
+            print("[SEED] Seeding default loitering munitions...")
+            # Acme Rail CTR-2024-001 units: LM-0001 to LM-0010 (LM-0002 excluded)
+            for i in range(1, 11):
+                if i == 2:
+                    continue  # delete/exclude LM002 record
+                sn = f"LM-{i:04d}"
+                unit = LoiteringMunition(
+                    serial_number=sn,
+                    unit_name=f"LM Unit {i:02d}",
+                    data={
+                        "serial_number": sn,
+                        "unit_name": f"LM Unit {i:02d}",
+                        "customer_id": 1,
+                        "customer_name": "Acme Rail Systems",
+                        "contract_id": 101,
+                        "contract_number": "CTR-2024-001",
+                        "warranty_valid_from": "2024-01-15",
+                        "warranty_valid_to": "2026-12-15",
+                        "sap_part_number": f"1000000000{1000+i:03d}",
+                        "customer_part_number": f"8000100{i}",
+                        "customer_part_no": f"8000100{i}",
+                        "make": "VajraCorp",
+                        "model": "VC-LM-V1",
+                        "software_version": "1.0.4",
+                        "status": "Active",
+                        "last_service_on": "2024-06-15",
+                        "next_service_due": "2024-12-15",
+                        "service_notes": "Initial service completed successfully."
+                    }
+                )
+                db.add(unit)
+
+            # MetroLine CTR-2024-014 units: LM-0011 to LM-0020
+            for i in range(11, 21):
+                sn = f"LM-{i:04d}"
+                unit = LoiteringMunition(
+                    serial_number=sn,
+                    unit_name=f"LM Unit {i:02d}",
+                    data={
+                        "serial_number": sn,
+                        "unit_name": f"LM Unit {i:02d}",
+                        "customer_id": 2,
+                        "customer_name": "MetroLine Services",
+                        "contract_id": 102,
+                        "contract_number": "CTR-2024-014",
+                        "warranty_valid_from": "2024-03-02",
+                        "warranty_valid_to": "2025-03-01",  # Expired
+                        "sap_part_number": f"1000000000{1000+i:03d}",
+                        "customer_part_number": f"8000100{i}",
+                        "customer_part_no": f"8000100{i}",
+                        "make": "VajraCorp",
+                        "model": "VC-LM-V2",
+                        "software_version": "1.0.4",
+                        "status": "Active",
+                        "last_service_on": "2024-08-20",
+                        "next_service_due": "2025-02-20",
+                        "service_notes": "Warranty expired but unit is fully functional."
+                    }
+                )
+                db.add(unit)
+
+            db.commit()
+            print("[OK] Loitering Munitions seeding completed")
+        else:
+            print(f"[OK] Database already has {existing_lms} loitering munition(s)")
+
+        # Seed default GroundControlSystem units
+        from models.entities import GroundControlSystem
+        existing_gcs = db.query(GroundControlSystem).count()
+        if existing_gcs == 0:
+            print("[SEED] Seeding default ground control systems...")
+            unit = GroundControlSystem(
+                serial_number="GCS-0101",
+                unit_name="GCS Ground Station",
+                data={
+                    "serial_number": "GCS-0101",
+                    "unit_name": "GCS Ground Station",
+                    "customer_id": 1,
+                    "customer_name": "Acme Rail Systems",
+                    "contract_id": 101,
+                    "contract_number": "CTR-2024-001",
+                    "warranty_valid_from": "2024-01-15",
+                    "warranty_valid_to": "2026-01-14",
+                    "sap_part_number": "20000000002001",
+                    "customer_part_number": "90002001",
+                    "customer_part_no": "90002001",
+                    "make": "VajraCorp",
+                    "model": "VC-GCS-V1",
+                    "software_version": "2.1.0",
+                    "status": "Active"
+                }
+            )
+            db.add(unit)
+            db.commit()
+            print("[OK] Ground Control Systems seeding completed")
+        else:
+            print(f"[OK] Database already has {existing_gcs} ground control system(s)")
+
+        # Seed default Incidents
+        from models.incident import Incident
+        existing_incidents = db.query(Incident).count()
+        if existing_incidents == 0:
+            print("[SEED] Seeding default incidents...")
+            default_incidents = [
+                ("GPS signal lost during takeoff", "The aircraft lost GPS signal momentarily after liftoff, triggering fail-safe return to land. GPS receiver connector reseated.", "resolved", "high", "Hardware", "resolved"),
+                ("Telemetry packet drop rate high", "High packet drops observed at ranges beyond 2km. Investigating antenna alignment on GCS Ground Antenna.", "assigned", "medium", "Software", "work_in_progress"),
+                ("Battery cell voltage mismatch warning", "Telemetry reported cell voltage difference > 100mV on Battery Pack B-001 during flight check. Battery quarantined for deep cycle testing.", "new", "low", "Hardware", "triage")
+            ]
+            for title, desc, status, priority, issue_type, stage in default_incidents:
+                try:
+                    inc = Incident(
+                        title=title,
+                        description=desc,
+                        status=status,
+                        priority=priority,
+                        issue_type=issue_type,
+                        stage=stage
+                    )
+                    db.add(inc)
+                except Exception as e:
+                    print(f"  [ERROR] Seeding incident: {e}")
+            db.commit()
+            print("[OK] Incident seeding completed")
+        else:
+            print(f"[OK] Database already has {existing_incidents} incident(s)")
+
         db.close()
     except Exception as e:
         print(f"[ERROR] Error during user seeding: {e}")

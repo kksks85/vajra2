@@ -144,3 +144,24 @@ class SubSystem(Base):
     name = Column(String(200), nullable=True)
     data = Column(JSON, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class KittingItem(Base):
+    __tablename__ = "kitting_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_serial_no = Column(String(100), nullable=False, index=True)
+    product_category = Column(String(100), nullable=False, index=True)
+    route_card_description = Column(String(250), nullable=False)
+    part_number = Column(String(100), nullable=True)
+    sap_part_number = Column(String(100), nullable=True)
+    material_description = Column(String(500), nullable=True)
+    batch_no_po_no = Column(String(100), nullable=True)
+    material_serial_no = Column(String(100), nullable=True)
+    weight_in_grams = Column(String(100), nullable=True)
+    required_quantity = Column(String(100), nullable=True)
+    uom = Column(String(50), nullable=True)
+    remarks = Column(String(500), nullable=True)
+    subsystems = Column(String(500), nullable=True)
+    data = Column(JSON, default=dict)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
