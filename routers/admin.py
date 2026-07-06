@@ -242,7 +242,7 @@ def load_entity(db: Session, model, unit_type: str, unit_id: int, top_level_fiel
     entity = db.query(model).filter(model.id == unit_id).first()
     if entity:
         return entity_to_dict(entity, db=db, top_level_fields=top_level_fields)
-    return next((item for item in _get_sample_units(unit_type) if item["id"] == unit_id), None)
+    return None
 
 
 def persist_entity(db: Session, model, data: dict, top_level_fields=None):
@@ -267,15 +267,15 @@ def list_or_sample(db: Session, model, unit_type: str, top_level_fields=None):
     items = db.query(model).order_by(model.id).all()
     if items:
         return [entity_to_dict(obj, db=db, top_level_fields=top_level_fields) for obj in items]
-    return _get_sample_units(unit_type)
+    return []
 
 
 @router.get("/admin")
 def admin_page(request: Request, db: Session = Depends(get_db)):
-    roles = _get_sample_roles()
-    licenses = _get_sample_licenses()
-    groups = _get_sample_groups()
-    users = _get_sample_users()
+    roles = []
+    licenses = []
+    groups = []
+    users = []
     context = build_template_context(request, roles=roles, licenses=licenses, groups=groups, users=users)
     return templates.TemplateResponse(request, "admin.html", context)
 
@@ -301,8 +301,6 @@ def users_list_page(request: Request, db: Session = Depends(get_db)):
         }
         for user in db_users
     ]
-    if not all_users:
-        all_users = _get_sample_users()
     pagination = paginate(all_users, page=page, per_page=50)
     context = build_template_context(request, users=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "users_list.html", context)
@@ -354,19 +352,51 @@ def users_new_page(request: Request):
 
 
 @router.get("/admin/users/{user_id}")
-def user_view_page(request: Request, user_id: int):
-    user = next((item for item in _get_sample_users() if item["id"] == user_id), None)
-    roles = _get_sample_roles()
-    licenses = _get_sample_licenses()
-    context = build_template_context(request, user=user, roles=roles, licenses=licenses, mode="view")
+def user_view_page(request: Request, user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return redirect_with_flash("/admin/users", request, "User not found.", "error")
+    user_dict = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "license_type": user.license_type,
+        "department": user.department,
+        "location": user.location,
+        "employee_id": user.employee_id,
+        "specialization": user.specialization,
+        "phone": user.phone,
+        "status": user.status,
+    }
+    roles = []
+    licenses = []
+    context = build_template_context(request, user=user_dict, roles=roles, licenses=licenses, mode="view")
     return templates.TemplateResponse(request, "user_config.html", context)
 
 
 @router.get("/admin/users/{user_id}/edit")
-def user_edit_page(request: Request, user_id: int):
-    user = next((item for item in _get_sample_users() if item["id"] == user_id), None)
-    roles = _get_sample_roles()
-    licenses = _get_sample_licenses()
+def user_edit_page(request: Request, user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return redirect_with_flash("/admin/users", request, "User not found.", "error")
+    user_dict = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "license_type": user.license_type,
+        "department": user.department,
+        "location": user.location,
+        "employee_id": user.employee_id,
+        "specialization": user.specialization,
+        "phone": user.phone,
+        "status": user.status,
+    }
+    roles = []
+    licenses = []
     departments = [
         "Administration",
         "Project Management",
@@ -423,8 +453,6 @@ def licenses_list_page(request: Request, db: Session = Depends(get_db)):
         }
         for license in db_licenses
     ]
-    if not all_licenses:
-        all_licenses = _get_sample_licenses()
     pagination = paginate(all_licenses, page=page, per_page=50)
     context = build_template_context(request, licenses=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "licenses_list.html", context)
@@ -465,8 +493,6 @@ def groups_list_page(request: Request, db: Session = Depends(get_db)):
         }
         for group in db_groups
     ]
-    if not all_groups:
-        all_groups = _get_sample_groups()
     pagination = paginate(all_groups, page=page, per_page=50)
     context = build_template_context(request, groups=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "groups_list.html", context)
@@ -679,9 +705,7 @@ def manage_group_members_page(group_id: int, request: Request, db: Session = Dep
         }
         for user in db_users
     ]
-    if not all_users:
-        all_users = _get_sample_users()
-        
+    
     group_dict = {
         "id": group.id,
         "name": group.name,
@@ -744,8 +768,6 @@ def customer_list_page(request: Request, db: Session = Depends(get_db)):
         }
         for customer in db_customers
     ]
-    if not all_customers:
-        all_customers = _get_sample_customers()
     pagination = paginate(all_customers, page=page, per_page=50)
     context = build_template_context(request, customers=pagination["items"], pagination=pagination)
     return templates.TemplateResponse(request, "customers_list.html", context)
@@ -758,16 +780,81 @@ def customer_configuration_page(request: Request):
 
 
 @router.post("/admin/customers")
-async def create_customer(request: Request, db: Session = Depends(get_db)):
+async def create_or_update_customer(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
-    data = parse_form_data(form)
-    customer = Customer(
-        name=data.get("customer_name", data.get("name", "")),
-        data=data,
-    )
+    customer_id = form.get("customer_id")
+    
+    # Build customer data
+    customer_name = form.get("customer_name", form.get("name", ""))
+    primary_address = form.get("primary_address", "")
+    contracts = form.get("contracts", "")
+    
+    # Build primary contact from form
+    primary_contact = {
+        "name": form.get("primary_contact_name", ""),
+        "email": form.get("primary_contact_email", ""),
+        "phone": form.get("primary_contact_phone", ""),
+        "designation": form.get("primary_contact_designation", ""),
+        "rank": form.get("primary_contact_rank", ""),
+        "site": form.get("primary_contact_site", ""),
+    }
+    
+    # Build additional contacts from form
+    contact_names = form.getlist("contact_name[]")
+    contact_emails = form.getlist("contact_email[]")
+    contact_phones = form.getlist("contact_phone[]")
+    contact_designations = form.getlist("contact_designation[]")
+    contact_ranks = form.getlist("contact_rank[]")
+    contact_sites = form.getlist("contact_site[]")
+    
+    additional_contacts = []
+    for i in range(len(contact_names)):
+        if contact_names[i]:  # Only add if name is not empty
+            additional_contacts.append({
+                "name": contact_names[i],
+                "email": contact_emails[i] if i < len(contact_emails) else "",
+                "phone": contact_phones[i] if i < len(contact_phones) else "",
+                "designation": contact_designations[i] if i < len(contact_designations) else "",
+                "rank": contact_ranks[i] if i < len(contact_ranks) else "",
+                "site": contact_sites[i] if i < len(contact_sites) else "",
+            })
+    
+    # Combine all contacts
+    all_contacts = [primary_contact] + additional_contacts if primary_contact.get("name") else additional_contacts
+    
+    # Create data dictionary
+    data = {
+        "name": customer_name,
+        "primary_address": primary_address,
+        "contacts": all_contacts,
+        "status": "Active",
+        "contracts": contracts,
+    }
+    
+    if customer_id:
+        # Update existing customer
+        customer = db.query(Customer).filter(Customer.id == int(customer_id)).first()
+        if customer:
+            customer.name = customer_name
+            customer.data = data
+            db.commit()
+            return redirect_with_flash("/admin/customers", request, "Customer updated.", "success")
+    
+    # Create new customer
+    customer = Customer(name=customer_name, data=data)
     db.add(customer)
     db.commit()
     return redirect_with_flash("/admin/customers", request, "Customer saved.", "success")
+
+
+@router.get("/admin/customers/{customer_id}/delete")
+def delete_customer(customer_id: int, request: Request, db: Session = Depends(get_db)):
+    customer = db.query(Customer).filter(Customer.id == customer_id).first()
+    if customer:
+        db.delete(customer)
+        db.commit()
+        return redirect_with_flash("/admin/customers", request, "Customer deleted.", "success")
+    return redirect_with_flash("/admin/customers", request, "Customer not found.", "error")
 
 
 def _get_sample_customers():
@@ -1679,22 +1766,30 @@ def _get_sample_sub_systems():
 @router.get("/admin/customers/{customer_id}")
 def customer_view_page(request: Request, customer_id: int, db: Session = Depends(get_db)):
     customer_obj = db.query(Customer).filter(Customer.id == customer_id).first()
+    contracts = []
     if customer_obj:
         customer = {"id": customer_obj.id, **(customer_obj.data or {})}
+        # Load contracts for this customer
+        db_contracts = db.query(Contract).filter(Contract.customer_id == customer_id).all()
+        contracts = [{"id": c.id, "number": c.number, **(c.data or {})} for c in db_contracts]
     else:
         customer = next((item for item in _get_sample_customers() if item["id"] == customer_id), None)
-    context = build_template_context(request, customer=customer, mode="view")
+    context = build_template_context(request, customer=customer, contracts=contracts, mode="view")
     return templates.TemplateResponse(request, "customer_config.html", context)
 
 
 @router.get("/admin/customers/{customer_id}/edit")
 def customer_edit_page(request: Request, customer_id: int, db: Session = Depends(get_db)):
     customer_obj = db.query(Customer).filter(Customer.id == customer_id).first()
+    contracts = []
     if customer_obj:
         customer = {"id": customer_obj.id, **(customer_obj.data or {})}
+        # Load contracts for this customer
+        db_contracts = db.query(Contract).filter(Contract.customer_id == customer_id).all()
+        contracts = [{"id": c.id, "number": c.number, **(c.data or {})} for c in db_contracts]
     else:
         customer = next((item for item in _get_sample_customers() if item["id"] == customer_id), None)
-    context = build_template_context(request, customer=customer, mode="edit")
+    context = build_template_context(request, customer=customer, contracts=contracts, mode="edit")
     return templates.TemplateResponse(request, "customer_config.html", context)
 
 
@@ -1711,9 +1806,7 @@ def contracts_list_page(request: Request, db: Session = Depends(get_db)):
         entity_to_dict(contract, db=db, top_level_fields=["number", "customer_id"])
         for contract in db_contracts
     ]
-    if not all_contracts:
-        all_contracts = _get_sample_contracts()
-        
+    
     import datetime
     today = datetime.date.today()
     for contract in all_contracts:
@@ -1890,8 +1983,9 @@ def tables_list_page(request: Request):
 
 
 @router.get("/admin/contracts/new")
-def contract_configuration_page(request: Request):
-    customers = _get_sample_customers()
+def contract_configuration_page(request: Request, db: Session = Depends(get_db)):
+    db_customers = db.query(Customer).order_by(Customer.id).all()
+    customers = [{"id": c.id, "name": c.name, **(c.data or {})} for c in db_customers]
     context = build_template_context(request, customers=customers)
     return templates.TemplateResponse(request, "contract_config.html", context)
 
@@ -1915,7 +2009,8 @@ def contract_view_page(request: Request, contract_id: int, db: Session = Depends
             except Exception:
                 pass
                 
-    customers = _get_sample_customers()
+    db_customers = db.query(Customer).order_by(Customer.id).all()
+    customers = [{"id": c.id, "name": c.name, **(c.data or {})} for c in db_customers]
     context = build_template_context(request, contract=contract, customers=customers, mode="view")
     return templates.TemplateResponse(request, "contract_config.html", context)
 
@@ -1939,7 +2034,8 @@ def contract_edit_page(request: Request, contract_id: int, db: Session = Depends
             except Exception:
                 pass
                 
-    customers = _get_sample_customers()
+    db_customers = db.query(Customer).order_by(Customer.id).all()
+    customers = [{"id": c.id, "name": c.name, **(c.data or {})} for c in db_customers]
     context = build_template_context(request, contract=contract, customers=customers, mode="edit")
     return templates.TemplateResponse(request, "contract_config.html", context)
 
@@ -1952,12 +2048,22 @@ def contract_disable(request: Request, contract_id: int):
 @router.get("/admin/lm")
 def loitering_munition_list_page(request: Request, db: Session = Depends(get_db)):
     page = int(request.query_params.get("page", 1))
+    status_filter = request.query_params.get("status")  # next-month, next-quarter, past-due
+    warranty_filter = request.query_params.get("warranty")  # expired, expiring, active
+    
     all_units = list_or_sample(db, LoiteringMunition, unit_type="LM", top_level_fields=["unit_name", "serial_number"])
     
     # Load contracts to override warranty dates dynamically
     _, contracts = _load_customers_and_contracts(db)
     import datetime
     today = datetime.date.today()
+    month_start = today.replace(day=1)
+    month_end = (month_start + datetime.timedelta(days=32)).replace(day=1) - datetime.timedelta(days=1)
+    next_month_start = (month_end + datetime.timedelta(days=1))
+    next_month_end = (next_month_start + datetime.timedelta(days=32)).replace(day=1) - datetime.timedelta(days=1)
+    quarter_end = today + datetime.timedelta(days=90)
+    
+    filtered_units = []
     for u in all_units:
         c_id = u.get("contract_id")
         c_num = u.get("contract_number")
@@ -1966,20 +2072,65 @@ def loitering_munition_list_page(request: Request, db: Session = Depends(get_db)
             con = next((c for c in contracts if str(c.get("id")) == str(c_id)), None)
         if not con and c_num:
             con = next((c for c in contracts if str(c.get("number")) == str(c_num)), None)
+        
+        warranty_status = "unknown"
+        service_status = "unknown"
+        
+        # Check warranty status
+        warranty_date_str = None
         if con:
             u["warranty_valid_from"] = con.get("executed_on", "")
             u["warranty_valid_to"] = con.get("valid_till", "")
-            
-            vt = con.get("valid_till")
-            if vt:
-                try:
-                    vt_date = datetime.datetime.strptime(vt, "%Y-%m-%d").date()
-                    if vt_date < today:
-                        u["status"] = "Expired"
-                except Exception:
-                    pass
+            warranty_date_str = con.get("valid_till", "")
+        else:
+            warranty_date_str = u.get("warranty_valid_to")
+        
+        if warranty_date_str:
+            try:
+                warranty_date = datetime.datetime.strptime(warranty_date_str, "%Y-%m-%d").date()
+                if warranty_date < today:
+                    warranty_status = "expired"
+                    if month_start <= warranty_date <= month_end:
+                        warranty_status = "expired"
+                elif month_start <= warranty_date <= month_end:
+                    warranty_status = "expired"
+                elif next_month_start <= warranty_date <= next_month_end:
+                    warranty_status = "expiring"
+                elif warranty_date <= quarter_end:
+                    warranty_status = "expiring"
+                else:
+                    warranty_status = "active"
+            except ValueError:
+                pass
+        
+        # Check service status (from seeded data which is merged into dict by entity_to_dict)
+        next_service_due_str = u.get('next_service_due')
+        
+        if next_service_due_str:
+            try:
+                next_service_date = datetime.datetime.strptime(next_service_due_str, "%d-%m-%Y").date()
+                if next_service_date < today:
+                    service_status = "past-due"
+                elif next_service_date <= month_end:
+                    service_status = "next-month"
+                elif next_service_date <= quarter_end:
+                    service_status = "next-quarter"
+            except ValueError:
+                pass
+        
+        # Apply filters
+        include_unit = True
+        if status_filter:
+            include_unit = (service_status == status_filter)
+        elif warranty_filter:
+            include_unit = (warranty_status == warranty_filter)
+        
+        if include_unit:
+            u["warranty_status"] = warranty_status
+            u["service_status"] = service_status
+            filtered_units.append(u)
 
-    pagination = paginate(all_units, page=page, per_page=50)
+    pagination = paginate(filtered_units, page=page, per_page=50)
     context = build_template_context(request, units=pagination["items"], unit_label="Loitering Munition (LM)", pagination=pagination)
     return templates.TemplateResponse(request, "lm_list.html", context)
 
@@ -1995,6 +2146,65 @@ def loitering_munition_new_page(request: Request, db: Session = Depends(get_db))
         kitting_items=[]
     )
     return templates.TemplateResponse(request, "loitering_munition.html", context)
+
+
+@router.get("/admin/master-products")
+def master_products_list_page(request: Request, db: Session = Depends(get_db)):
+    """Master Product Table - Aggregates all product types (LM, GCS, TMV, Simulator, RDV, MRLS)"""
+    page = int(request.query_params.get("page", 1))
+    
+    import datetime
+    today = datetime.date.today()
+    all_products = []
+    
+    # Load contracts for warranty data
+    _, contracts = _load_customers_and_contracts(db)
+    
+    # Fetch from each product table
+    product_models = [
+        (LoiteringMunition, "LM"),
+        (GroundControlSystem, "GCS"),
+        (TacticalMobilityVehicle, "TMV"),
+        (SimulatorUnit, "Simulator"),
+        (RapidDeploymentVehicle, "RDV"),
+        (MRLS, "MRLS"),
+    ]
+    
+    for model_class, product_type in product_models:
+        units = list_or_sample(db, model_class, unit_type=product_type, top_level_fields=["unit_name", "serial_number"])
+        
+        for u in units:
+            u["product_type"] = product_type
+            
+            # Load contract warranty data
+            c_id = u.get("contract_id")
+            c_num = u.get("contract_number")
+            con = None
+            if c_id:
+                con = next((c for c in contracts if str(c.get("id")) == str(c_id)), None)
+            if not con and c_num:
+                con = next((c for c in contracts if str(c.get("number")) == str(c_num)), None)
+            if con:
+                u["warranty_valid_from"] = con.get("executed_on", "")
+                u["warranty_valid_to"] = con.get("valid_till", "")
+                
+                vt = con.get("valid_till")
+                if vt:
+                    try:
+                        vt_date = datetime.datetime.strptime(vt, "%Y-%m-%d").date()
+                        if vt_date < today:
+                            u["status"] = "Expired"
+                    except Exception:
+                        pass
+            
+            all_products.append(u)
+    
+    # Sort by serial number
+    all_products.sort(key=lambda x: x.get("serial_number", ""))
+    
+    pagination = paginate(all_products, page=page, per_page=50)
+    context = build_template_context(request, products=pagination["items"], pagination=pagination)
+    return templates.TemplateResponse(request, "master_product_table.html", context)
 
 
 LM_ROUTE_CARDS = [
@@ -2275,7 +2485,7 @@ def lm_kitting_list_page(request: Request, db: Session = Depends(get_db)):
         )
     
     all_items = query.order_by(KittingItem.id.desc()).all()
-    pagination = paginate(all_items, page=page, per_page=50)
+    pagination = paginate(all_items, page=page, per_page=5000)
     
     lm_units = db.query(LoiteringMunition).all()
     lm_serials = [u.serial_number for u in lm_units if u.serial_number]
@@ -2433,21 +2643,42 @@ async def update_lm_kitting_item(request: Request, id: int, db: Session = Depend
     form = await request.form()
     data = parse_form_data(form)
     
-    # Audit log change tracking
+    # CRITICAL: Validate required fields to prevent record loss
+    product_serial_no = data.get("product_serial_no", "").strip()
+    if not product_serial_no:
+        product_serial_no = item.product_serial_no  # Keep existing value
+    
+    product_category = data.get("product_category", "").strip()
+    if not product_category:
+        product_category = item.product_category  # Keep existing value
+    
+    # Prepare update dict with proper null/empty handling
+    updates = {
+        "product_serial_no": product_serial_no,
+        "product_category": product_category,
+        "route_card_description": data.get("route_card_description") or item.route_card_description,
+        "part_number": data.get("part_number") or item.part_number,
+        "sap_part_number": data.get("sap_part_number") or item.sap_part_number,
+        "material_description": data.get("material_description") or item.material_description,
+        "batch_no_po_no": data.get("batch_no_po_no") or item.batch_no_po_no,
+        "material_serial_no": data.get("material_serial_no") or item.material_serial_no,
+        "weight_in_grams": data.get("weight_in_grams") or item.weight_in_grams,
+        "required_quantity": data.get("required_quantity") or item.required_quantity,
+        "uom": data.get("uom") or item.uom,
+        "remarks": data.get("remarks") or item.remarks,
+        "subsystems": data.get("subsystems") or item.subsystems,
+    }
+    
+    # Audit log change tracking - capture ALL changes with timestamp and user
     change_log = (item.data or {}).get("change_log", []) if item.data else []
-    fields_to_track = [
-        "product_serial_no", "route_card_description",
-        "part_number", "sap_part_number", "material_description",
-        "batch_no_po_no", "material_serial_no", "weight_in_grams",
-        "required_quantity", "uom", "remarks", "subsystems"
-    ]
+    fields_to_track = list(updates.keys())
     
     import datetime
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     for field in fields_to_track:
         old_val = getattr(item, field, "")
-        new_val = data.get(field, "")
+        new_val = updates.get(field, "")
         if str(old_val).strip() != str(new_val).strip():
             change_log.append({
                 "timestamp": timestamp,
@@ -2457,24 +2688,18 @@ async def update_lm_kitting_item(request: Request, id: int, db: Session = Depend
                 "new_value": str(new_val)
             })
             
-    # Update properties
-    item.product_serial_no = data.get("product_serial_no", item.product_serial_no)
-    item.route_card_description = data.get("route_card_description", item.route_card_description)
-    item.part_number = data.get("part_number", item.part_number)
-    item.sap_part_number = data.get("sap_part_number", item.sap_part_number)
-    item.material_description = data.get("material_description", item.material_description)
-    item.batch_no_po_no = data.get("batch_no_po_no", item.batch_no_po_no)
-    item.material_serial_no = data.get("material_serial_no", item.material_serial_no)
-    item.weight_in_grams = data.get("weight_in_grams", item.weight_in_grams)
-    item.required_quantity = data.get("required_quantity", item.required_quantity)
-    item.uom = data.get("uom", item.uom)
-    item.remarks = data.get("remarks", item.remarks)
-    item.subsystems = data.get("subsystems", item.subsystems)
+    # Apply all updates together
+    for field, value in updates.items():
+        setattr(item, field, value)
     
     item.data = {"change_log": change_log}
     db.commit()
     db.refresh(item)
-    return redirect_with_flash("/admin/lm-kitting", request, "Kitting item updated.", "success")
+    
+    # Flash message includes count of changes
+    change_count = len([c for c in change_log if c.get("timestamp") == timestamp])
+    message = f"Kitting item updated ({change_count} field{'s' if change_count != 1 else ''} changed)."
+    return redirect_with_flash("/admin/lm-kitting", request, message, "success")
 
 
 # GCS Kitting list, search, and pagination
@@ -2653,21 +2878,42 @@ async def update_gcs_kitting_item(request: Request, id: int, db: Session = Depen
     form = await request.form()
     data = parse_form_data(form)
     
-    # Audit log change tracking
+    # CRITICAL: Validate required fields to prevent record loss
+    product_serial_no = data.get("product_serial_no", "").strip()
+    if not product_serial_no:
+        product_serial_no = item.product_serial_no  # Keep existing value
+    
+    product_category = data.get("product_category", "").strip()
+    if not product_category:
+        product_category = item.product_category  # Keep existing value
+    
+    # Prepare update dict with proper null/empty handling
+    updates = {
+        "product_serial_no": product_serial_no,
+        "product_category": product_category,
+        "route_card_description": data.get("route_card_description") or item.route_card_description,
+        "part_number": data.get("part_number") or item.part_number,
+        "sap_part_number": data.get("sap_part_number") or item.sap_part_number,
+        "material_description": data.get("material_description") or item.material_description,
+        "batch_no_po_no": data.get("batch_no_po_no") or item.batch_no_po_no,
+        "material_serial_no": data.get("material_serial_no") or item.material_serial_no,
+        "weight_in_grams": data.get("weight_in_grams") or item.weight_in_grams,
+        "required_quantity": data.get("required_quantity") or item.required_quantity,
+        "uom": data.get("uom") or item.uom,
+        "remarks": data.get("remarks") or item.remarks,
+        "subsystems": data.get("subsystems") or item.subsystems,
+    }
+    
+    # Audit log change tracking - capture ALL changes with timestamp and user
     change_log = (item.data or {}).get("change_log", []) if item.data else []
-    fields_to_track = [
-        "product_serial_no", "route_card_description",
-        "part_number", "sap_part_number", "material_description",
-        "batch_no_po_no", "material_serial_no", "weight_in_grams",
-        "required_quantity", "uom", "remarks", "subsystems"
-    ]
+    fields_to_track = list(updates.keys())
     
     import datetime
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     for field in fields_to_track:
         old_val = getattr(item, field, "")
-        new_val = data.get(field, "")
+        new_val = updates.get(field, "")
         if str(old_val).strip() != str(new_val).strip():
             change_log.append({
                 "timestamp": timestamp,
@@ -2677,24 +2923,18 @@ async def update_gcs_kitting_item(request: Request, id: int, db: Session = Depen
                 "new_value": str(new_val)
             })
             
-    # Update properties
-    item.product_serial_no = data.get("product_serial_no", item.product_serial_no)
-    item.route_card_description = data.get("route_card_description", item.route_card_description)
-    item.part_number = data.get("part_number", item.part_number)
-    item.sap_part_number = data.get("sap_part_number", item.sap_part_number)
-    item.material_description = data.get("material_description", item.material_description)
-    item.batch_no_po_no = data.get("batch_no_po_no", item.batch_no_po_no)
-    item.material_serial_no = data.get("material_serial_no", item.material_serial_no)
-    item.weight_in_grams = data.get("weight_in_grams", item.weight_in_grams)
-    item.required_quantity = data.get("required_quantity", item.required_quantity)
-    item.uom = data.get("uom", item.uom)
-    item.remarks = data.get("remarks", item.remarks)
-    item.subsystems = data.get("subsystems", item.subsystems)
+    # Apply all updates together
+    for field, value in updates.items():
+        setattr(item, field, value)
     
     item.data = {"change_log": change_log}
     db.commit()
     db.refresh(item)
-    return redirect_with_flash("/admin/gcs-kitting", request, "Kitting item updated.", "success")
+    
+    # Flash message includes count of changes
+    change_count = len([c for c in change_log if c.get("timestamp") == timestamp])
+    message = f"Kitting item updated ({change_count} field{'s' if change_count != 1 else ''} changed)."
+    return redirect_with_flash("/admin/gcs-kitting", request, message, "success")
 
 
 @router.get("/admin/tmv")
@@ -3751,10 +3991,19 @@ async def create_loitering_munition(request: Request, db: Session = Depends(get_
                     "new_value": str(new_val)
                 })
         
-        # Save change log in data
-        data["change_log"] = change_log
+        # Preserve critical fields from old data if not provided in form
+        if not data.get("customer") or data.get("customer").strip() == "":
+            data["customer"] = old_data.get("customer", "")
+        if not data.get("contract") or data.get("contract").strip() == "":
+            data["contract"] = old_data.get("contract", "")
+        
+        # Merge new data with old data to preserve all existing fields
+        merged_data = old_data.copy()
+        merged_data.update(data)
+        merged_data["change_log"] = change_log
+        
         existing.unit_name = data.get("unit_name", existing.unit_name)
-        existing.data = data
+        existing.data = merged_data
         db.commit()
         db.refresh(existing)
         return redirect_with_flash("/admin/lm", request, "Unit updated and changes logged.", "success")
@@ -3772,8 +4021,20 @@ async def create_ground_control_system(request: Request, db: Session = Depends(g
     existing = db.query(GroundControlSystem).filter(GroundControlSystem.serial_number == serial_no).first()
     
     if existing:
+        old_data = existing.data or {}
+        
+        # Preserve critical fields from old data if not provided in form
+        if not data.get("customer") or data.get("customer").strip() == "":
+            data["customer"] = old_data.get("customer", "")
+        if not data.get("contract") or data.get("contract").strip() == "":
+            data["contract"] = old_data.get("contract", "")
+        
+        # Merge new data with old data to preserve all existing fields
+        merged_data = old_data.copy()
+        merged_data.update(data)
+        
         existing.unit_name = data.get("unit_name", existing.unit_name)
-        existing.data = data
+        existing.data = merged_data
         db.commit()
         db.refresh(existing)
         return redirect_with_flash("/admin/gcs", request, "Unit updated.", "success")

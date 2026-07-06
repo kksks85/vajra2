@@ -1,4 +1,4 @@
-# Vajra Service Management (Python-Only)
+# ALS - 50 Customer Service Management Portal (Python-Only)
 
 Enterprise-grade service management for drone operations. Includes incident management, knowledge management, admin/RBAC, and a low-code/no-code workflow builder.
 

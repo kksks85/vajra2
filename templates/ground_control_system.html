@@ -109,35 +109,37 @@
         .tabs-container {
           display: flex;
           flex-wrap: wrap;
-          gap: 2px;
-          border-bottom: 2px solid var(--border-color);
+          gap: 8px;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          padding: 12px 8px;
           margin-bottom: 20px;
-          padding-bottom: 0px !important;
         }
         .tab-btn {
-          border: 1px solid var(--border-color) !important;
-          border-bottom: none !important;
-          background: #f1f5f9 !important;
-          color: #475569 !important;
-          padding: 8px 16px !important;
+          border: 1px solid #cbd5e1 !important;
+          background: #ffffff !important;
+          color: #334155 !important;
+          padding: 10px 16px !important;
           font-size: 13px !important;
-          font-weight: 600 !important;
+          font-weight: 500 !important;
           cursor: pointer !important;
-          border-top-left-radius: 4px;
-          border-top-right-radius: 4px;
-          margin-bottom: -2px !important;
-          transition: all 0.15s ease;
+          border-radius: 5px;
+          margin: 0 !important;
+          transition: all 0.2s ease;
+          position: relative;
         }
         .tab-btn:hover {
-          background: #e2e8f0 !important;
+          background: #f1f5f9 !important;
           color: #1e293b !important;
+          border-color: #94a3b8 !important;
         }
         .tab-btn.active {
-          background: #ffffff !important;
-          color: var(--primary-color) !important;
-          border-color: var(--border-color) !important;
-          border-bottom: 2px solid #ffffff !important;
-          box-shadow: inset 0 3px 0 var(--primary-color);
+          background: #3b82f6 !important;
+          color: #ffffff !important;
+          border-color: #3b82f6 !important;
+          font-weight: 600 !important;
+          box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
         }
       </style>
 
@@ -153,9 +155,6 @@
               {{ card }}
             </button>
           {% endfor %}
-          <button type="button" class="tab-btn" data-tab="tab-subsystems">
-            Subsystems View
-          </button>
         </div>
 
         <!-- Search bar for filtering parts (ServiceNow Style below tabs) -->
@@ -241,71 +240,6 @@
             </div>
           </div>
         {% endfor %}
-
-        <!-- Subsystems view tab content -->
-        <div id="tab-subsystems" class="tab-content" style="display: none;">
-          {% set subsystems_list = [] %}
-          {% for item in kitting_items %}
-            {% if item.subsystems and item.subsystems not in subsystems_list %}
-              {% set _ = subsystems_list.append(item.subsystems) %}
-            {% endif %}
-          {% endfor %}
-          
-          {% for sub in subsystems_list %}
-            <div style="margin-top: 15px; margin-bottom: 25px;">
-              <h3 style="margin-bottom: 10px; color: var(--si-primary); border-left: 3px solid var(--si-primary); padding-left: 8px; font-size: 15px; font-weight: 600;">
-                {{ sub }}
-              </h3>
-              <div style="overflow-x: auto;">
-                <table class="table dense parts-table" style="width: 100%; border-collapse: collapse; min-width: 1000px;">
-                  <thead>
-                    <tr style="border-bottom: 2px solid var(--border-color);">
-                      <th>Part Number</th>
-                      <th>SAP Part Number</th>
-                      <th>Material Description</th>
-                      <th>Batch No / PO No</th>
-                      <th>Material Serial No</th>
-                      <th>Weight in Grams</th>
-                      <th>Required Quantity</th>
-                      <th>Unit of Measurement (UOM)</th>
-                      <th>Remarks</th>
-                      <th>Route Card Description</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for item in kitting_items %}
-                      {% if item.subsystems == sub %}
-                        <tr class="part-row" style="border-bottom: 1px solid var(--border-color); cursor: pointer;" onclick="handlePartRowClick(event, '/admin/gcs-kitting/{{ item.id }}')">
-                          <td class="searchable col-part_number">
-                            <a href="/admin/gcs-kitting/{{ item.id }}" style="color: var(--si-primary); font-weight: 500; text-decoration: none;">{{ item.part_number }}</a>
-                          </td>
-                          <td class="searchable col-sap_part_number">
-                            <a href="/admin/gcs-kitting/{{ item.id }}" style="color: var(--si-primary); font-weight: 500; text-decoration: none;">{{ item.sap_part_number }}</a>
-                          </td>
-                          <td class="searchable col-material_description"><strong>{{ item.material_description }}</strong></td>
-                          <td class="searchable col-batch_no_po_no">{{ item.batch_no_po_no }}</td>
-                          <td class="searchable col-material_serial_no">{{ item.material_serial_no or '-' }}</td>
-                          <td class="searchable col-weight_in_grams">{{ item.weight_in_grams or '-' }}</td>
-                          <td class="searchable col-required_quantity">{{ item.required_quantity }}</td>
-                          <td class="searchable col-uom">{{ item.uom }}</td>
-                          <td class="searchable col-remarks" style="color: var(--si-muted);">{{ item.remarks or '-' }}</td>
-                          <td class="searchable col-route_card_description">
-                            <a href="/admin/gcs-kitting?q={{ item.route_card_description }}" class="pill" style="font-size: 0.85em; text-decoration: none;">{{ item.route_card_description or '-' }}</a>
-                          </td>
-                        </tr>
-                      {% endif %}
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          {% endfor %}
-          {% if not subsystems_list %}
-            <div style="text-align: center; padding: 25px; color: var(--si-muted);">
-              No subsystems found. Populate data in the GCS Kitting master table.
-            </div>
-          {% endif %}
-        </div>
 
       </div>
     </div>

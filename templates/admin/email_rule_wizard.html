@@ -1,0 +1,648 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .wizard-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px;
+    background: #ffffff;
+  }
+
+  .wizard-header {
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  .wizard-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .wizard-header p {
+    margin: 8px 0 0 0;
+    color: #6b7280;
+    font-size: 14px;
+  }
+
+  .wizard-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    position: relative;
+  }
+
+  .wizard-steps::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #e5e7eb;
+    z-index: 0;
+  }
+
+  .step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-number {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 12px;
+    background: #e5e7eb;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 16px;
+  }
+
+  .step.active .step-number {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .step.completed .step-number {
+    background: #10b981;
+    color: white;
+  }
+
+  .step-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .step.active .step-title {
+    color: #3b82f6;
+  }
+
+  .wizard-content {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 30px;
+    margin-bottom: 30px;
+  }
+
+  .wizard-step {
+    display: none;
+  }
+
+  .wizard-step.active {
+    display: block;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+  }
+
+  .form-group.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-group.checkbox input {
+    width: auto;
+    margin: 0;
+  }
+
+  .form-group.checkbox label {
+    margin: 0;
+  }
+
+  .helper-text {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 6px;
+  }
+
+  .trigger-options,
+  .recipient-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .option-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .option-card:hover {
+    border-color: #3b82f6;
+    background: #f0f9ff;
+  }
+
+  .option-card.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  .option-card input[type="radio"],
+  .option-card input[type="checkbox"] {
+    margin-right: 8px;
+  }
+
+  .option-label {
+    font-weight: 600;
+    color: #111827;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .option-desc {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .recipient-tag {
+    display: inline-block;
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #1e40af;
+    margin: 4px 4px 4px 0;
+  }
+
+  .recipient-tag button {
+    background: none;
+    border: none;
+    color: #1e40af;
+    cursor: pointer;
+    margin-left: 6px;
+    font-weight: bold;
+  }
+
+  .wizard-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary {
+    background: #e5e7eb;
+    color: #111827;
+  }
+
+  .btn-secondary:hover {
+    background: #d1d5db;
+  }
+
+  .btn-primary {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: #2563eb;
+  }
+
+  .btn-success {
+    background: #10b981;
+    color: white;
+  }
+
+  .btn-success:hover {
+    background: #059669;
+  }
+
+  .preview-section {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .preview-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .preview-item:last-child {
+    border-bottom: none;
+  }
+
+  .preview-label {
+    font-weight: 600;
+    color: #6b7280;
+  }
+
+  .preview-value {
+    color: #111827;
+  }
+
+  .step-description {
+    background: white;
+    border-left: 4px solid #3b82f6;
+    padding: 12px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+  }
+</style>
+
+<div class="wizard-container">
+  <!-- Header -->
+  <div class="wizard-header">
+    <h1>🚀 Email Rule Wizard</h1>
+    <p>Create dynamic email notification rules step by step</p>
+  </div>
+
+  <!-- Steps Progress -->
+  <div class="wizard-steps">
+    <div class="step active" data-step="1">
+      <div class="step-number">1</div>
+      <div class="step-title">Rule Name</div>
+    </div>
+    <div class="step" data-step="2">
+      <div class="step-number">2</div>
+      <div class="step-title">Trigger Event</div>
+    </div>
+    <div class="step" data-step="3">
+      <div class="step-number">3</div>
+      <div class="step-title">Conditions</div>
+    </div>
+    <div class="step" data-step="4">
+      <div class="step-number">4</div>
+      <div class="step-title">Recipients</div>
+    </div>
+    <div class="step" data-step="5">
+      <div class="step-number">5</div>
+      <div class="step-title">Email Template</div>
+    </div>
+    <div class="step" data-step="6">
+      <div class="step-number">6</div>
+      <div class="step-title">Review & Save</div>
+    </div>
+  </div>
+
+  <!-- Wizard Form -->
+  <form id="ruleWizardForm" method="POST" action="/admin/email-config/rule">
+    <!-- Step 1: Rule Name -->
+    <div id="step-1" class="wizard-step active">
+      <div class="wizard-content">
+        <div class="step-description">
+          📝 Let's give your rule a meaningful name so you can identify it easily.
+        </div>
+        <div class="form-group">
+          <label for="ruleName">Rule Name *</label>
+          <input type="text" id="ruleName" name="ruleName" placeholder="e.g., Notify on Critical Incident" required />
+          <div class="helper-text">A unique name for this notification rule</div>
+        </div>
+        <div class="form-group">
+          <label for="ruleDescription">Description</label>
+          <textarea id="ruleDescription" name="ruleDescription" placeholder="Describe what this rule does..."></textarea>
+          <div class="helper-text">Optional: Describe the purpose of this rule</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Trigger Event -->
+    <div id="step-2" class="wizard-step">
+      <div class="wizard-content">
+        <div class="step-description">
+          ⚡ Choose what event should trigger this email notification.
+        </div>
+        <div class="form-group">
+          <label>Select Trigger Event *</label>
+          <div class="trigger-options">
+            <label class="option-card">
+              <input type="radio" name="triggerType" value="incident_created" />
+              <span class="option-label">Incident Created</span>
+              <span class="option-desc">When a new incident is logged</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="triggerType" value="incident_assigned" />
+              <span class="option-label">Incident Assigned</span>
+              <span class="option-desc">When an incident is assigned</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="triggerType" value="incident_status_changed" />
+              <span class="option-label">Status Changed</span>
+              <span class="option-desc">When incident status changes</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="triggerType" value="sla_breach" />
+              <span class="option-label">SLA Breach</span>
+              <span class="option-desc">When SLA is about to breach</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="triggerType" value="priority_high" />
+              <span class="option-label">High Priority</span>
+              <span class="option-desc">When high priority incident created</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="triggerType" value="custom" />
+              <span class="option-label">Custom Event</span>
+              <span class="option-desc">Define your own condition</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Conditions -->
+    <div id="step-3" class="wizard-step">
+      <div class="wizard-content">
+        <div class="step-description">
+          🎯 Set specific conditions that must be met for the rule to trigger.
+        </div>
+        <div class="form-group">
+          <label>Priority Level</label>
+          <select name="priorityCondition">
+            <option value="">-- Any Priority --</option>
+            <option value="critical">Critical (AOG)</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <div class="helper-text">Only send email for specific priority levels</div>
+        </div>
+        <div class="form-group">
+          <label>Issue Type</label>
+          <select name="issueTypeCondition">
+            <option value="">-- Any Issue Type --</option>
+            <option value="electrical">Electrical</option>
+            <option value="mechanical">Mechanical</option>
+            <option value="electronics">Electronics</option>
+            <option value="software">Software</option>
+            <option value="communication">Communication</option>
+          </select>
+          <div class="helper-text">Only send email for specific issue types</div>
+        </div>
+        <div class="form-group">
+          <label>Customer</label>
+          <select name="customerCondition">
+            <option value="">-- Any Customer --</option>
+            <option value="indian_air_force">Indian Air Force</option>
+            <option value="indian_army">Indian Army</option>
+            <option value="indian_navy">Indian Navy</option>
+          </select>
+          <div class="helper-text">Only send email for incidents from specific customers</div>
+        </div>
+        <div class="form-group checkbox">
+          <input type="checkbox" id="requiresApproval" name="requiresApproval" />
+          <label for="requiresApproval">Require approval before sending</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Recipients -->
+    <div id="step-4" class="wizard-step">
+      <div class="wizard-content">
+        <div class="step-description">
+          👥 Specify who should receive these email notifications.
+        </div>
+        <div class="form-group">
+          <label>Add Recipients *</label>
+          <input type="email" id="recipientEmail" placeholder="email@company.com" />
+          <button type="button" class="btn btn-secondary" style="margin-top: 8px;" onclick="addRecipient()">+ Add Recipient</button>
+          <div class="helper-text">Enter email addresses one by one</div>
+        </div>
+        <div id="recipientsList" style="margin-top: 15px;">
+          <!-- Recipients will appear here -->
+        </div>
+        <input type="hidden" id="recipients" name="recipients" />
+      </div>
+    </div>
+
+    <!-- Step 5: Email Template -->
+    <div id="step-5" class="wizard-step">
+      <div class="wizard-content">
+        <div class="step-description">
+          📧 Customize the email content and subject line.
+        </div>
+        <div class="form-group">
+          <label for="emailSubject">Email Subject *</label>
+          <input type="text" id="emailSubject" name="emailSubject" placeholder="e.g., [ALS-50] Critical Incident: {incident_number}" required />
+          <div class="helper-text">Use {field_name} for dynamic variables like {incident_number}, {priority}, {customer_name}</div>
+        </div>
+        <div class="form-group">
+          <label for="emailBody">Email Body *</label>
+          <textarea id="emailBody" name="emailBody" placeholder="Dear {recipient_name},&#10;&#10;A new incident has been created:&#10;Incident ID: {incident_number}&#10;Priority: {priority}&#10;Status: {status}&#10;...&#10;&#10;Best Regards,&#10;ALS-50 Support Team" required></textarea>
+          <div class="helper-text">You can use variables: {incident_number}, {priority}, {status}, {customer_name}, {requestor_name}, {assigned_to}, {recipient_name}</div>
+        </div>
+        <div class="form-group checkbox">
+          <input type="checkbox" id="includeAttachments" name="includeAttachments" />
+          <label for="includeAttachments">Include incident details as attachment</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 6: Review & Save -->
+    <div id="step-6" class="wizard-step">
+      <div class="wizard-content">
+        <div class="step-description">
+          ✅ Review your rule configuration before saving.
+        </div>
+        <div class="preview-section">
+          <div class="preview-item">
+            <span class="preview-label">Rule Name:</span>
+            <span class="preview-value" id="previewRuleName">-</span>
+          </div>
+          <div class="preview-item">
+            <span class="preview-label">Trigger:</span>
+            <span class="preview-value" id="previewTrigger">-</span>
+          </div>
+          <div class="preview-item">
+            <span class="preview-label">Conditions:</span>
+            <span class="preview-value" id="previewConditions">-</span>
+          </div>
+          <div class="preview-item">
+            <span class="preview-label">Recipients:</span>
+            <span class="preview-value" id="previewRecipients">-</span>
+          </div>
+          <div class="preview-item">
+            <span class="preview-label">Subject:</span>
+            <span class="preview-value" id="previewSubject">-</span>
+          </div>
+        </div>
+        <div style="margin-top: 20px; padding: 12px; background: #f0fdf4; border-left: 4px solid #10b981; border-radius: 4px;">
+          <strong style="color: #065f46;">✓ Ready to Save</strong>
+          <p style="margin: 4px 0 0 0; color: #065f46; font-size: 13px;">Your email notification rule is ready. Click save to activate it.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="wizard-actions">
+      <button type="button" class="btn btn-secondary" id="prevBtn" onclick="changeStep(-1)" style="display: none;">← Previous</button>
+      <div>
+        <button type="button" class="btn btn-secondary" onclick="window.history.back()">Cancel</button>
+        <button type="button" class="btn btn-primary" id="nextBtn" onclick="changeStep(1)">Next →</button>
+        <button type="submit" class="btn btn-success" id="saveBtn" style="display: none;">✓ Save Rule</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+  let currentStep = 1;
+  const totalSteps = 6;
+  let recipients = [];
+
+  function showStep(stepNum) {
+    // Hide all steps
+    document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.step').forEach(el => {
+      el.classList.remove('active', 'completed');
+    });
+
+    // Show current step
+    document.getElementById(`step-${stepNum}`).classList.add('active');
+    document.querySelector(`[data-step="${stepNum}"]`).classList.add('active');
+
+    // Mark previous steps as completed
+    for (let i = 1; i < stepNum; i++) {
+      document.querySelector(`[data-step="${i}"]`).classList.add('completed');
+    }
+
+    // Update button visibility
+    document.getElementById('prevBtn').style.display = stepNum > 1 ? 'block' : 'none';
+    document.getElementById('nextBtn').style.display = stepNum < totalSteps ? 'block' : 'none';
+    document.getElementById('saveBtn').style.display = stepNum === totalSteps ? 'block' : 'none';
+
+    // Update preview if on final step
+    if (stepNum === totalSteps) {
+      updatePreview();
+    }
+
+    currentStep = stepNum;
+  }
+
+  function changeStep(direction) {
+    const newStep = currentStep + direction;
+    if (newStep >= 1 && newStep <= totalSteps) {
+      showStep(newStep);
+    }
+  }
+
+  function addRecipient() {
+    const email = document.getElementById('recipientEmail').value.trim();
+    if (!email) {
+      alert('Please enter an email address');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+    if (recipients.includes(email)) {
+      alert('This email is already added');
+      return;
+    }
+
+    recipients.push(email);
+    document.getElementById('recipientEmail').value = '';
+    updateRecipientsList();
+  }
+
+  function removeRecipient(email) {
+    recipients = recipients.filter(r => r !== email);
+    updateRecipientsList();
+  }
+
+  function updateRecipientsList() {
+    const list = document.getElementById('recipientsList');
+    list.innerHTML = recipients.map(email => `
+      <div class="recipient-tag">
+        ${email}
+        <button type="button" onclick="removeRecipient('${email}')">&times;</button>
+      </div>
+    `).join('');
+    document.getElementById('recipients').value = JSON.stringify(recipients);
+  }
+
+  function updatePreview() {
+    document.getElementById('previewRuleName').textContent = document.getElementById('ruleName').value || '-';
+    const trigger = document.querySelector('input[name="triggerType"]:checked');
+    document.getElementById('previewTrigger').textContent = trigger ? trigger.value.replace(/_/g, ' ').toUpperCase() : '-';
+    document.getElementById('previewRecipients').textContent = recipients.length > 0 ? recipients.join(', ') : '-';
+    document.getElementById('previewSubject').textContent = document.getElementById('emailSubject').value || '-';
+  }
+
+  // Allow adding recipient with Enter key
+  document.getElementById('recipientEmail')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addRecipient();
+    }
+  });
+
+  // Mark option cards as selected
+  document.querySelectorAll('.option-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const input = card.querySelector('input');
+      document.querySelectorAll(`.option-card`).forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      input.checked = true;
+    });
+  });
+
+  // Initialize
+  showStep(1);
+</script>
+
+{% endblock %}

@@ -3,186 +3,136 @@
 <section class="admin-dashboard">
   <header class="admin-hero">
     <div class="admin-hero-content">
-      <p class="admin-eyebrow">Admin Command Center</p>
-      <h1>Operations Command</h1>
-      <p>Task-driven service orchestration for the full drone fleet. Monitor readiness, resolve incidents, and coordinate mission-critical maintenance with precision.</p>
+      <p class="admin-eyebrow">ALS - 50 Command Center</p>
+      <h1>Operations Dashboard</h1>
+      <p>Service management and incident tracking for the complete fleet. Monitor incidents, track service schedules, and manage warranty status with precision.</p>
       <div class="admin-hero-actions">
-        <div class="admin-pill">Mission Readiness: 88%</div>
-        <div class="admin-pill admin-pill--soft">Last Sync: just now</div>
+        <div class="admin-pill">Total Incidents: {{ metrics.total_incidents }}</div>
+        <div class="admin-pill admin-pill--soft">Open: {{ metrics.open_incidents }}</div>
       </div>
     </div>
     <div class="admin-hero-panel">
-      <div class="admin-hero-title">Shift Pulse</div>
-      <div class="admin-hero-stat">{{ metrics.incidents }} open incidents</div>
-      <div class="admin-hero-sub">Field operations stable · Automation pipelines online</div>
+      <div class="admin-hero-title">Fleet Status</div>
+      <div class="admin-hero-stat">{{ metrics.total_incidents }} Incidents</div>
+      <div class="admin-hero-sub">Customer Service Management Platform</div>
       <div class="admin-hero-matrix">
         <div>
-          <span>Coverage</span>
-          <strong>96%</strong>
+          <span>Total Incident</span>
+          <strong>{{ metrics.total_incidents }}</strong>
         </div>
         <div>
-          <span>Utilization</span>
-          <strong>72%</strong>
+          <span>Work in Progress</span>
+          <strong>{{ metrics.work_in_progress }}</strong>
         </div>
         <div>
-          <span>Risk Index</span>
-          <strong>Low</strong>
+          <span>Resolved</span>
+          <strong>{{ metrics.resolved }}</strong>
+        </div>
+        <div>
+          <span>Critical Priority</span>
+          <strong>{{ metrics.critical_priority }}</strong>
         </div>
       </div>
     </div>
   </header>
 
-  <section class="admin-metric-grid">
-    <div class="admin-metric-card">
-      <div class="admin-metric-value">{{ metrics.incidents }}</div>
-      <div class="admin-metric-label">Open Incidents</div>
-      <div class="admin-metric-meta">+4 since yesterday</div>
-    </div>
-    <div class="admin-metric-card">
-      <div class="admin-metric-value">{{ metrics.workflows }}</div>
-      <div class="admin-metric-label">Active Workflows</div>
-      <div class="admin-metric-meta">98% success rate</div>
-    </div>
-    <div class="admin-metric-card">
-      <div class="admin-metric-value">{{ metrics.knowledge }}</div>
-      <div class="admin-metric-label">Knowledge Articles</div>
-      <div class="admin-metric-meta">14 published this week</div>
-    </div>
-    <div class="admin-metric-card">
-      <div class="admin-metric-value">{{ metrics.tasks }}</div>
-      <div class="admin-metric-label">Automation Tasks</div>
-      <div class="admin-metric-meta">12 queued · 3 escalated</div>
-    </div>
-  </section>
-
   <section class="admin-grid">
-    <div class="admin-card">
+    <div class="admin-card" style="cursor: pointer;" onclick="window.location.href='/admin/incidents'">
       <div class="admin-card-header">
         <div>
-          <h2>Service Posture</h2>
-          <p>Operational readiness across assets and contracts.</p>
-        </div>
-        <span class="admin-tag">Live</span>
-      </div>
-      <div class="admin-progress">
-        <div>
-          <div class="admin-progress-label">Fleet Availability</div>
-          <div class="admin-progress-bar"><span style="width: 84%"></span></div>
-        </div>
-        <div>
-          <div class="admin-progress-label">Mission Assurance</div>
-          <div class="admin-progress-bar"><span style="width: 78%"></span></div>
-        </div>
-        <div>
-          <div class="admin-progress-label">Maintenance Compliance</div>
-          <div class="admin-progress-bar"><span style="width: 91%"></span></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="admin-card">
-      <div class="admin-card-header">
-        <div>
-          <h2>Fleet Health</h2>
-          <p>Subsystem watchlist and predicted risk.</p>
-        </div>
-        <span class="admin-tag admin-tag--warning">Monitor</span>
-      </div>
-      <ul class="admin-list">
-        <li>
-          <div>
-            <strong>Avionics Calibration</strong>
-            <span>12 units due within 72 hrs</span>
-          </div>
-          <span class="admin-badge">Priority</span>
-        </li>
-        <li>
-          <div>
-            <strong>Propulsion Health</strong>
-            <span>3 assets in diagnostic stage</span>
-          </div>
-          <span class="admin-badge admin-badge--info">Tracking</span>
-        </li>
-        <li>
-          <div>
-            <strong>Payload Systems</strong>
-            <span>Stable with 98% uptime</span>
-          </div>
-          <span class="admin-badge admin-badge--success">Stable</span>
-        </li>
-      </ul>
-    </div>
-
-    <div class="admin-card admin-card--wide">
-      <div class="admin-card-header">
-        <div>
-          <h2>Command Activity</h2>
-          <p>Latest updates from the control rooms.</p>
-        </div>
-        <span class="admin-tag admin-tag--soft">Last 24 hrs</span>
-      </div>
-      <div class="admin-activity">
-        <div class="admin-activity-item">
-          <span class="admin-activity-dot"></span>
-          <div>
-            <strong>Incident INC-031 escalated</strong>
-            <span>Critical priority raised by Field Ops · 14:02</span>
-          </div>
-        </div>
-        <div class="admin-activity-item">
-          <span class="admin-activity-dot admin-activity-dot--blue"></span>
-          <div>
-            <strong>Workflow WF-204 completed</strong>
-            <span>Automated inspection closed with 0 exceptions · 12:44</span>
-          </div>
-        </div>
-        <div class="admin-activity-item">
-          <span class="admin-activity-dot admin-activity-dot--amber"></span>
-          <div>
-            <strong>Knowledge update published</strong>
-            <span>New avionics troubleshooting guide pushed · 11:18</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="admin-card admin-card--wide">
-      <div class="admin-card-header">
-        <div>
-          <h2>Regional Command Board</h2>
-          <p>Coverage by theater and command readiness.</p>
+          <h2>Incidents by Priority</h2>
+          <p>Distribution of incidents across priority levels.</p>
         </div>
       </div>
       <div class="admin-table">
         <div class="admin-table-row admin-table-head">
-          <span>Region</span>
-          <span>Readiness</span>
-          <span>Open Incidents</span>
-          <span>Active Crews</span>
+          <span>Priority</span>
+          <span>Count</span>
+          <span>Open</span>
+          <span>Resolved</span>
         </div>
-        <div class="admin-table-row">
-          <span>North Command</span>
-          <span>92%</span>
-          <span>8</span>
-          <span>14</span>
+        {% for priority, data in metrics.incidents_by_priority.items() %}
+        <div class="admin-table-row" style="cursor: pointer;" onclick="event.stopPropagation(); window.location.href='/admin/incidents?priority={{ priority|lower }}'">
+          <span>{{ priority|capitalize }}</span>
+          <span style="background: {% if priority == 'critical' %}#dc2626{% elif priority == 'high' %}#f97316{% elif priority == 'medium' %}#fbbf24{% else %}#3b82f6{% endif %}; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-weight: 600; display: inline-block;">{{ data.total }}</span>
+          <span style="background: #f59e0b; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-weight: 600; display: inline-block;">{{ data.open }}</span>
+          <span style="background: #10b981; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-weight: 600; display: inline-block;">{{ data.resolved }}</span>
         </div>
-        <div class="admin-table-row">
-          <span>East Command</span>
-          <span>87%</span>
-          <span>11</span>
-          <span>12</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="admin-card" style="cursor: pointer;" onclick="window.location.href='/admin/incidents'">
+      <div class="admin-card-header">
+        <div>
+          <h2>Incidents by Product Category</h2>
+          <p>Incidents distributed by product type.</p>
         </div>
-        <div class="admin-table-row">
-          <span>South Command</span>
-          <span>95%</span>
-          <span>6</span>
-          <span>9</span>
+      </div>
+      <div class="admin-table" style="max-height: 240px; overflow-y: auto;">
+        <div class="admin-table-row admin-table-head" style="position: sticky; top: 0; z-index: 1;">
+          <span>Product Category</span>
+          <span>Count</span>
         </div>
-        <div class="admin-table-row">
-          <span>West Command</span>
-          <span>89%</span>
-          <span>6</span>
-          <span>10</span>
+        {% for category, count in metrics.incidents_by_category.items() %}
+        <div class="admin-table-row" style="cursor: pointer;" onclick="event.stopPropagation(); window.location.href='/admin/incidents?category={{ category|lower }}'">
+          <span>{{ category }}</span>
+          <span style="background: #6366f1; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-weight: 600; display: inline-block;">{{ count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="admin-card" style="cursor: pointer;" onclick="window.location.href='/admin/lm'">
+      <div class="admin-card-header">
+        <div>
+          <h2>LM Service Schedule</h2>
+          <p>Loitering Munition upcoming and overdue service appointments.</p>
+        </div>
+      </div>
+      <div class="admin-table">
+        <div class="admin-table-row admin-table-head">
+          <span>Status</span>
+          <span>Count</span>
+        </div>
+        <div class="admin-table-row" style="cursor: pointer; hover: background: #f0f0f0;" onclick="event.stopPropagation(); window.location.href='/admin/lm?status=next-month'">
+          <span>Due in Next Month</span>
+          <span style="background: #fbbf24; color: #92400e; padding: 4px 8px; border-radius: 4px; font-weight: 600;">{{ metrics.service_schedule_next_month|length }}</span>
+        </div>
+        <div class="admin-table-row" style="cursor: pointer;" onclick="event.stopPropagation(); window.location.href='/admin/lm?status=next-quarter'">
+          <span>Due in Next Quarter</span>
+          <span style="background: #bfdbfe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-weight: 600;">{{ metrics.service_schedule_next_quarter|length }}</span>
+        </div>
+        <div class="admin-table-row" style="cursor: pointer;" onclick="event.stopPropagation(); window.location.href='/admin/lm?status=past-due'">
+          <span>Past Due</span>
+          <span style="background: #fca5a5; color: #7f1d1d; padding: 4px 8px; border-radius: 4px; font-weight: 600;">{{ metrics.service_schedule_past_due|length }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card" style="cursor: pointer;" onclick="window.location.href='/admin/lm'">
+      <div class="admin-card-header">
+        <div>
+          <h2>LM Product Warranty Status</h2>
+          <p>Warranty expiration tracking for Loitering Munition units.</p>
+        </div>
+      </div>
+      <div class="admin-table">
+        <div class="admin-table-row admin-table-head">
+          <span>Status</span>
+          <span>Count</span>
+        </div>
+        <div class="admin-table-row" style="cursor: pointer;" onclick="event.stopPropagation(); window.location.href='/admin/lm?warranty=expired'">
+          <span>Warranty Already Expired</span>
+          <span style="background: #dc2626; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-weight: 600;">{{ metrics.warranty_already_expired|length }}</span>
+        </div>
+        <div class="admin-table-row" style="cursor: pointer;" onclick="event.stopPropagation(); window.location.href='/admin/lm?warranty=expiring'">
+          <span>Expiring Next Month</span>
+          <span style="background: #f97316; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-weight: 600;">{{ metrics.warranty_expiring_next_month|length }}</span>
+        </div>
+        <div class="admin-table-row" style="cursor: pointer;" onclick="event.stopPropagation(); window.location.href='/admin/lm?warranty=active'">
+          <span>Active Warranty</span>
+          <span style="background: #22c55e; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-weight: 600;">{{ metrics.warranty_valid_active|length }}</span>
         </div>
       </div>
     </div>

@@ -25,6 +25,9 @@
   </header>
 
   <form id="customer-config-form" method="post" action="/admin/customers" class="si-incident-form">
+    {% if customer.get('id') %}
+      <input type="hidden" name="customer_id" value="{{ customer.id }}" />
+    {% endif %}
     <div class="si-incident-grid">
       <div class="si-incident-section">Customer details</div>
       <div class="si-incident-field">
@@ -38,41 +41,68 @@
 
       <div class="si-incident-divider"></div>
       <div class="si-incident-section">Primary contact</div>
-      <div class="si-incident-row si-incident-row-3">
+      {% set contacts = customer.get('contacts', []) %}
+      {% set primary = contacts[0] if contacts else {} %}
+      <div class="si-incident-row si-incident-row-2">
         <div class="si-incident-field">
           <label>Contact name</label>
-          <input name="primary_contact_name" placeholder="Contact name" value="{{ customer.get('contact_name', '') }}" {% if view_only %}readonly disabled{% endif %} />
+          <input name="primary_contact_name" placeholder="Contact name" value="{{ primary.get('name', '') }}" {% if view_only %}readonly disabled{% endif %} />
         </div>
         <div class="si-incident-field">
+          <label>Designation</label>
+          <input name="primary_contact_designation" placeholder="e.g., Project Manager" value="{{ primary.get('designation', '') }}" {% if view_only %}readonly disabled{% endif %} />
+        </div>
+      </div>
+      <div class="si-incident-row si-incident-row-4">
+        <div class="si-incident-field">
           <label>Contact email</label>
-          <input name="primary_contact_email" placeholder="Contact email" value="{{ customer.get('contact_email', '') }}" {% if view_only %}readonly disabled{% endif %} />
+          <input name="primary_contact_email" placeholder="Contact email" value="{{ primary.get('email', '') }}" {% if view_only %}readonly disabled{% endif %} />
         </div>
         <div class="si-incident-field">
           <label>Contact phone</label>
-          <input name="primary_contact_phone" placeholder="Contact phone" value="{{ customer.get('contact_phone', '') }}" {% if view_only %}readonly disabled{% endif %} />
+          <input name="primary_contact_phone" placeholder="Contact phone" value="{{ primary.get('phone', '') }}" {% if view_only %}readonly disabled{% endif %} />
+        </div>
+        <div class="si-incident-field">
+          <label>Rank</label>
+          <input name="primary_contact_rank" placeholder="e.g., Senior" value="{{ primary.get('rank', '') }}" {% if view_only %}readonly disabled{% endif %} />
+        </div>
+        <div class="si-incident-field">
+          <label>Site</label>
+          <input name="primary_contact_site" placeholder="e.g., New Delhi, Bangalore" value="{{ primary.get('site', '') }}" {% if view_only %}readonly disabled{% endif %} />
         </div>
       </div>
 
       <div class="si-incident-divider"></div>
       <div class="si-incident-section">Additional contacts</div>
-      <div class="si-incident-row si-incident-row-3" id="contact-list">
-        <div class="si-incident-field">
-          <label>Contact name</label>
-          <input name="contact_name[]" placeholder="Contact name" {% if view_only %}readonly disabled{% endif %} />
-        </div>
-        <div class="si-incident-field">
-          <label>Contact email</label>
-          <input name="contact_email[]" placeholder="Contact email" {% if view_only %}readonly disabled{% endif %} />
-        </div>
-        <div class="si-incident-field">
-          <label>Contact phone</label>
-          <input name="contact_phone[]" placeholder="Contact phone" {% if view_only %}readonly disabled{% endif %} />
-        </div>
-        {% if not view_only %}
-          <div class="si-incident-row-actions">
-            <button class="si-btn" type="button" data-remove-contact>Remove</button>
-          </div>
-        {% endif %}
+      <div class="si-table">
+        <table id="contact-list">
+          <thead>
+            <tr>
+              <th>Contact name</th>
+              <th>Designation</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Rank</th>
+              <th>Site</th>
+              {% if not view_only %}<th>Actions</th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for contact in contacts[1:] %}
+            <tr>
+              <td><input name="contact_name[]" placeholder="Contact name" value="{{ contact.get('name', '') }}" {% if view_only %}readonly disabled{% endif %} style="width: 100%; border: none; padding: 4px;" /></td>
+              <td><input name="contact_designation[]" placeholder="Technical Lead" value="{{ contact.get('designation', '') }}" {% if view_only %}readonly disabled{% endif %} style="width: 100%; border: none; padding: 4px;" /></td>
+              <td><input name="contact_email[]" placeholder="Email" value="{{ contact.get('email', '') }}" {% if view_only %}readonly disabled{% endif %} style="width: 100%; border: none; padding: 4px;" /></td>
+              <td><input name="contact_phone[]" placeholder="Phone" value="{{ contact.get('phone', '') }}" {% if view_only %}readonly disabled{% endif %} style="width: 100%; border: none; padding: 4px;" /></td>
+              <td><input name="contact_rank[]" placeholder="Rank" value="{{ contact.get('rank', '') }}" {% if view_only %}readonly disabled{% endif %} style="width: 100%; border: none; padding: 4px;" /></td>
+              <td><input name="contact_site[]" placeholder="Site" value="{{ contact.get('site', '') }}" {% if view_only %}readonly disabled{% endif %} style="width: 100%; border: none; padding: 4px;" /></td>
+              {% if not view_only %}
+              <td style="text-align: center;"><button class="si-btn" type="button" data-remove-contact style="padding: 4px 8px; font-size: 12px;">Remove</button></td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
       {% if not view_only %}
         <div class="si-incident-actions-inline">
@@ -80,31 +110,31 @@
         </div>
       {% endif %}
 
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Customer Contracts</div>
+      <div class="si-incident-field">
+        <label>Contract Name</label>
+        <input name="contracts" placeholder="Enter contract name" value="{{ customer.get('contracts', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      </div>
+
     </div>
   </form>
 </section>
 
 <template id="contact-row-template">
-  <div class="si-incident-row si-incident-row-3">
-    <div class="si-incident-field">
-      <label>Contact name</label>
-      <input name="contact_name[]" placeholder="Contact name" />
-    </div>
-    <div class="si-incident-field">
-      <label>Contact email</label>
-      <input name="contact_email[]" placeholder="Contact email" />
-    </div>
-    <div class="si-incident-field">
-      <label>Contact phone</label>
-      <input name="contact_phone[]" placeholder="Contact phone" />
-    </div>
-    <div class="si-incident-row-actions">
-      <button class="si-btn" type="button" data-remove-contact>Remove</button>
-    </div>
-  </div>
+  <tr>
+    <td><input name="contact_name[]" placeholder="Contact name" style="width: 100%; border: none; padding: 4px;" /></td>
+    <td><input name="contact_designation[]" placeholder="Technical Lead" style="width: 100%; border: none; padding: 4px;" /></td>
+    <td><input name="contact_email[]" placeholder="Email" style="width: 100%; border: none; padding: 4px;" /></td>
+    <td><input name="contact_phone[]" placeholder="Phone" style="width: 100%; border: none; padding: 4px;" /></td>
+    <td><input name="contact_rank[]" placeholder="Rank" style="width: 100%; border: none; padding: 4px;" /></td>
+    <td><input name="contact_site[]" placeholder="Site" style="width: 100%; border: none; padding: 4px;" /></td>
+    <td style="text-align: center;"><button class="si-btn" type="button" data-remove-contact style="padding: 4px 8px; font-size: 12px;">Remove</button></td>
+  </tr>
 </template>
 
 <script>
+  const contactTable = document.querySelector("#contact-list tbody");
   const contactList = document.getElementById("contact-list");
   const contactTemplate = document.getElementById("contact-row-template");
   const addContact = document.getElementById("add-contact");
@@ -112,14 +142,14 @@
   if (addContact) {
     addContact.addEventListener("click", () => {
       const fragment = contactTemplate.content.cloneNode(true);
-      contactList.appendChild(fragment);
+      contactTable.appendChild(fragment);
     });
   }
 
   contactList.addEventListener("click", (event) => {
     if (event.target.matches("[data-remove-contact]")) {
       event.preventDefault();
-      const row = event.target.closest(".si-incident-row");
+      const row = event.target.closest("tr");
       if (row) {
         row.remove();
       }

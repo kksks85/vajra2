@@ -1,0 +1,626 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .wizard-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px;
+    background: #ffffff;
+  }
+
+  .wizard-header {
+    margin-bottom: 40px;
+  }
+
+  .wizard-header h1 {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .wizard-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+  }
+
+  .wizard-steps {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 40px;
+    position: relative;
+  }
+
+  .wizard-steps::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #e5e7eb;
+    z-index: 0;
+  }
+
+  .step {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+  }
+
+  .step.active .step-number {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .step.completed .step-number {
+    background: #10b981;
+    color: white;
+  }
+
+  .step-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+  }
+
+  .step.active .step-label {
+    color: #3b82f6;
+  }
+
+  .wizard-content {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 30px;
+    margin-bottom: 30px;
+  }
+
+  .form-section {
+    display: none;
+  }
+
+  .form-section.active {
+    display: block;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+  }
+
+  .help-text {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+  }
+
+  .option-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .option-card {
+    padding: 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .option-card:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  .option-card.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  .option-card input[type="radio"],
+  .option-card input[type="checkbox"] {
+    margin-right: 8px;
+  }
+
+  .recipient-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .recipient-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #1e40af;
+  }
+
+  .recipient-tag button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    color: #1e40af;
+  }
+
+  .wizard-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 30px;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary {
+    background: #e5e7eb;
+    color: #111827;
+  }
+
+  .btn-secondary:hover {
+    background: #d1d5db;
+  }
+
+  .btn-primary {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: #2563eb;
+  }
+
+  .btn-primary:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+  }
+
+  .summary-item {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .summary-label {
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .summary-value {
+    color: #6b7280;
+  }
+</style>
+
+<div class="wizard-container">
+  <div class="wizard-header">
+    <h1>✨ Create Email Rule</h1>
+    <p>Create a {% if rule_type == 'inbound' %}inbound{% else %}outbound{% endif %} email notification rule with this step-by-step wizard</p>
+  </div>
+
+  <!-- Steps Indicator -->
+  <div class="wizard-steps">
+    <div class="step active" data-step="1">
+      <div class="step-number">1</div>
+      <div class="step-label">Rule Name</div>
+    </div>
+    <div class="step" data-step="2">
+      <div class="step-number">2</div>
+      <div class="step-label">Trigger Event</div>
+    </div>
+    <div class="step" data-step="3">
+      <div class="step-number">3</div>
+      <div class="step-label">Conditions</div>
+    </div>
+    <div class="step" data-step="4">
+      <div class="step-number">4</div>
+      <div class="step-label">Recipients</div>
+    </div>
+    <div class="step" data-step="5">
+      <div class="step-number">5</div>
+      <div class="step-label">Email Template</div>
+    </div>
+    <div class="step" data-step="6">
+      <div class="step-number">6</div>
+      <div class="step-label">Review</div>
+    </div>
+  </div>
+
+  <form id="ruleForm">
+    <input type="hidden" name="rule_type" value="{{ rule_type }}">
+
+    <!-- Step 1: Rule Name -->
+    <div class="wizard-content">
+      <div class="form-section active" data-step="1">
+        <div class="section-title">📝 What's the name of this rule?</div>
+        <div class="form-group">
+          <label>Rule Name *</label>
+          <input type="text" name="rule_name" id="ruleName" placeholder="e.g., Alert on Critical Priority" required>
+          <div class="help-text">Give your rule a descriptive name to identify it later</div>
+        </div>
+        <div class="form-group">
+          <label>Description (Optional)</label>
+          <textarea name="rule_description" placeholder="What is this rule for? When will it be triggered?"></textarea>
+        </div>
+      </div>
+
+      <!-- Step 2: Trigger Event -->
+      <div class="form-section" data-step="2">
+        <div class="section-title">🎯 When should this rule trigger?</div>
+        <div class="form-group">
+          <label>Select Trigger Event *</label>
+          <div class="option-group">
+            <label class="option-card">
+              <input type="radio" name="trigger_event" value="incident_created" required>
+              <strong>Incident Created</strong>
+              <br><span style="font-size: 12px; color: #6b7280;">When a new incident is logged</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="trigger_event" value="incident_updated">
+              <strong>Incident Updated</strong>
+              <br><span style="font-size: 12px; color: #6b7280;">When an incident is modified</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="trigger_event" value="incident_resolved">
+              <strong>Incident Resolved</strong>
+              <br><span style="font-size: 12px; color: #6b7280;">When an incident is marked resolved</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="trigger_event" value="incident_closed">
+              <strong>Incident Closed</strong>
+              <br><span style="font-size: 12px; color: #6b7280;">When an incident is closed</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="trigger_event" value="sla_breach">
+              <strong>SLA Breach</strong>
+              <br><span style="font-size: 12px; color: #6b7280;">When an SLA is breached</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="trigger_event" value="assignment_change">
+              <strong>Assignment Changed</strong>
+              <br><span style="font-size: 12px; color: #6b7280;">When incident assignment changes</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Conditions -->
+      <div class="form-section" data-step="3">
+        <div class="section-title">⚙️ Add filtering conditions (optional)</div>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px;">Rule will trigger only if ALL conditions are met</p>
+        
+        <div class="form-group">
+          <label>Priority</label>
+          <select name="condition_priority">
+            <option value="">-- Any --</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Issue Type</label>
+          <select name="condition_issue_type">
+            <option value="">-- Any --</option>
+            <option value="electrical">Electrical</option>
+            <option value="mechanical">Mechanical</option>
+            <option value="software">Software</option>
+            <option value="communication">Communication</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Customer</label>
+          <select name="condition_customer">
+            <option value="">-- Any --</option>
+            <option value="iaf">Indian Air Force</option>
+            <option value="ia">Indian Army</option>
+            <option value="in">Indian Navy</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Step 4: Recipients -->
+      <div class="form-section" data-step="4">
+        <div class="section-title">👥 Who should receive these emails?</div>
+        
+        <div class="form-group">
+          <label>Add Recipients</label>
+          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="text" id="recipientEmail" placeholder="Enter email address" style="flex: 1;">
+            <button type="button" onclick="addRecipient()" style="padding: 10px 16px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">Add</button>
+          </div>
+          <div id="recipientsList" class="recipient-list"></div>
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" name="include_requestor">
+            Include Requestor in Email Recipients
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" name="include_assigned_to">
+            Include Assigned Team Member
+          </label>
+        </div>
+      </div>
+
+      <!-- Step 5: Email Template -->
+      <div class="form-section" data-step="5">
+        <div class="section-title">✉️ Customize Email Content</div>
+        
+        <div class="form-group">
+          <label>Email Subject *</label>
+          <input type="text" name="email_subject" placeholder="e.g., Incident Alert: {{INCIDENT_ID}} - {{PRIORITY}}" required>
+          <div class="help-text">Available tags: {{INCIDENT_ID}}, {{PRIORITY}}, {{STATUS}}, {{CUSTOMER}}, {{ISSUE_TYPE}}</div>
+        </div>
+
+        <div class="form-group">
+          <label>Email Body *</label>
+          <textarea name="email_body" placeholder="Incident: {{INCIDENT_ID}}&#10;Priority: {{PRIORITY}}&#10;Status: {{STATUS}}&#10;Customer: {{CUSTOMER}}&#10;Issue Type: {{ISSUE_TYPE}}&#10;&#10;Description: {{DESCRIPTION}}" required></textarea>
+          <div class="help-text">Use available tags above to create dynamic email content</div>
+        </div>
+      </div>
+
+      <!-- Step 6: Review -->
+      <div class="form-section" data-step="6">
+        <div class="section-title">✅ Review Your Rule</div>
+        <div id="reviewSummary" style="background: white; border-radius: 4px; padding: 16px; border: 1px solid #e5e7eb;">
+          <!-- Summary will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="wizard-actions">
+      <button type="button" class="btn btn-secondary" onclick="previousStep()" id="prevBtn" style="display: none;">← Previous</button>
+      <button type="button" class="btn btn-primary" onclick="nextStep()" id="nextBtn">Next →</button>
+      <button type="submit" class="btn btn-primary" id="submitBtn" style="display: none;">✓ Create Rule</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  let currentStep = 1;
+  const totalSteps = 6;
+  const recipients = [];
+
+  function showStep(step) {
+    currentStep = step;
+    
+    // Hide all sections
+    document.querySelectorAll('.form-section').forEach(section => {
+      section.classList.remove('active');
+    });
+    
+    // Show current section
+    document.querySelector(`[data-step="${step}"]`).classList.add('active');
+    
+    // Update step indicators
+    document.querySelectorAll('.step').forEach((stepEl, index) => {
+      const stepNum = index + 1;
+      stepEl.classList.remove('active', 'completed');
+      if (stepNum === step) {
+        stepEl.classList.add('active');
+      } else if (stepNum < step) {
+        stepEl.classList.add('completed');
+      }
+    });
+
+    // Update buttons
+    document.getElementById('prevBtn').style.display = step > 1 ? 'block' : 'none';
+    document.getElementById('nextBtn').style.display = step < totalSteps ? 'block' : 'none';
+    document.getElementById('submitBtn').style.display = step === totalSteps ? 'block' : 'none';
+
+    // Generate review summary on step 6
+    if (step === 6) {
+      updateReviewSummary();
+    }
+  }
+
+  function nextStep() {
+    if (validateStep(currentStep)) {
+      showStep(currentStep + 1);
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function previousStep() {
+    showStep(currentStep - 1);
+    window.scrollTo(0, 0);
+  }
+
+  function validateStep(step) {
+    if (step === 1) {
+      const ruleName = document.getElementById('ruleName').value.trim();
+      if (!ruleName) {
+        alert('Please enter a rule name');
+        return false;
+      }
+    } else if (step === 2) {
+      const triggerEvent = document.querySelector('input[name="trigger_event"]:checked');
+      if (!triggerEvent) {
+        alert('Please select a trigger event');
+        return false;
+      }
+    } else if (step === 4) {
+      if (recipients.length === 0 && !document.querySelector('input[name="include_requestor"]').checked && !document.querySelector('input[name="include_assigned_to"]').checked) {
+        alert('Please add at least one recipient or select auto-include options');
+        return false;
+      }
+    } else if (step === 5) {
+      const subject = document.querySelector('input[name="email_subject"]').value.trim();
+      const body = document.querySelector('textarea[name="email_body"]').value.trim();
+      if (!subject || !body) {
+        alert('Please fill in email subject and body');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function addRecipient() {
+    const email = document.getElementById('recipientEmail').value.trim();
+    if (email && email.includes('@')) {
+      recipients.push(email);
+      document.getElementById('recipientEmail').value = '';
+      updateRecipientsList();
+    } else {
+      alert('Please enter a valid email address');
+    }
+  }
+
+  function removeRecipient(email) {
+    recipients.splice(recipients.indexOf(email), 1);
+    updateRecipientsList();
+  }
+
+  function updateRecipientsList() {
+    const listDiv = document.getElementById('recipientsList');
+    listDiv.innerHTML = recipients.map(email => `
+      <div class="recipient-tag">
+        ${email}
+        <button type="button" onclick="removeRecipient('${email}')">×</button>
+      </div>
+    `).join('');
+  }
+
+  function updateReviewSummary() {
+    const ruleName = document.getElementById('ruleName').value;
+    const triggerEvent = document.querySelector('input[name="trigger_event"]:checked')?.value;
+    const priority = document.querySelector('select[name="condition_priority"]').value;
+    const issueType = document.querySelector('select[name="condition_issue_type"]').value;
+    const customer = document.querySelector('select[name="condition_customer"]').value;
+    const subject = document.querySelector('input[name="email_subject"]').value;
+    const body = document.querySelector('textarea[name="email_body"]').value;
+
+    const summary = `
+      <div class="summary-item">
+        <div class="summary-label">Rule Name:</div>
+        <div class="summary-value">${ruleName}</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Trigger:</div>
+        <div class="summary-value">${triggerEvent}</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Conditions:</div>
+        <div class="summary-value">${priority || 'Any'} priority, ${issueType || 'Any'} issue type, ${customer || 'Any'} customer</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Recipients:</div>
+        <div class="summary-value">${recipients.join(', ') || 'Dynamic'}</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Subject:</div>
+        <div class="summary-value">${subject}</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Body:</div>
+        <div class="summary-value">${body.substring(0, 100)}...</div>
+      </div>
+    `;
+    document.getElementById('reviewSummary').innerHTML = summary;
+  }
+
+  document.getElementById('ruleForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (validateStep(6)) {
+      alert('Email rule created successfully! (Demo)');
+      // In real implementation: submit form to backend
+    }
+  });
+
+  // Show first step on load
+  showStep(1);
+
+  // Allow Enter key to advance
+  document.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && currentStep < totalSteps) {
+      e.preventDefault();
+      nextStep();
+    }
+  });
+</script>
+
+{% endblock %}

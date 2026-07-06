@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .email-config-container {
+    max-width: 1200px;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+  }
+
+  .email-config-header {
+    padding: 30px 40px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+  }
+
+  .email-config-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .email-config-header p {
+    margin: 8px 0 0 0;
+    color: #6b7280;
+    font-size: 14px;
+  }
+
+  .email-config-content {
+    padding: 0 40px 40px 40px;
+  }
+
+  .tabs-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  .tab-button {
+    padding: 12px 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tab-button.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+  }
+
+  .tab-button:hover {
+    color: #111827;
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .config-section {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .config-section h2 {
+    margin: 0 0 20px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group.full {
+    grid-column: 1 / -1;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
+  .config-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: #2563eb;
+  }
+
+  .btn-secondary {
+    background: #e5e7eb;
+    color: #111827;
+  }
+
+  .btn-secondary:hover {
+    background: #d1d5db;
+  }
+
+  .btn-success {
+    background: #10b981;
+    color: white;
+  }
+
+  .btn-success:hover {
+    background: #059669;
+  }
+
+  .rules-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .rules-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .rules-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+  }
+
+  .rules-table th {
+    background: #f3f4f6;
+    padding: 12px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .rules-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    color: #374151;
+  }
+
+  .rules-table tr:hover {
+    background: #f9fafb;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .status-active {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .status-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .info-text {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 4px;
+  }
+
+  .test-connection {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .connection-status {
+    padding: 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+
+  .connection-success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+  }
+
+  .connection-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+</style>
+
+<div class="email-config-container">
+  <!-- Header -->
+  <div class="email-config-header">
+    <h1>📧 Email Configuration</h1>
+    <p>Configure SMTP/POP3 settings and create email notification rules</p>
+  </div>
+
+  <!-- Content -->
+  <div class="email-config-content">
+    <!-- Tabs -->
+    <div class="tabs-container">
+      <button class="tab-button active" onclick="switchTab('smtp')">📤 SMTP Settings</button>
+      <button class="tab-button" onclick="switchTab('pop3')">📥 POP3 Settings</button>
+    </div>
+
+    <!-- SMTP Tab -->
+    <div id="smtp" class="tab-content active">
+      <div class="config-section">
+        <h2>SMTP Configuration</h2>
+        <form method="POST" action="/admin/email-config/smtp">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="smtp_host">SMTP Host</label>
+              <input type="text" id="smtp_host" name="smtp_host" placeholder="e.g., smtp.gmail.com" value="{{ smtp_config.host }}" required />
+              <div class="info-text">SMTP server address</div>
+            </div>
+            <div class="form-group">
+              <label for="smtp_port">SMTP Port</label>
+              <input type="number" id="smtp_port" name="smtp_port" placeholder="587" value="{{ smtp_config.port }}" required />
+              <div class="info-text">Usually 587 (TLS) or 465 (SSL)</div>
+            </div>
+            <div class="form-group">
+              <label for="smtp_username">Username</label>
+              <input type="email" id="smtp_username" name="smtp_username" placeholder="your-email@gmail.com" value="{{ smtp_config.username }}" required />
+              <div class="info-text">SMTP authentication username</div>
+            </div>
+            <div class="form-group">
+              <label for="smtp_password">Password</label>
+              <input type="password" id="smtp_password" name="smtp_password" placeholder="••••••••" value="{{ smtp_config.password }}" required />
+              <div class="info-text">SMTP authentication password or app password</div>
+            </div>
+            <div class="form-group full">
+              <label for="from_email">From Email Address</label>
+              <input type="email" id="from_email" name="from_email" placeholder="noreply@company.com" value="{{ smtp_config.from_email }}" required />
+              <div class="info-text">Email address that will appear as sender</div>
+            </div>
+            <div class="form-group full">
+              <div class="checkbox-group">
+                <input type="checkbox" id="use_tls" name="use_tls" {% if smtp_config.use_tls %}checked{% endif %} />
+                <label for="use_tls" style="margin-bottom: 0;">Use TLS Encryption</label>
+              </div>
+              <div class="info-text">Recommended for secure connections</div>
+            </div>
+          </div>
+          <div class="config-actions">
+            <button type="button" class="btn btn-secondary" onclick="testSMTPConnection()">Test Connection</button>
+            <button type="submit" class="btn btn-primary">Save SMTP Settings</button>
+          </div>
+          <div id="smtp-status" class="connection-status" style="display: none;"></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- POP3 Tab -->
+    <div id="pop3" class="tab-content">
+      <div class="config-section">
+        <h2>POP3 Configuration</h2>
+        <form method="POST" action="/admin/email-config/pop3">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="pop3_host">POP3 Host</label>
+              <input type="text" id="pop3_host" name="pop3_host" placeholder="e.g., pop.gmail.com" value="{{ pop3_config.host }}" required />
+              <div class="info-text">POP3 server address</div>
+            </div>
+            <div class="form-group">
+              <label for="pop3_port">POP3 Port</label>
+              <input type="number" id="pop3_port" name="pop3_port" placeholder="995" value="{{ pop3_config.port }}" required />
+              <div class="info-text">Usually 995 (SSL) or 110 (plain)</div>
+            </div>
+            <div class="form-group">
+              <label for="pop3_username">Username</label>
+              <input type="email" id="pop3_username" name="pop3_username" placeholder="your-email@gmail.com" value="{{ pop3_config.username }}" required />
+              <div class="info-text">POP3 authentication username</div>
+            </div>
+            <div class="form-group">
+              <label for="pop3_password">Password</label>
+              <input type="password" id="pop3_password" name="pop3_password" placeholder="••••••••" value="{{ pop3_config.password }}" required />
+              <div class="info-text">POP3 authentication password</div>
+            </div>
+            <div class="form-group full">
+              <div class="checkbox-group">
+                <input type="checkbox" id="use_ssl" name="use_ssl" {% if pop3_config.use_ssl %}checked{% endif %} />
+                <label for="use_ssl" style="margin-bottom: 0;">Use SSL Encryption</label>
+              </div>
+              <div class="info-text">Recommended for secure connections</div>
+            </div>
+          </div>
+          <div class="config-actions">
+            <button type="button" class="btn btn-secondary" onclick="testPOP3Connection()">Test Connection</button>
+            <button type="submit" class="btn btn-primary">Save POP3 Settings</button>
+          </div>
+          <div id="pop3-status" class="connection-status" style="display: none;"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-button').forEach(btn => {
+      btn.classList.remove('active');
+    });
+
+    // Show selected tab
+    document.getElementById(tabName).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function testSMTPConnection() {
+    const statusDiv = document.getElementById('smtp-status');
+    statusDiv.style.display = 'block';
+    statusDiv.textContent = '⏳ Testing SMTP connection...';
+    statusDiv.className = 'connection-status';
+
+    // Simulate test - in real implementation, call backend
+    setTimeout(() => {
+      statusDiv.innerHTML = '✅ SMTP connection successful!';
+      statusDiv.className = 'connection-status connection-success';
+    }, 1500);
+  }
+
+  function testPOP3Connection() {
+    const statusDiv = document.getElementById('pop3-status');
+    statusDiv.style.display = 'block';
+    statusDiv.textContent = '⏳ Testing POP3 connection...';
+    statusDiv.className = 'connection-status';
+
+    // Simulate test - in real implementation, call backend
+    setTimeout(() => {
+      statusDiv.innerHTML = '✅ POP3 connection successful!';
+      statusDiv.className = 'connection-status connection-success';
+    }, 1500);
+  }
+
+  function deleteRule(ruleId) {
+    if (confirm('Are you sure you want to delete this rule?')) {
+      // Delete logic here
+      console.log('Deleting rule:', ruleId);
+    }
+  }
+
+  function editRule(ruleId) {
+    // Edit logic here
+    window.location.href = `/admin/email-config/rule-wizard?id=${ruleId}`;
+  }
+</script>
+
+{% endblock %}

@@ -45,19 +45,21 @@
 
       <div class="si-incident-field">
         <label>Executed on</label>
-        <input name="executed_on" placeholder="Executed on" value="{{ contract.get('executed_on', '') }}" {% if view_only %}readonly disabled{% endif %} />
+        <input type="date" name="executed_on" value="{{ contract.get('executed_on', '') }}" {% if view_only %}readonly disabled{% endif %} />
       </div>
       <div class="si-incident-field">
         <label>Valid Till</label>
-        <input name="valid_till" placeholder="Valid till" value="{{ contract.get('valid_till', '') }}" {% if view_only %}readonly disabled{% endif %} />
+        <input type="date" name="valid_till" value="{{ contract.get('valid_till', '') }}" {% if view_only %}readonly disabled{% endif %} />
       </div>
 
       <div class="si-incident-field">
         <label>Status</label>
         <select name="status" {% if view_only %}disabled{% endif %}>
-          <option value="Active" {% if contract.get('status') | lower == 'active' %}selected{% endif %}>Active</option>
-          <option value="Expired" {% if contract.get('status') | lower == 'expired' %}selected{% endif %}>Expired</option>
-          <option value="Disabled" {% if contract.get('status') | lower == 'disabled' %}selected{% endif %}>Disabled</option>
+          <option value="">Select status</option>
+          <option value="Active - Under Warranty" {% if contract.get('status') == 'Active - Under Warranty' %}selected{% endif %}>Active - Under Warranty</option>
+          <option value="Active - Under AMC (Warranty Expired)" {% if contract.get('status') == 'Active - Under AMC (Warranty Expired)' %}selected{% endif %}>Active - Under AMC (Warranty Expired)</option>
+          <option value="Active - Under CMC (Warranty Expired)" {% if contract.get('status') == 'Active - Under CMC (Warranty Expired)' %}selected{% endif %}>Active - Under CMC (Warranty Expired)</option>
+          <option value="Warranty Expired No AMC / CMC" {% if contract.get('status') == 'Warranty Expired No AMC / CMC' %}selected{% endif %}>Warranty Expired No AMC / CMC</option>
         </select>
       </div>
       <div class="si-incident-field">
@@ -70,7 +72,67 @@
 
       <div class="si-incident-field si-incident-field-wide">
         <label>No of Deliverables [LM/ GCS/ TMV/ RDV/ Simulator/ LRU/ MRLS/ SMTs/STEs]</label>
-        <input name="main_deliverables" placeholder="No of deliverables details..." value="{{ contract.get('main_deliverables', '') }}" {% if view_only %}readonly disabled{% endif %} />
+        <div id="deliverables-container" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Template row - hidden -->
+          <div class="deliverable-row" style="display: none;" id="deliverable-template">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <select name="main_deliverables_product[]" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                <option value="">Select product</option>
+                <option value="Loitering Munition">Loitering Munition</option>
+                <option value="GCS">GCS</option>
+                <option value="Simulator">Simulator</option>
+                <option value="RDV">RDV</option>
+                <option value="TMV">TMV</option>
+              </select>
+              <input type="number" name="main_deliverables_quantity[]" placeholder="Quantity" min="1" style="width: 100px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" />
+              <button type="button" class="add-deliverable" style="padding: 6px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; width: 32px;">+</button>
+              <button type="button" class="remove-deliverable" style="padding: 6px 10px; cursor: pointer; background: #f44336; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; width: 32px;">−</button>
+            </div>
+          </div>
+
+          <!-- Existing entries or default row -->
+          {% set deliverables = contract.get('main_deliverables', []) %}
+          {% if deliverables %}
+            {% for item in deliverables %}
+            <div class="deliverable-row">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select name="main_deliverables_product[]" {% if view_only %}disabled{% endif %} style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                  <option value="">Select product</option>
+                  <option value="Loitering Munition" {% if item.get('product') == 'Loitering Munition' or item == 'Loitering Munition' %}selected{% endif %}>Loitering Munition</option>
+                  <option value="GCS" {% if item.get('product') == 'GCS' or item == 'GCS' %}selected{% endif %}>GCS</option>
+                  <option value="Simulator" {% if item.get('product') == 'Simulator' or item == 'Simulator' %}selected{% endif %}>Simulator</option>
+                  <option value="RDV" {% if item.get('product') == 'RDV' or item == 'RDV' %}selected{% endif %}>RDV</option>
+                  <option value="TMV" {% if item.get('product') == 'TMV' or item == 'TMV' %}selected{% endif %}>TMV</option>
+                </select>
+                <input type="number" name="main_deliverables_quantity[]" value="{{ item.get('quantity', '') }}" placeholder="Quantity" min="1" style="width: 100px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" {% if view_only %}readonly disabled{% endif %} />
+                {% if not view_only %}
+                  <button type="button" class="add-deliverable" style="padding: 6px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; width: 32px;">+</button>
+                  <button type="button" class="remove-deliverable" style="padding: 6px 10px; cursor: pointer; background: #f44336; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; width: 32px;">−</button>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <!-- Default empty row -->
+            <div class="deliverable-row">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select name="main_deliverables_product[]" {% if view_only %}disabled{% endif %} style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                  <option value="">Select product</option>
+                  <option value="Loitering Munition">Loitering Munition</option>
+                  <option value="GCS">GCS</option>
+                  <option value="Simulator">Simulator</option>
+                  <option value="RDV">RDV</option>
+                  <option value="TMV">TMV</option>
+                </select>
+                <input type="number" name="main_deliverables_quantity[]" placeholder="Quantity" min="1" style="width: 100px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" {% if view_only %}readonly disabled{% endif %} />
+                {% if not view_only %}
+                  <button type="button" class="add-deliverable" style="padding: 6px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; width: 32px;">+</button>
+                  <button type="button" class="remove-deliverable" style="padding: 6px 10px; cursor: pointer; background: #f44336; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; width: 32px;">−</button>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
       </div>
 
       <div class="si-incident-field si-incident-field-wide" style="display: flex; align-items: center; gap: 8px; padding-top: 10px;">
@@ -115,7 +177,152 @@
         <input type="checkbox" id="sub_refresher_training" name="sub_refresher_training" value="true" {% if contract.get('sub_refresher_training') %}checked{% endif %} {% if view_only %}disabled{% endif %} style="width: 18px; height: 18px; cursor: pointer; margin: 0;" />
         <label for="sub_refresher_training" style="margin: 0; cursor: pointer; font-weight: normal;">Refresher Training</label>
       </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Additional Spares [MRLS]</div>
+
+      <div class="si-incident-field si-incident-field-wide">
+        <label>Spares Details (Spares name, Customer part number, Serial number, Quantity)</label>
+        <div id="spares-container" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Template row - hidden -->
+          <div class="spares-row" style="display: none;" id="spares-template">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="text" name="spares_name[]" placeholder="Spares name" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;" />
+              <input type="text" name="spares_part_number[]" placeholder="Customer part number" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;" />
+              <input type="text" name="spares_serial_number[]" placeholder="Serial number" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;" />
+              <input type="number" name="spares_quantity[]" placeholder="Quantity" min="1" style="width: 100px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" />
+              <button type="button" class="add-spares" style="padding: 6px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; width: 32px;">+</button>
+              <button type="button" class="remove-spares" style="padding: 6px 10px; cursor: pointer; background: #f44336; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; width: 32px;">−</button>
+            </div>
+          </div>
+
+          <!-- Existing entries or default row -->
+          {% set spares_list = contract.get('spares', []) %}
+          {% if spares_list %}
+            {% for item in spares_list %}
+            <div class="spares-row">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" name="spares_name[]" value="{{ item.get('name', '') }}" placeholder="Spares name" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;" {% if view_only %}readonly disabled{% endif %} />
+                <input type="text" name="spares_part_number[]" value="{{ item.get('part_number', '') }}" placeholder="Customer part number" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;" {% if view_only %}readonly disabled{% endif %} />
+                <input type="text" name="spares_serial_number[]" value="{{ item.get('serial_number', '') }}" placeholder="Serial number" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;" {% if view_only %}readonly disabled{% endif %} />
+                <input type="number" name="spares_quantity[]" value="{{ item.get('quantity', '') }}" placeholder="Quantity" min="1" style="width: 100px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" {% if view_only %}readonly disabled{% endif %} />
+                {% if not view_only %}
+                  <button type="button" class="add-spares" style="padding: 6px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; width: 32px;">+</button>
+                  <button type="button" class="remove-spares" style="padding: 6px 10px; cursor: pointer; background: #f44336; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; width: 32px;">−</button>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <!-- Default empty row -->
+            <div class="spares-row">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" name="spares_name[]" placeholder="Spares name" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;" {% if view_only %}readonly disabled{% endif %} />
+                <input type="text" name="spares_part_number[]" placeholder="Customer part number" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;" {% if view_only %}readonly disabled{% endif %} />
+                <input type="text" name="spares_serial_number[]" placeholder="Serial number" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;" {% if view_only %}readonly disabled{% endif %} />
+                <input type="number" name="spares_quantity[]" placeholder="Quantity" min="1" style="width: 100px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" {% if view_only %}readonly disabled{% endif %} />
+                {% if not view_only %}
+                  <button type="button" class="add-spares" style="padding: 6px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; width: 32px;">+</button>
+                  <button type="button" class="remove-spares" style="padding: 6px 10px; cursor: pointer; background: #f44336; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 14px; width: 32px;">−</button>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
     </div>
   </form>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const deliverables_container = document.getElementById('deliverables-container');
+      const deliverables_template = document.getElementById('deliverable-template');
+      const spares_container = document.getElementById('spares-container');
+      const spares_template = document.getElementById('spares-template');
+
+      function attachDeliverablesListeners() {
+        // Attach add button listeners
+        document.querySelectorAll('#deliverables-container .add-deliverable').forEach(addBtn => {
+          // Remove old listeners by cloning
+          const newBtn = addBtn.cloneNode(true);
+          addBtn.parentElement.replaceChild(newBtn, addBtn);
+          
+          newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const newRow = deliverables_template.cloneNode(true);
+            newRow.style.display = '';
+            newRow.id = '';
+            
+            // Reset form fields in the new row
+            const selects = newRow.querySelectorAll('select');
+            const inputs = newRow.querySelectorAll('input[type="number"]');
+            selects.forEach(sel => sel.value = '');
+            inputs.forEach(inp => inp.value = '');
+            
+            // Insert the new row after current row
+            const currentRow = this.closest('.deliverable-row');
+            currentRow.parentElement.insertBefore(newRow, currentRow.nextSibling);
+            
+            // Re-attach listeners to all buttons
+            attachDeliverablesListeners();
+          });
+        });
+
+        // Attach remove button listeners
+        document.querySelectorAll('#deliverables-container .remove-deliverable').forEach(removeBtn => {
+          // Remove old listeners by cloning
+          const newBtn = removeBtn.cloneNode(true);
+          removeBtn.parentElement.replaceChild(newBtn, removeBtn);
+          
+          newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            this.closest('.deliverable-row').remove();
+          });
+        });
+      }
+
+      function attachSparesListeners() {
+        // Attach add button listeners
+        document.querySelectorAll('#spares-container .add-spares').forEach(addBtn => {
+          // Remove old listeners by cloning
+          const newBtn = addBtn.cloneNode(true);
+          addBtn.parentElement.replaceChild(newBtn, addBtn);
+          
+          newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const newRow = spares_template.cloneNode(true);
+            newRow.style.display = '';
+            newRow.id = '';
+            
+            // Reset form fields in the new row
+            const inputs = newRow.querySelectorAll('input');
+            inputs.forEach(inp => inp.value = '');
+            
+            // Insert the new row after current row
+            const currentRow = this.closest('.spares-row');
+            currentRow.parentElement.insertBefore(newRow, currentRow.nextSibling);
+            
+            // Re-attach listeners to all buttons
+            attachSparesListeners();
+          });
+        });
+
+        // Attach remove button listeners
+        document.querySelectorAll('#spares-container .remove-spares').forEach(removeBtn => {
+          // Remove old listeners by cloning
+          const newBtn = removeBtn.cloneNode(true);
+          removeBtn.parentElement.replaceChild(newBtn, removeBtn);
+          
+          newBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            this.closest('.spares-row').remove();
+          });
+        });
+      }
+
+      // Initial attachment
+      attachDeliverablesListeners();
+      attachSparesListeners();
+    });
+  </script>
 </section>
 {% endblock %}

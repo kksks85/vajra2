@@ -1,482 +1,468 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="si-incident-new">
-  <header class="si-incident-header">
+<style>
+  .incident-container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    width: 100%;
+  }
+
+  .incident-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 40px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 0;
+  }
+
+  .incident-header > div:first-child {
+    flex: 1;
+  }
+
+  .incident-header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .incident-header p {
+    margin: 6px 0 0 0;
+    color: #6b7280;
+    font-size: 14px;
+  }
+
+  .incident-actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  .incident-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .incident-btn-primary {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .incident-btn-primary:hover {
+    background: #2563eb;
+  }
+
+  .incident-btn-secondary {
+    background: #e5e7eb;
+    color: #111827;
+  }
+
+  .incident-btn-secondary:hover {
+    background: #d1d5db;
+  }
+
+  .incident-form {
+    display: grid;
+    gap: 0;
+    padding: 20px 30px;
+  }
+
+  .form-section {
+    padding: 16px;
+    background: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    grid-column: 1 / -1;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 12px;
+  }
+
+  .form-grid.full {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group-full {
+    grid-column: 1 / -1;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 4px;
+  }
+
+  .required {
+    color: #ef4444;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .form-group input[readonly] {
+    background: #f3f4f6;
+    cursor: not-allowed;
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: monospace;
+  }
+
+  .read-only-value {
+    padding: 10px 12px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #6b7280;
+  }
+
+  .info-text {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 4px;
+    margin-bottom: 0;
+  }
+    font-style: italic;
+    border: 1px solid #e5e7eb;
+  }
+
+  .info-text {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .required {
+    color: #ef4444;
+    font-weight: 600;
+  }
+</style>
+
+<div class="incident-container">
+  <div class="incident-header">
     <div>
-      <div class="si-incident-title">Incident</div>
-      <div class="si-incident-subtitle">New record</div>
+      <h1>📋 New Incident</h1>
+      <p>Log a new incident for quick resolution</p>
     </div>
-    <div class="si-incident-actions">
-      <button type="submit" form="incident-new-form" class="si-btn">Submit</button>
-      <button class="si-btn si-btn-primary" type="submit" form="incident-new-form">Resolve</button>
+    <div class="incident-actions">
+      <button type="button" class="incident-btn incident-btn-secondary" onclick="history.back()">Cancel</button>
+      <button type="submit" form="incident-form" class="incident-btn incident-btn-primary">Submit Incident</button>
     </div>
-  </header>
+  </div>
 
-  <form id="incident-new-form" method="post" action="/incidents" class="si-incident-form">
-    <div class="si-incident-grid">
-      <div class="si-incident-section">Incident details</div>
-      <div class="si-incident-field">
-        <label>Incident Number</label>
-        <input name="number" placeholder="Auto-generated" readonly disabled />
-      </div>
-      <div class="si-incident-field">
-        <label>Created on</label>
-        <input name="created_on" placeholder="Auto-generated" readonly disabled />
-      </div>
+  <form id="incident-form" method="post" action="/incidents" class="incident-form">
+    <div class="form-section">
+      <div class="form-grid">
+        
+        <!-- INCIDENT DETAILS SECTION -->
+        <div class="section-title">📌 Incident Details</div>
+        
+        <div class="form-group">
+          <label>Incident Number</label>
+          <div class="read-only-value">Auto-generated</div>
+        </div>
+        <div class="form-group">
+          <label>Created On</label>
+          <div class="read-only-value">Auto-generated</div>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            {% for status in statuses %}
+            <option value="{{ status.id }}" {% if status.id == 'new' %}selected{% endif %}>
+              {{ status.label }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select name="priority">
+            {% for priority in priorities %}
+            <option value="{{ priority.id }}" {% if priority.id == 'medium' %}selected{% endif %}>
+              {{ priority.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
 
-      <div class="si-incident-field">
-        <label>Status</label>
-        <select name="status">
-          {% for status in statuses %}
-          <option value="{{ status.id }}" {% if status.id == 'new' %}selected{% endif %}>{{ status.label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="si-incident-field">
-        <label>Priority</label>
-        <select name="priority">
-          {% for priority in priorities %}
-          <option value="{{ priority.id }}" {% if priority.id == 'medium' %}selected{% endif %}>{{ priority.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
+        <!-- CUSTOMER & REQUESTOR SECTION -->
+        <div class="section-title">👤 Customer & Requestor</div>
+        
+        <div class="form-group">
+          <label><span class="required">*</span>Customer Name</label>
+          <select name="caller" id="customerSelect" required onchange="updateContracts(); updateRequestors()">
+            <option value="">-- Select Customer --</option>
+            {% for customer in customers %}
+            <option value="{{ customer.name }}">
+              {{ customer.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label><span class="required">*</span>Requestor Name</label>
+          <select name="requestor_name" id="requestorSelect" required onchange="updateRequestorContact()">
+            <option value="">-- Select Contact --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Customer Contract</label>
+          <select name="customer_contract" id="contractSelect" onchange="filterRequestorsForContract()">
+            <option value="">-- Select Contract --</option>
+            {% for contract in contracts %}
+            <option value="{{ contract.number }}" data-customer="{{ contract.customer_name }}">
+              {{ contract.number }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Requestor Contact</label>
+          <input type="text" name="requestor_contact" id="requestorPhone" placeholder="Phone or Email" readonly />
+        </div>
 
-      <div class="si-incident-field">
-        <label>Issue Type</label>
-        <select name="issue_type">
-          <option value="">-- Select Issue Type --</option>
-          {% for issue_type in issue_types %}
-          <option value="{{ issue_type.id }}">{{ issue_type.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="si-incident-field">
-        <label>SLA</label>
-        <input name="sla" placeholder="SLA" />
-      </div>
-      <div class="si-incident-field">
-        <label>Assignment Group</label>
-        <input name="assignment_group" placeholder="Assignment group" />
-      </div>
-      <div class="si-incident-field">
-        <label>Assigned to</label>
-        <input name="assigned_to" placeholder="Assigned to" />
-      </div>
+        <!-- PRODUCT INFORMATION SECTION -->
+        <div class="section-title">🔧 Product Information</div>
+        
+        <div class="form-group">
+          <label>System Type</label>
+          <select name="srlm_system">
+            <option value="">-- Select System --</option>
+            <option value="SRLM">SRLM</option>
+            <option value="ERLM">ERLM</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Product Category</label>
+          <select name="platform_variant">
+            <option value="">-- Select Category --</option>
+            <option value="Loitering Munition (LM)">Loitering Munition (LM)</option>
+            <option value="Gimbal">Gimbal</option>
+            <option value="Tracker">Tracker</option>
+            <option value="GCS">GCS</option>
+            <option value="GDT">GDT</option>
+            <option value="Simulator">Simulator</option>
+            <option value="RDV">RDV</option>
+            <option value="TMV">TMV</option>
+            <option value="Warhead + ESAM">Warhead + ESAM</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Serial Number</label>
+          <input type="text" name="line_replaceable_unit" placeholder="e.g., LM-SN-001-01" />
+        </div>
+        <div class="form-group">
+          <label>Sub-system</label>
+          <select name="sub_system">
+            <option value="">-- Select Sub-system --</option>
+            <option value="Airframe">Airframe</option>
+            <option value="Propulsion">Propulsion</option>
+            <option value="Avionics & Flight Control">Avionics & Flight Control</option>
+            <option value="Communication">Communication</option>
+            <option value="Payload">Payload</option>
+            <option value="Computing">Computing</option>
+            <option value="Display">Display</option>
+            <option value="Control Interface">Control Interface</option>
+            <option value="Power">Power</option>
+          </select>
+        </div>
 
-      <div class="si-incident-divider"></div>
-      <div class="si-incident-section">Customer</div>
-      <div class="si-incident-field">
-        <label><span class="si-required">*</span> Customer Name</label>
-        <input name="caller" placeholder="Select customer" list="customer-name-list" />
-        <datalist id="customer-name-list">
-          <option value="Acme Rail Systems"></option>
-          <option value="MetroLine Services"></option>
-          <option value="Urban Transit Corp"></option>
-        </datalist>
-      </div>
-      <div class="si-incident-field">
-        <label>Customer Contract</label>
-        <select name="customer_contract" id="customer-contract">
-          <option value="">-- None --</option>
-          <option value="CTR-2024-001" data-customer="Acme Rail Systems">CTR-2024-001</option>
-          <option value="CTR-2024-014" data-customer="MetroLine Services">CTR-2024-014</option>
-          <option value="CTR-2023-220" data-customer="Urban Transit Corp">CTR-2023-220</option>
-        </select>
-      </div>
+        <!-- ISSUE CLASSIFICATION SECTION -->
+        <div class="section-title">⚠️ Issue Classification</div>
+        
+        <div class="form-group">
+          <label><span class="required">*</span>Issue Type</label>
+          <select name="issue_type" required>
+            <option value="">-- Select Issue Type --</option>
+            {% for issue_type in issue_types %}
+            <option value="{{ issue_type.id }}">{{ issue_type.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Assignment Group</label>
+          <input type="text" name="assignment_group" placeholder="e.g., Technical Support, Engineering" />
+        </div>
+        <div class="form-group">
+          <label>Assigned To</label>
+          <input type="text" name="assigned_to" placeholder="Engineer or team member" />
+        </div>
+        <div class="form-group">
+          <label>SLA</label>
+          <input type="text" name="sla" placeholder="e.g., 4 hours, 1 day" />
+        </div>
 
-      <div class="si-incident-field">
-        <label>Requestor Name</label>
-        <input name="requestor_name" placeholder="Requestor name" list="requestor-name-list" />
-        <datalist id="requestor-name-list"></datalist>
-      </div>
-      <div class="si-incident-field">
-        <label>Requestor Contact</label>
-        <input name="requestor_contact" placeholder="Requestor contact" list="requestor-contact-list" />
-        <datalist id="requestor-contact-list"></datalist>
-      </div>
+        <!-- SERVICE HISTORY SECTION -->
+        <div class="section-title">📊 Service History</div>
+        
+        <div class="form-group">
+          <label>Warranty Status</label>
+          <input type="text" name="warranty_status" placeholder="e.g., Active, Expired" readonly />
+        </div>
+        <div class="form-group">
+          <label>Last Serviced On</label>
+          <input type="text" name="last_serviced_on" placeholder="Date of last service" readonly />
+        </div>
 
-      <div class="si-incident-divider"></div>
-      <div class="si-incident-section">Product details</div>
-      <div class="si-incident-field">
-        <label>SRLM System</label>
-        <select name="srlm_system">
-          <option value="">-- None --</option>
-          <option value="LM">Loitering Munition (LM)</option>
-          <option value="GCS">Ground Control System (GCS)</option>
-          <option value="TMV">Tactical Mobility Vehicle (TMV)</option>
-          <option value="Simulator">Simulator</option>
-        </select>
-      </div>
-      <div class="si-incident-field">
-        <label>Platform Variant</label>
-        <select name="platform_variant" id="platform-variant">
-          <option value="">-- None --</option>
-        </select>
-      </div>
-      <div class="si-incident-field">
-        <label>Sub-system</label>
-        <select name="sub_system" id="sub-system">
-          <option value="">-- None --</option>
-          <option value="Airframe" data-srlm="LM">Airframe</option>
-          <option value="Propulsion" data-srlm="LM">Propulsion</option>
-          <option value="Avionics & Flight Control" data-srlm="LM">Avionics & Flight Control</option>
-          <option value="Communication" data-srlm="LM">Communication</option>
-          <option value="Payload" data-srlm="LM">Payload</option>
-          <option value="Computing" data-srlm="GCS">Computing</option>
-          <option value="Communication" data-srlm="GCS">Communication</option>
-          <option value="Display" data-srlm="GCS">Display</option>
-          <option value="Control Interface" data-srlm="GCS">Control Interface</option>
-          <option value="Power" data-srlm="GCS">Power</option>
-          <option value="Powertrain" data-srlm="TMV">Powertrain</option>
-          <option value="Electrical" data-srlm="TMV">Electrical</option>
-          <option value="Communication" data-srlm="TMV">Communication</option>
-          <option value="Navigation" data-srlm="TMV">Navigation</option>
-          <option value="Payload Handling" data-srlm="TMV">Payload Handling</option>
-          <option value="Computing" data-srlm="Simulator">Computing</option>
-          <option value="Display" data-srlm="Simulator">Display</option>
-          <option value="Control" data-srlm="Simulator">Control</option>
-          <option value="Audio" data-srlm="Simulator">Audio</option>
-          <option value="Software" data-srlm="Simulator">Software</option>
-        </select>
-      </div>
-      <div class="si-incident-field">
-        <label>Line Replaceable Unit (LRU)</label>
-        <select name="line_replaceable_unit" id="lru-select">
-          <option value="">-- None --</option>
-        </select>
-      </div>
+        <!-- ISSUE DESCRIPTION SECTION - FULL WIDTH -->
+        <div class="section-title">Issue Description</div>
+        
+        <div class="form-group form-group-full">
+          <label><span class="required">*</span>Short Description</label>
+          <input type="text" name="title" placeholder="Brief summary of the issue" required />
+          <p class="info-text">What is the main problem?</p>
+        </div>
+        <div class="form-group form-group-full">
+          <label>Detailed Description</label>
+          <textarea name="description" placeholder="Provide detailed information about the issue, steps to reproduce, error messages, etc."></textarea>
+          <p class="info-text">Include as much detail as possible to aid resolution</p>
+        </div>
 
-      <div class="si-incident-divider"></div>
-      <div class="si-incident-section">Service history</div>
-      <div class="si-incident-field">
-        <label>Warranty Status</label>
-        <input name="warranty_status" placeholder="Warranty status" />
-      </div>
-      <div class="si-incident-field">
-        <label>Last Serviced on</label>
-        <input name="last_serviced_on" placeholder="Last serviced on" />
-      </div>
+      </div><!-- Close form-grid -->
+    </div><!-- Close form-section -->
 
-      <div class="si-incident-divider"></div>
-      <div class="si-incident-section">Issue description</div>
-      <div class="si-incident-field si-incident-field-wide">
-        <label><span class="si-required">*</span> Short description</label>
-        <input name="title" placeholder="Short description" required />
-      </div>
-
-      <div class="si-incident-field si-incident-field-wide">
-        <label>Description</label>
-        <textarea name="description" placeholder="Description"></textarea>
-      </div>
+    <!-- SUBMIT BUTTON -->
+    <div class="form-actions">
+      <button type="button" class="incident-btn incident-btn-secondary" onclick="history.back()">Cancel</button>
+      <button type="submit" class="incident-btn incident-btn-primary">Submit Incident</button>
     </div>
   </form>
-</section>
+</div>
 
 <script>
-  const platformVariants = [
-    {
-      customer: "Acme Rail Systems",
-      contract: "CTR-2024-001",
-      srlm: "LM",
-      variant: "LM Alpha - (LM-0001)",
-    },
-    {
-      customer: "MetroLine Services",
-      contract: "CTR-2024-014",
-      srlm: "LM",
-      variant: "LM Bravo - (LM-0002)",
-    },
-    {
-      customer: "Acme Rail Systems",
-      contract: "CTR-2024-001",
-      srlm: "GCS",
-      variant: "GCS North - (GCS-0101)",
-    },
-    {
-      customer: "MetroLine Services",
-      contract: "CTR-2024-014",
-      srlm: "TMV",
-      variant: "TMV Ranger - (TMV-2201)",
-    },
-    {
-      customer: "Urban Transit Corp",
-      contract: "CTR-2023-220",
-      srlm: "Simulator",
-      variant: "Simulator Prime - (SIM-3001)",
-    },
-  ];
-
-  const customerContacts = [
-    {
-      customer: "Acme Rail Systems",
-      primary: { name: "Ravi Kumar", contact: "+91 98765 43210" },
-      additional: [],
-    },
-    {
-      customer: "MetroLine Services",
-      primary: { name: "Neha Singh", contact: "+91 91234 56789" },
-      additional: [
-        { name: "Amit Rao", contact: "+91 90000 11223" },
-      ],
-    },
-    {
-      customer: "Urban Transit Corp",
-      primary: { name: "Arjun Mehta", contact: "+91 99887 66554" },
-      additional: [
-        { name: "Kavya Nair", contact: "+91 91111 22334" },
-        { name: "Rahul Iyer", contact: "+91 93333 44556" },
-      ],
-    },
-  ];
-
-  const lruOptions = [
-    {
-      srlm: "LM",
-      platformVariant: "LM Alpha - (LM-0001)",
-      subSystem: "Navigation",
-      lru: "Guidance Module (LRU-1001)",
-    },
-    {
-      srlm: "LM",
-      platformVariant: "LM Alpha - (LM-0001)",
-      subSystem: "Airframe",
-      lru: "Airframe Sensor Pack (LRU-1002)",
-    },
-    {
-      srlm: "LM",
-      platformVariant: "LM Alpha - (LM-0001)",
-      subSystem: "Propulsion",
-      lru: "Propulsion Pump (LRU-1004)",
-    },
-    {
-      srlm: "GCS",
-      platformVariant: "GCS North - (GCS-0101)",
-      subSystem: "Computing",
-      lru: "Compute Node A (LRU-2101)",
-    },
-    {
-      srlm: "GCS",
-      platformVariant: "GCS North - (GCS-0101)",
-      subSystem: "Communication",
-      lru: "Comms Router (LRU-2103)",
-    },
-    {
-      srlm: "GCS",
-      platformVariant: "GCS North - (GCS-0101)",
-      subSystem: "Display",
-      lru: "Display Panel A (LRU-2105)",
-    },
-    {
-      srlm: "TMV",
-      platformVariant: "TMV Ranger - (TMV-2201)",
-      subSystem: "Powertrain",
-      lru: "Transmission Module (LRU-3101)",
-    },
-    {
-      srlm: "TMV",
-      platformVariant: "TMV Ranger - (TMV-2201)",
-      subSystem: "Electrical",
-      lru: "Battery Pack (LRU-3103)",
-    },
-    {
-      srlm: "TMV",
-      platformVariant: "TMV Ranger - (TMV-2201)",
-      subSystem: "Navigation",
-      lru: "GPS Module (LRU-3108)",
-    },
-    {
-      srlm: "Simulator",
-      platformVariant: "Simulator Prime - (SIM-3001)",
-      subSystem: "Computing",
-      lru: "Sim Compute Node (LRU-4101)",
-    },
-    {
-      srlm: "Simulator",
-      platformVariant: "Simulator Prime - (SIM-3001)",
-      subSystem: "Display",
-      lru: "Projection Unit (LRU-4104)",
-    },
-    {
-      srlm: "Simulator",
-      platformVariant: "Simulator Prime - (SIM-3001)",
-      subSystem: "Audio",
-      lru: "Audio Mixer (LRU-4107)",
-    },
-  ];
-
-  const customerInput = document.querySelector("input[name='caller']");
-  const contractSelect = document.getElementById("customer-contract");
-  const srlmSelect = document.querySelector("select[name='srlm_system']");
-  const variantSelect = document.getElementById("platform-variant");
-  const subSystemSelect = document.getElementById("sub-system");
-  const lruSelect = document.getElementById("lru-select");
-  const requestorNameInput = document.querySelector("input[name='requestor_name']");
-  const requestorContactInput = document.querySelector("input[name='requestor_contact']");
-  const requestorNameList = document.getElementById("requestor-name-list");
-  const requestorContactList = document.getElementById("requestor-contact-list");
-
-  const resetVariants = () => {
-    variantSelect.innerHTML = "<option value=\"\">-- None --</option>";
-  };
-
-  const updateVariants = () => {
-    const customer = (customerInput?.value || "").trim();
-    const contract = contractSelect?.value || "";
-    const srlm = srlmSelect?.value || "";
-
-    resetVariants();
-
-    platformVariants
-      .filter((item) => item.customer === customer && item.contract === contract && item.srlm === srlm)
-      .forEach((item) => {
-        const option = document.createElement("option");
-        option.value = item.variant;
-        option.textContent = item.variant;
-        variantSelect.appendChild(option);
-      });
-  };
-
-  const updateSubSystems = () => {
-    if (!subSystemSelect || !srlmSelect) {
-      return;
-    }
-
-    const selectedSrlm = srlmSelect.value;
-    const options = Array.from(subSystemSelect.options);
-
-    options.forEach((option) => {
-      const srlm = option.getAttribute("data-srlm");
-      if (!srlm) {
-        option.hidden = false;
-        return;
+  // Pass customer contacts directly from server
+  const customerContactsData = {{ customers | tojson }};
+  
+  // Build customer contacts map from server data
+  const customerContactsMap = {};
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    // Populate the map from server data
+    customerContactsData.forEach(customer => {
+      if (customer.name && customer.contacts && Array.isArray(customer.contacts)) {
+        customerContactsMap[customer.name] = customer.contacts;
       }
-      option.hidden = selectedSrlm && srlm !== selectedSrlm;
     });
+  });
 
-    if (subSystemSelect.selectedOptions.length) {
-      const selected = subSystemSelect.selectedOptions[0];
-      if (selected.hidden) {
-        subSystemSelect.value = "";
+  // Update contracts based on customer selection
+  function updateContracts() {
+    const customerSelect = document.getElementById('customerSelect');
+    const contractSelect = document.getElementById('contractSelect');
+    const selectedCustomer = customerSelect.value;
+
+    // Reset contracts
+    contractSelect.value = '';
+
+    // Filter contracts
+    for (let option of contractSelect.options) {
+      if (option.value === '') {
+        option.style.display = '';
+      } else {
+        const optionCustomer = option.getAttribute('data-customer');
+        option.style.display = (optionCustomer === selectedCustomer) ? '' : 'none';
       }
     }
-  };
 
-  const updateRequestorFields = () => {
-    if (!requestorNameInput || !requestorContactInput || !requestorNameList || !requestorContactList) {
-      return;
-    }
+    // Update requestor options
+    updateRequestors();
+  }
 
-    requestorNameList.innerHTML = "";
-    requestorContactList.innerHTML = "";
+  // Update requestor list based on customer
+  function updateRequestors() {
+    const customerSelect = document.getElementById('customerSelect');
+    const requestorSelect = document.getElementById('requestorSelect');
+    const selectedCustomer = customerSelect.value;
 
-    const customer = (customerInput?.value || "").trim();
-    const match = customerContacts.find((item) => item.customer === customer);
+    requestorSelect.innerHTML = '<option value="">-- Select Contact --</option>';
+    requestorSelect.value = '';
+    document.getElementById('requestorPhone').value = '';
 
-    if (!match) {
-      requestorNameInput.value = "";
-      requestorContactInput.value = "";
-      return;
-    }
-
-    const contacts = [match.primary, ...match.additional];
-    contacts.forEach((entry) => {
-      const nameOption = document.createElement("option");
-      nameOption.value = entry.name;
-      requestorNameList.appendChild(nameOption);
-
-      const contactOption = document.createElement("option");
-      contactOption.value = entry.contact;
-      requestorContactList.appendChild(contactOption);
-    });
-
-    if (match.additional.length === 0) {
-      requestorNameInput.value = match.primary.name;
-      requestorContactInput.value = match.primary.contact;
-    }
-  };
-
-  const updateLruOptions = () => {
-    if (!lruSelect || !srlmSelect || !variantSelect || !subSystemSelect) {
-      return;
-    }
-
-    const srlm = srlmSelect.value;
-    const platformVariant = variantSelect.value;
-    const subSystem = subSystemSelect.value;
-
-    lruSelect.innerHTML = "<option value=\"\">-- None --</option>";
-
-    lruOptions
-      .filter(
-        (item) =>
-          (!srlm || item.srlm === srlm) &&
-          (!platformVariant || item.platformVariant === platformVariant) &&
-          (!subSystem || item.subSystem === subSystem)
-      )
-      .forEach((item) => {
-        const option = document.createElement("option");
-        option.value = item.lru;
-        option.textContent = item.lru;
-        lruSelect.appendChild(option);
+    if (selectedCustomer && customerContactsMap[selectedCustomer]) {
+      const contacts = customerContactsMap[selectedCustomer];
+      contacts.forEach(contact => {
+        const option = document.createElement('option');
+        option.value = contact.name;
+        option.setAttribute('data-phone', contact.phone || '');
+        option.setAttribute('data-email', contact.email || '');
+        option.textContent = contact.name;
+        requestorSelect.appendChild(option);
       });
-  };
-
-  const syncRequestorContact = () => {
-    if (!requestorNameInput || !requestorContactInput) {
-      return;
     }
+  }
 
-    const customer = (customerInput?.value || "").trim();
-    const match = customerContacts.find((item) => item.customer === customer);
-    if (!match) {
-      return;
-    }
+  // Update phone when requestor is selected
+  function updateRequestorContact() {
+    const requestorSelect = document.getElementById('requestorSelect');
+    const selectedOption = requestorSelect.options[requestorSelect.selectedIndex];
+    const phone = selectedOption.getAttribute('data-phone') || '';
+    const email = selectedOption.getAttribute('data-email') || '';
 
-    const contacts = [match.primary, ...match.additional];
-    const selectedName = requestorNameInput.value.trim();
-    const selected = contacts.find((entry) => entry.name === selectedName);
-    if (selected) {
-      requestorContactInput.value = selected.contact;
-    }
-  };
+    document.getElementById('requestorPhone').value = phone || email || '';
+  }
 
-  if (customerInput && contractSelect && srlmSelect && variantSelect) {
-    customerInput.addEventListener("input", () => {
-      const selectedCustomer = customerInput.value.trim();
-      const options = Array.from(contractSelect.options);
-
-      options.forEach((option) => {
-        const customerName = option.getAttribute("data-customer");
-        if (!customerName) {
-          option.hidden = false;
-          return;
-        }
-        option.hidden = selectedCustomer && customerName !== selectedCustomer;
-      });
-
-      if (contractSelect.selectedOptions.length) {
-        const selected = contractSelect.selectedOptions[0];
-        if (selected.hidden) {
-          contractSelect.value = "";
-        }
-      }
-
-      updateVariants();
-      updateRequestorFields();
-    });
-    requestorNameInput.addEventListener("input", syncRequestorContact);
-    requestorNameInput.addEventListener("change", syncRequestorContact);
-    contractSelect.addEventListener("change", updateVariants);
-    srlmSelect.addEventListener("change", () => {
-      updateVariants();
-      updateSubSystems();
-      updateLruOptions();
-    });
-    variantSelect.addEventListener("change", updateLruOptions);
-    subSystemSelect.addEventListener("change", updateLruOptions);
-    updateVariants();
-    updateSubSystems();
-    updateLruOptions();
+  // Placeholder for contract-based filtering if needed
+  function filterRequestorsForContract() {
+    // Can implement additional filtering based on contract if needed
   }
 </script>
+
 {% endblock %}

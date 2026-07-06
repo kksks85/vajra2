@@ -19,12 +19,16 @@
   </header>
 
   <form id="kitting-config-form" method="post" action="/admin/{{ category.lower() }}-kitting/{{ item.id }}" class="si-incident-form">
+    <!-- Hidden field to ensure product_category is always submitted -->
+    <input type="hidden" name="product_category" value="{{ item.product_category }}" />
+    <input type="hidden" name="product_id" value="{{ item.id }}" />
+    
     <div class="si-incident-grid">
       <div class="si-incident-section">Master Data details</div>
       
       <div class="si-incident-field">
         <label>Product Category</label>
-        <input name="product_category" value="{{ item.product_category }}" readonly style="background: #f1f5f9; color: #64748b;" />
+        <input value="{{ item.product_category }}" readonly style="background: #f1f5f9; color: #64748b;" />
       </div>
 
       <div class="si-incident-field">

@@ -1,92 +1,684 @@
 {% extends "base.html" %}
 {% block content %}
+
+<style>
+  .data-grid-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin: 20px;
+  }
+
+  .grid-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fafbfc;
+  }
+
+  .grid-title {
+    flex: 1;
+  }
+
+  .grid-title h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .grid-title .pill {
+    display: inline-block;
+    background: #e8f0ff;
+    color: #0052cc;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+  }
+
+  .grid-meta {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-right: 20px;
+  }
+
+  .grid-meta .count {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+
+  .grid-meta .total {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .gear-menu {
+    position: relative;
+  }
+
+  .gear-btn {
+    background: none;
+    border: 1px solid #ddd;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 8px 12px;
+    color: #666;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .gear-btn:hover {
+    background: #f0f0f0;
+    color: #333;
+  }
+
+  .gear-dropdown {
+    position: absolute;
+    right: 0;
+    top: 40px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    min-width: 200px;
+    z-index: 100;
+    display: none;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .gear-dropdown.show {
+    display: block;
+  }
+
+  .dropdown-section {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 8px 0;
+  }
+
+  .dropdown-section:last-child {
+    border-bottom: none;
+  }
+
+  .dropdown-title {
+    padding: 8px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .column-option {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+    transition: background 0.2s;
+  }
+
+  .column-option:hover {
+    background: #f5f5f5;
+  }
+
+  .column-option input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+  }
+
+  .export-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+    transition: background 0.2s;
+  }
+
+  .export-option:hover {
+    background: #f5f5f5;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-wrapper::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .table-wrapper::-webkit-scrollbar-track {
+    background: #f5f5f5;
+  }
+
+  .table-wrapper::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+  }
+
+  .table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #999;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    font-size: 13px;
+    min-width: 1200px;
+  }
+
+  .data-table thead {
+    background: #f5f6f7;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .data-table thead tr:first-child th {
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 1px solid #e0e0e0;
+    white-space: nowrap;
+    position: relative;
+    background: #f5f6f7;
+    min-width: 120px;
+    flex-shrink: 0;
+  }
+
+  .data-table thead tr:first-child th:last-child {
+    min-width: 150px;
+  }
+
+  .data-table thead tr:last-child th {
+    padding: 6px 12px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fafbfc;
+    border-top: 1px solid #e0e0e0;
+    min-width: 120px;
+    flex-shrink: 0;
+  }
+
+  .data-table thead tr:last-child th:last-child {
+    min-width: 150px;
+  }
+
+  .filter-header {
+    position: relative;
+    width: 100%;
+  }
+
+  .filter-header input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: inherit;
+    box-sizing: border-box;
+    min-width: 100%;
+  }
+
+  .filter-header input:focus {
+    outline: none;
+    border-color: #0052cc;
+    box-shadow: 0 0 0 2px rgba(0, 82, 204, 0.1);
+  }
+
+  .data-table tbody tr {
+    border-bottom: 1px solid #e8e8e8;
+    transition: background 0.15s;
+  }
+
+  .data-table tbody tr:hover {
+    background: #f9f9f9;
+  }
+
+  .data-table tbody td {
+    padding: 8px 12px;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 120px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .data-table tbody td[title] {
+    cursor: help;
+  }
+
+  .data-table tbody td[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: normal;
+    max-width: 300px;
+    width: max-content;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    word-break: break-word;
+  }
+
+  .data-table tbody td[title]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #1f2937;
+    z-index: 1000;
+  }
+
+  .data-table tbody td:last-child {
+    min-width: 150px;
+  }
+
+  .action-links {
+    display: flex;
+    gap: 8px;
+  }
+
+  .action-links a {
+    color: #0052cc;
+    text-decoration: none;
+    font-size: 12px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .action-links a:hover {
+    color: #003a99;
+    text-decoration: underline;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 14px;
+  }
+
+  .results-info {
+    padding: 12px 20px;
+    background: #f5f6f7;
+    border-top: 1px solid #e0e0e0;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .hidden-column {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .grid-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .grid-meta {
+      align-self: flex-end;
+      margin-right: 0;
+    }
+  }
+</style>
+
 <section class="list-shell">
-  <div class="list-bar">
-    <div class="list-title">
-      <h1>{{ unit_label }}</h1>
-      <span class="pill">All</span>
-    </div>
-    <div class="list-controls">
-      <div class="list-actions">
-        <a class="ghost small" href="/admin/lm/new">Create New LM</a>
+  <div class="data-grid-container">
+    <!-- Grid Header -->
+    <div class="grid-header">
+      <div class="grid-title">
+        <h1>{{ unit_label }} <span class="pill">All</span></h1>
       </div>
-      <span class="list-meta">{{ pagination.total }} total</span>
+      <div class="grid-meta">
+        <span class="count">Total Records</span>
+        <span class="total" id="total-count">{{ units|length }}</span>
+      </div>
+      <div class="gear-menu">
+        <button class="gear-btn" onclick="toggleGearMenu()" title="Settings">⚙️</button>
+        <div class="gear-dropdown" id="gear-dropdown">
+          <!-- Column Selection -->
+          <div class="dropdown-section">
+            <div class="dropdown-title">Columns</div>
+            <label class="column-option">
+              <input type="checkbox" value="serial_number" checked onchange="toggleColumn('serial_number')">
+              Serial Number
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="unit_name" checked onchange="toggleColumn('unit_name')">
+              Unit Name
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="sap_part" checked onchange="toggleColumn('sap_part')">
+              SAP Part Number
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="cust_part" checked onchange="toggleColumn('cust_part')">
+              Customer Part Number
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="customer" checked onchange="toggleColumn('customer')">
+              Customer
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="contract" checked onchange="toggleColumn('contract')">
+              Contract
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="warranty" checked onchange="toggleColumn('warranty')">
+              Warranty Valid To
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="make" checked onchange="toggleColumn('make')">
+              Make
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="model" checked onchange="toggleColumn('model')">
+              Model
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="software" checked onchange="toggleColumn('software')">
+              Software Version
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="status" checked onchange="toggleColumn('status')">
+              Status
+            </label>
+          </div>
+
+          <!-- Export Options -->
+          <div class="dropdown-section">
+            <div class="dropdown-title">Export</div>
+            <div class="export-option" onclick="exportToExcel()">📊 Excel</div>
+            <div class="export-option" onclick="exportToCSV()">📄 CSV</div>
+            <div class="export-option" onclick="exportToPDF()">📕 PDF</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="table-wrapper">
+      <table class="data-table" id="data-table">
+        <thead>
+          <tr>
+            <th data-column="serial_number">Serial Number</th>
+            <th data-column="unit_name">Unit Name</th>
+            <th data-column="sap_part">SAP Part Number</th>
+            <th data-column="cust_part">Customer Part Number</th>
+            <th data-column="customer">Customer</th>
+            <th data-column="contract">Contract</th>
+            <th data-column="warranty">Warranty Valid To</th>
+            <th data-column="make">Make</th>
+            <th data-column="model">Model</th>
+            <th data-column="software">Software Version</th>
+            <th data-column="status">Status</th>
+            <th>Actions</th>
+          </tr>
+          <tr id="filter-row">
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="serial_number"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="unit_name"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="sap_part"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="cust_part"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="customer"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="contract"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="warranty"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="make"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="model"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="software"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="status"></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          {% for unit in units %}
+          <tr class="data-row" style="cursor: pointer;" onclick="window.location.href='/admin/lm/{{ unit.id }}';"
+              data-serial_number="{% if unit.get('serial_number') %}{{ unit.get('serial_number')|lower }}{% endif %}"
+              data-unit_name="{% if unit.get('unit_name') %}{{ unit.get('unit_name')|lower }}{% endif %}"
+              data-sap_part="{% if unit.get('sap_part_number') %}{{ unit.get('sap_part_number')|lower }}{% endif %}"
+              data-cust_part="{% if unit.get('customer_part_number') %}{{ unit.get('customer_part_number')|lower }}{% endif %}"
+              data-customer="{% if unit.get('customer') %}{{ unit.get('customer')|lower }}{% endif %}"
+              data-contract="{% if unit.get('contract') %}{{ unit.get('contract')|lower }}{% endif %}"
+              data-warranty="{% if unit.get('warranty_valid_to') %}{{ unit.get('warranty_valid_to')|lower }}{% endif %}"
+              data-make="{% if unit.get('make') %}{{ unit.get('make')|lower }}{% endif %}"
+              data-model="{% if unit.get('model') %}{{ unit.get('model')|lower }}{% endif %}"
+              data-software="{% if unit.get('software_version') %}{{ unit.get('software_version')|lower }}{% endif %}"
+              data-status="{% if unit.get('status') %}{{ unit.get('status')|lower }}{% endif %}">
+            <td data-column="serial_number" style="font-weight: 500; color: #1e293b;" title="{{ unit.get('serial_number', '') }}">
+              {{ unit.get('serial_number', '') }}
+            </td>
+            <td data-column="unit_name" style="color: #1e293b; font-weight: 500;" title="{{ unit.get('unit_name', '') }}">{{ unit.get('unit_name', '') }}</td>
+            <td data-column="sap_part" style="color: #64748b; font-size: 13px;" title="{{ unit.get('sap_part_number', '') }}">{{ unit.get('sap_part_number', '') }}</td>
+            <td data-column="cust_part" style="color: #64748b; font-size: 13px;" title="{{ unit.get('customer_part_number', '') }}">{{ unit.get('customer_part_number', '') }}</td>
+            <td data-column="customer" style="color: #1e40af; font-weight: 500;" title="{{ unit.get('customer', '') }}">{{ unit.get('customer', '') }}</td>
+            <td data-column="contract" style="color: #7c3aed; font-weight: 500;" title="{{ unit.get('contract', '') }}">{{ unit.get('contract', '') }}</td>
+            <td data-column="warranty" style="color: #dc2626; font-weight: 600;" title="{{ unit.get('warranty_valid_to', '') }}">{{ unit.get('warranty_valid_to', '') }}</td>
+            <td data-column="make" style="color: #64748b;" title="{{ unit.get('make', '') }}">{{ unit.get('make', '') }}</td>
+            <td data-column="model" style="color: #64748b;" title="{{ unit.get('model', '') }}">{{ unit.get('model', '') }}</td>
+            <td data-column="software" style="color: #64748b; font-size: 13px;" title="{{ unit.get('software_version', '') }}">{{ unit.get('software_version', '') }}</td>
+            <td data-column="status" style="text-align: center;" title="{{ unit.get('status', 'N/A') }}">
+              {% set status = unit.get('status', 'unknown')|lower %}
+              <span style="background: {% if status == 'active' %}#22c55e{% elif status == 'inactive' %}#6b7280{% else %}#9ca3af{% endif %}; color: white; padding: 4px 10px; border-radius: 4px; display: inline-block; font-size: 11px; font-weight: 600; white-space: nowrap;">{{ unit.get('status', 'N/A') }}</span>
+            </td>
+            <td style="text-align: center;">
+              <div class="action-links" onclick="event.stopPropagation();" style="display: flex; gap: 8px; justify-content: center;">
+                <a href="/admin/lm/{{ unit.id }}" style="color: #0369a1; text-decoration: none; font-weight: 500;">View</a>
+                <span style="color: #d1d5db;">|</span>
+                <a href="/admin/lm/{{ unit.id }}/edit" style="color: #059669; text-decoration: none; font-weight: 500;">Edit</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Results Info -->
+    <div class="results-info">
+      <span id="results-text">Showing <strong id="visible-count">{{ units|length }}</strong> of <strong id="total-records">{{ units|length }}</strong> records</span>
+    </div>
+
+    <!-- No Results -->
+    <div id="no-results" class="no-results" style="display: none;">
+      No records found matching your search criteria.
     </div>
   </div>
-
-  <div class="list-card">
-    <table class="table dense">
-      <thead>
-        <tr>
-          <th>Serial Number</th>
-          <th>Unit Name</th>
-          <th>SAP Part number</th>
-          <th>Customer Part no</th>
-          <th>Customer</th>
-          <th>Contract</th>
-          <th>Warranty Valid To</th>
-          <th>Make</th>
-          <th>Model</th>
-          <th>Software version</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for unit in units %}
-        <tr>
-          <td>{{ unit.serial_number }}</td>
-          <td>{{ unit.unit_name }}</td>
-          <td>{{ unit.sap_part_number }}</td>
-          <td>{{ unit.customer_part_number }}</td>
-          <td>{{ unit.customer_name }}</td>
-          <td>{{ unit.contract_number }}</td>
-          <td>{{ unit.warranty_valid_to }}</td>
-          <td>{{ unit.make }}</td>
-          <td>{{ unit.model }}</td>
-          <td>{{ unit.software_version }}</td>
-          <td>{{ unit.status }}</td>
-          <td>
-            <a class="ghost small" href="/admin/lm/{{ unit.id }}">View</a>
-            <a class="ghost small" href="/admin/lm/{{ unit.id }}/edit">Edit</a>
-            <a class="ghost small" href="/admin/lm/{{ unit.id }}/disable">Expended</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  {% if pagination and pagination.total_pages > 1 %}
-  <div class="pagination">
-    <span class="pagination-info">Showing {{ pagination.start_index }}-{{ pagination.end_index }} of {{ pagination.total }}</span>
-    
-    {% if pagination.has_previous %}
-      <a class="pagination-item" href="/admin/lm?page=1" title="First Page">«</a>
-      <a class="pagination-item" href="/admin/lm?page={{ pagination.previous_page }}">← Prev</a>
-    {% else %}
-      <span class="pagination-item pagination-disabled">«</span>
-      <span class="pagination-item pagination-disabled">← Prev</span>
-    {% endif %}
-
-    {% for page_num in range(1, pagination.total_pages + 1) %}
-      {% if page_num == pagination.page %}
-        <span class="pagination-item pagination-current">{{ page_num }}</span>
-      {% elif page_num == 1 or page_num == pagination.total_pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
-        <a class="pagination-item" href="/admin/lm?page={{ page_num }}">{{ page_num }}</a>
-      {% elif page_num == 2 or page_num == pagination.total_pages - 1 %}
-        <span class="pagination-separator">...</span>
-      {% endif %}
-    {% endfor %}
-
-    {% if pagination.has_next %}
-      <a class="pagination-item" href="/admin/lm?page={{ pagination.next_page }}">Next →</a>
-      <a class="pagination-item" href="/admin/lm?page={{ pagination.total_pages }}" title="Last Page">»</a>
-    {% else %}
-      <span class="pagination-item pagination-disabled">Next →</span>
-      <span class="pagination-item pagination-disabled">»</span>
-    {% endif %}
-  </div>
-  {% endif %}
 </section>
+
+<script>
+  let allRows = [];
+  const visibleColumns = new Set(['serial_number', 'unit_name', 'sap_part', 'cust_part', 'customer', 'contract', 'warranty', 'make', 'model', 'software', 'status']);
+
+  document.addEventListener('DOMContentLoaded', function() {
+    allRows = Array.from(document.querySelectorAll('.data-row'));
+    setupFilterListeners();
+    setupClickOutside();
+    document.getElementById('total-records').textContent = allRows.length;
+  });
+
+  function setupFilterListeners() {
+    document.querySelectorAll('.filter-header input').forEach(input => {
+      input.addEventListener('keyup', applyFilters);
+      input.addEventListener('change', applyFilters);
+    });
+  }
+
+  function setupClickOutside() {
+    document.addEventListener('click', function(e) {
+      const dropdown = document.getElementById('gear-dropdown');
+      const gearBtn = document.querySelector('.gear-btn');
+      if (!e.target.closest('.gear-menu')) {
+        dropdown.classList.remove('show');
+      }
+    });
+  }
+
+  function toggleGearMenu() {
+    document.getElementById('gear-dropdown').classList.toggle('show');
+  }
+
+  function toggleColumn(columnName) {
+    if (visibleColumns.has(columnName)) {
+      visibleColumns.delete(columnName);
+    } else {
+      visibleColumns.add(columnName);
+    }
+    updateColumnVisibility();
+  }
+
+  function updateColumnVisibility() {
+    document.querySelectorAll('[data-column]').forEach(cell => {
+      const column = cell.getAttribute('data-column');
+      if (visibleColumns.has(column)) {
+        cell.classList.remove('hidden-column');
+      } else {
+        cell.classList.add('hidden-column');
+      }
+    });
+  }
+
+  function applyFilters() {
+    const filters = {};
+    document.querySelectorAll('.filter-header input').forEach(input => {
+      const value = input.value.toLowerCase().trim();
+      if (value) {
+        filters[input.dataset.column] = value;
+      }
+    });
+
+    let visibleCount = 0;
+    const noResults = document.getElementById('no-results');
+    const tableBody = document.getElementById('table-body');
+
+    allRows.forEach(row => {
+      let show = true;
+      for (const [column, value] of Object.entries(filters)) {
+        const rowValue = (row.getAttribute(`data-${column}`) || '').toLowerCase();
+        if (!rowValue.includes(value)) {
+          show = false;
+          break;
+        }
+      }
+      row.style.display = show ? '' : 'none';
+      if (show) visibleCount++;
+    });
+
+    document.getElementById('visible-count').textContent = visibleCount;
+    if (Object.keys(filters).length > 0) {
+      noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+      tableBody.style.display = visibleCount === 0 ? 'none' : '';
+    } else {
+      noResults.style.display = 'none';
+      tableBody.style.display = '';
+    }
+  }
+
+  function getVisibleData() {
+    const rows = [];
+    const headers = [];
+    
+    document.querySelectorAll('th[data-column]').forEach(th => {
+      const column = th.getAttribute('data-column');
+      if (visibleColumns.has(column)) {
+        headers.push(th.textContent.trim());
+      }
+    });
+
+    allRows.forEach(row => {
+      if (row.style.display !== 'none') {
+        const rowData = [];
+        row.querySelectorAll('td[data-column]').forEach(td => {
+          const column = td.getAttribute('data-column');
+          if (visibleColumns.has(column)) {
+            rowData.push(td.textContent.trim());
+          }
+        });
+        if (rowData.length > 0) rows.push(rowData);
+      }
+    });
+
+    return { headers, rows };
+  }
+
+  function exportToCSV() {
+    const { headers, rows } = getVisibleData();
+    let csv = headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\n';
+    rows.forEach(row => {
+      csv += row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',') + '\n';
+    });
+    downloadFile(csv, 'lm_list.csv', 'text/csv');
+  }
+
+  function exportToExcel() {
+    const { headers, rows } = getVisibleData();
+    if (typeof XLSX === 'undefined') {
+      alert('Excel library not loaded. Please try CSV export instead.');
+      return;
+    }
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    XLSX.utils.book_append_sheet(wb, ws, 'LM Units');
+    XLSX.writeFile(wb, 'lm_list.xlsx');
+  }
+
+  function exportToPDF() {
+    const { headers, rows } = getVisibleData();
+    if (typeof jsPDF === 'undefined') {
+      alert('PDF library not loaded. Please try CSV export instead.');
+      return;
+    }
+    const doc = new jsPDF.jsPDF();
+    doc.autoTable({
+      head: [headers],
+      body: rows,
+      margin: 10,
+      theme: 'grid'
+    });
+    doc.save('lm_list.pdf');
+  }
+
+  function downloadFile(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+</script>
+
+<!-- Required Libraries for Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
 {% endblock %}

@@ -3,13 +3,10 @@
 <section class="list-shell">
   <div class="list-bar">
     <div class="list-title">
-      <h1>{{ unit_label }}</h1>
+      <h1>Master Product Table</h1>
       <span class="pill">All</span>
     </div>
     <div class="list-controls">
-      <div class="list-actions">
-        <a class="ghost small" href="/admin/simulator/new">Create New Simulator</a>
-      </div>
       <span class="list-meta">{{ pagination.total }} total</span>
     </div>
   </div>
@@ -18,6 +15,7 @@
     <table class="table dense">
       <thead>
         <tr>
+          <th>Product Type</th>
           <th>Serial Number</th>
           <th>Unit Name</th>
           <th>SAP Part number</th>
@@ -33,23 +31,34 @@
         </tr>
       </thead>
       <tbody>
-        {% for unit in units %}
+        {% for product in products %}
         <tr>
-          <td>{{ unit.serial_number }}</td>
-          <td>{{ unit.unit_name }}</td>
-          <td>{{ unit.sap_part_number }}</td>
-          <td>{{ unit.customer_part_number }}</td>
-          <td>{{ unit.customer_name }}</td>
-          <td>{{ unit.contract_number }}</td>
-          <td>{{ unit.warranty_valid_to }}</td>
-          <td>{{ unit.make }}</td>
-          <td>{{ unit.model }}</td>
-          <td>{{ unit.software_version }}</td>
-          <td>{{ unit.status }}</td>
+          <td><span class="badge">{{ product.product_type }}</span></td>
+          <td>{{ product.serial_number }}</td>
+          <td>{{ product.unit_name }}</td>
+          <td>{{ product.sap_part_number }}</td>
+          <td>{{ product.customer_part_number }}</td>
+          <td>{{ product.customer_name }}</td>
+          <td>{{ product.contract_number }}</td>
+          <td>{{ product.warranty_valid_to }}</td>
+          <td>{{ product.make }}</td>
+          <td>{{ product.model }}</td>
+          <td>{{ product.software_version }}</td>
+          <td>{{ product.status }}</td>
           <td>
-            <a class="ghost small" href="/admin/simulator/{{ unit.id }}">View</a>
-            <a class="ghost small" href="/admin/simulator/{{ unit.id }}/edit">Edit</a>
-            <a class="ghost small" href="/admin/simulator/{{ unit.id }}/disable">Delete</a>
+            {% if product.product_type == "LM" %}
+              <a class="ghost small" href="/admin/lm/{{ product.id }}">View</a>
+            {% elif product.product_type == "GCS" %}
+              <a class="ghost small" href="/admin/gcs/{{ product.id }}">View</a>
+            {% elif product.product_type == "TMV" %}
+              <a class="ghost small" href="/admin/tmv/{{ product.id }}">View</a>
+            {% elif product.product_type == "Simulator" %}
+              <a class="ghost small" href="/admin/simulator/{{ product.id }}">View</a>
+            {% elif product.product_type == "RDV" %}
+              <a class="ghost small" href="/admin/rdv/{{ product.id }}">View</a>
+            {% elif product.product_type == "MRLS" %}
+              <a class="ghost small" href="/admin/mrls/{{ product.id }}">View</a>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}
@@ -62,8 +71,8 @@
     <span class="pagination-info">Showing {{ pagination.start_index }}-{{ pagination.end_index }} of {{ pagination.total }}</span>
     
     {% if pagination.has_previous %}
-      <a class="pagination-item" href="/admin/simulator?page=1" title="First Page">«</a>
-      <a class="pagination-item" href="/admin/simulator?page={{ pagination.previous_page }}">← Prev</a>
+      <a class="pagination-item" href="/admin/master-products?page=1" title="First Page">«</a>
+      <a class="pagination-item" href="/admin/master-products?page={{ pagination.previous_page }}">← Prev</a>
     {% else %}
       <span class="pagination-item pagination-disabled">«</span>
       <span class="pagination-item pagination-disabled">← Prev</span>
@@ -73,15 +82,15 @@
       {% if page_num == pagination.page %}
         <span class="pagination-item pagination-current">{{ page_num }}</span>
       {% elif page_num == 1 or page_num == pagination.total_pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
-        <a class="pagination-item" href="/admin/simulator?page={{ page_num }}">{{ page_num }}</a>
+        <a class="pagination-item" href="/admin/master-products?page={{ page_num }}">{{ page_num }}</a>
       {% elif page_num == 2 or page_num == pagination.total_pages - 1 %}
         <span class="pagination-separator">...</span>
       {% endif %}
     {% endfor %}
 
     {% if pagination.has_next %}
-      <a class="pagination-item" href="/admin/simulator?page={{ pagination.next_page }}">Next →</a>
-      <a class="pagination-item" href="/admin/simulator?page={{ pagination.total_pages }}" title="Last Page">»</a>
+      <a class="pagination-item" href="/admin/master-products?page={{ pagination.next_page }}">Next →</a>
+      <a class="pagination-item" href="/admin/master-products?page={{ pagination.total_pages }}" title="Last Page">»</a>
     {% else %}
       <span class="pagination-item pagination-disabled">Next →</span>
       <span class="pagination-item pagination-disabled">»</span>

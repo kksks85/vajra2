@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .email-rules-container {
+    max-width: 1200px;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    width: 100%;
+  }
+
+  .rules-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 40px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .rules-header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .rules-header p {
+    margin: 6px 0 0 0;
+    color: #6b7280;
+    font-size: 14px;
+  }
+
+  .create-rule-btn {
+    padding: 12px 24px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .create-rule-btn:hover {
+    background: #2563eb;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 40px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+  }
+
+  .tab {
+    padding: 16px 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tab:hover {
+    color: #3b82f6;
+  }
+
+  .tab.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+  }
+
+  .rules-content {
+    padding: 30px 40px;
+  }
+
+  .rules-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+
+  .rules-table thead {
+    background: #f3f4f6;
+  }
+
+  .rules-table th {
+    padding: 12px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .rules-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    color: #374151;
+  }
+
+  .rules-table tbody tr:hover {
+    background: #f9fafb;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .status-active {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  .status-inactive {
+    background: #fee2e2;
+    color: #7f1d1d;
+  }
+
+  .rule-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .rule-action-btn {
+    padding: 6px 12px;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+
+  .rule-action-btn:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+  }
+
+  .rule-action-btn.delete {
+    color: #dc2626;
+    border-color: #fca5a5;
+  }
+
+  .rule-action-btn.delete:hover {
+    background: #fee2e2;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #6b7280;
+  }
+
+  .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+</style>
+
+<div class="email-rules-container">
+  <div class="rules-header">
+    <div>
+      <h1>📧 Email Rules</h1>
+      <p>Manage inbound and outbound email notification rules</p>
+    </div>
+    <button class="create-rule-btn" onclick="window.location.href='/admin/email-rules/wizard?rule_type={{ rule_type }}'">
+      + Create New Rule
+    </button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab {% if rule_type == 'inbound' %}active{% endif %}" 
+            onclick="window.location.href='/admin/email-rules?rule_type=inbound'">
+      📥 Inbound Rules
+    </button>
+    <button class="tab {% if rule_type == 'outbound' %}active{% endif %}" 
+            onclick="window.location.href='/admin/email-rules?rule_type=outbound'">
+      📤 Outbound Rules
+    </button>
+  </div>
+
+  <div class="rules-content">
+    {% if rule_type == 'inbound' %}
+      <h2 style="margin-top: 0; margin-bottom: 20px;">Inbound Email Rules</h2>
+      {% if inbound_rules %}
+        <table class="rules-table">
+          <thead>
+            <tr>
+              <th>Rule Name</th>
+              <th>Trigger Event</th>
+              <th>Conditions</th>
+              <th>Recipients</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rule in inbound_rules %}
+            <tr>
+              <td>{{ rule.name }}</td>
+              <td>{{ rule.trigger }}</td>
+              <td>{{ rule.conditions }}</td>
+              <td>{{ rule.recipients }}</td>
+              <td>
+                <span class="status-badge status-{{ rule.status.lower() }}">
+                  {{ rule.status }}
+                </span>
+              </td>
+              <td>
+                <div class="rule-actions">
+                  <button class="rule-action-btn" onclick="alert('Edit functionality coming soon')">Edit</button>
+                  <button class="rule-action-btn delete" onclick="alert('Delete functionality coming soon')">Delete</button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <p>No inbound rules created yet</p>
+          <button class="create-rule-btn" onclick="window.location.href='/admin/email-rules/wizard?rule_type=inbound'" 
+                  style="margin-top: 20px;">
+            Create Your First Inbound Rule
+          </button>
+        </div>
+      {% endif %}
+
+    {% elif rule_type == 'outbound' %}
+      <h2 style="margin-top: 0; margin-bottom: 20px;">Outbound Email Rules</h2>
+      {% if outbound_rules %}
+        <table class="rules-table">
+          <thead>
+            <tr>
+              <th>Rule Name</th>
+              <th>Trigger Event</th>
+              <th>Conditions</th>
+              <th>Recipients</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rule in outbound_rules %}
+            <tr>
+              <td>{{ rule.name }}</td>
+              <td>{{ rule.trigger }}</td>
+              <td>{{ rule.conditions }}</td>
+              <td>{{ rule.recipients }}</td>
+              <td>
+                <span class="status-badge status-{{ rule.status.lower() }}">
+                  {{ rule.status }}
+                </span>
+              </td>
+              <td>
+                <div class="rule-actions">
+                  <button class="rule-action-btn" onclick="alert('Edit functionality coming soon')">Edit</button>
+                  <button class="rule-action-btn delete" onclick="alert('Delete functionality coming soon')">Delete</button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <p>No outbound rules created yet</p>
+          <button class="create-rule-btn" onclick="window.location.href='/admin/email-rules/wizard?rule_type=outbound'" 
+                  style="margin-top: 20px;">
+            Create Your First Outbound Rule
+          </button>
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

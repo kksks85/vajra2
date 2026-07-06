@@ -40,8 +40,8 @@
           <td>INC{{ "%07d" | format(incident.id) }}</td>
           <td>{{ format_utc(incident.created_at, "%Y-%m-%d %H:%M") }}</td>
           <td>{{ incident.title }}</td>
-          <td><span class="badge priority-{{ incident.priority }}">{{ incident.priority|capitalize }}</span></td>
-          <td><span class="badge status-{{ incident.status }}">{{ incident.status|capitalize }}</span></td>
+          <td><span class="priority-text priority-{{ incident.priority }}">{{ incident.priority|capitalize }}</span></td>
+          <td><span class="status-text status-{{ incident.status }}">{{ incident.status|capitalize }}</span></td>
           <td>{{ incident.stage|capitalize }}</td>
         </tr>
         {% endfor %}
@@ -65,67 +65,61 @@
     background-color: rgba(43, 116, 214, 0.05);
   }
 
-  .badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.8rem;
+  .priority-text {
     font-weight: 500;
+    color: #475569;
   }
 
-  .badge.priority-critical {
-    background: #fee2e2;
-    color: #991b1b;
+  .priority-text.priority-critical {
+    color: #dc2626;
+    font-weight: 600;
   }
 
-  .badge.priority-high {
-    background: #fef3c7;
-    color: #92400e;
+  .priority-text.priority-high {
+    color: #475569;
   }
 
-  .badge.priority-medium {
-    background: #dbeafe;
-    color: #1e40af;
+  .priority-text.priority-medium {
+    color: #475569;
   }
 
-  .badge.priority-low {
-    background: #dcfce7;
-    color: #166534;
+  .priority-text.priority-low {
+    color: #475569;
   }
 
-  .badge.status-new {
-    background: #e0e7ff;
-    color: #3730a3;
+  .status-text {
+    font-weight: 500;
+    color: #475569;
   }
 
-  .badge.status-diagnosis {
-    background: #fce7f3;
-    color: #831843;
+  .status-text.status-new {
+    color: #475569;
   }
 
-  .badge.status-work_in_progress {
-    background: #fef3c7;
-    color: #92400e;
+  .status-text.status-diagnosis {
+    color: #475569;
   }
 
-  .badge.status-on_hold {
-    background: #fee2e2;
-    color: #991b1b;
+  .status-text.status-in_progress {
+    color: #475569;
   }
 
-  .badge.status-repair_completed {
-    background: #dbeafe;
-    color: #1e40af;
+  .status-text.status-on_hold {
+    color: #475569;
   }
 
-  .badge.status-quality_check {
-    background: #fef3c7;
-    color: #92400e;
+  .status-text.status-repair_completed {
+    color: #16a34a;
+    font-weight: 600;
   }
 
-  .badge.status-closure {
-    background: #dcfce7;
-    color: #166534;
+  .status-text.status-quality_check {
+    color: #475569;
+  }
+
+  .status-text.status-closure {
+    color: #16a34a;
+    font-weight: 600;
   }
 </style>
 {% endblock %}

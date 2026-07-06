@@ -28,16 +28,18 @@
       </thead>
       <tbody>
         {% for customer in customers %}
+        {% set contacts = customer.get('contacts', []) %}
+        {% set primary = contacts[0] if contacts else {} %}
         <tr>
           <td>{{ customer.name }}</td>
-          <td>{{ customer.contact_name }}</td>
-          <td>{{ customer.contact_email }}</td>
-          <td>{{ customer.contact_phone }}</td>
-          <td>{{ customer.status }}</td>
+          <td>{{ primary.get('name', '') }}</td>
+          <td>{{ primary.get('email', '') }}</td>
+          <td>{{ primary.get('phone', '') }}</td>
+          <td>{{ customer.get('status', 'Active') }}</td>
           <td>
             <a class="ghost small" href="/admin/customers/{{ customer.id }}">View</a>
             <a class="ghost small" href="/admin/customers/{{ customer.id }}/edit">Edit</a>
-            <a class="ghost small" href="/admin/customers/{{ customer.id }}/disable">Expended</a>
+            <a class="ghost small" href="/admin/customers/{{ customer.id }}/delete">Delete</a>
           </td>
         </tr>
         {% endfor %}

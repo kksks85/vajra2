@@ -41,6 +41,33 @@
         </select>
       </div>
 
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Customer</div>
+      <div class="si-incident-field">
+        <label><span class="si-required">*</span> Customer Name</label>
+        <input name="caller" placeholder="Select customer" list="customer-name-list" value="{{ incident.caller or '' }}" />
+        <datalist id="customer-name-list">
+          <option value="Indian Air Force"></option>
+          <option value="Indian Army"></option>
+          <option value="Indian Navy"></option>
+        </datalist>
+      </div>
+      <div class="si-incident-field">
+        <label>Customer Contract</label>
+        <input name="customer_contract" placeholder="e.g., Contract-2024-1234" value="{{ incident.customer_contract or '' }}" />
+      </div>
+
+      <div class="si-incident-field">
+        <label>Requestor Name</label>
+        <input name="requestor_name" placeholder="Requestor name" value="{{ incident.requestor_name or '' }}" />
+      </div>
+      <div class="si-incident-field">
+        <label>Requestor Contact</label>
+        <input name="requestor_contact" placeholder="Phone or Email" value="{{ incident.requestor_contact or '' }}" />
+      </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Incident Classification</div>
       <div class="si-incident-field">
         <label>Issue Type</label>
         <select name="issue_type">
@@ -52,97 +79,59 @@
       </div>
       <div class="si-incident-field">
         <label>SLA</label>
-        <input name="sla" placeholder="SLA" />
+        <input name="sla" placeholder="e.g., 4 hours, 24 hours" value="{{ incident.sla or '' }}" />
       </div>
       <div class="si-incident-field">
         <label>Assignment Group</label>
-        <input name="assignment_group" placeholder="Assignment group" />
+        <input name="assignment_group" placeholder="Technical Support, Engineering, Field Operations" value="{{ incident.assignment_group or '' }}" />
       </div>
       <div class="si-incident-field">
         <label>Assigned to</label>
-        <input name="assigned_to" placeholder="Assigned to" />
-      </div>
-
-      <div class="si-incident-divider"></div>
-      <div class="si-incident-section">Customer</div>
-      <div class="si-incident-field">
-        <label><span class="si-required">*</span> Customer Name</label>
-        <input name="caller" placeholder="Select customer" list="customer-name-list" />
-        <datalist id="customer-name-list">
-          <option value="Acme Rail Systems"></option>
-          <option value="MetroLine Services"></option>
-          <option value="Urban Transit Corp"></option>
-        </datalist>
-      </div>
-      <div class="si-incident-field">
-        <label>Customer Contract</label>
-        <select name="customer_contract" id="customer-contract">
-          <option value="">-- None --</option>
-          <option value="CTR-2024-001" data-customer="Acme Rail Systems">CTR-2024-001</option>
-          <option value="CTR-2024-014" data-customer="MetroLine Services">CTR-2024-014</option>
-          <option value="CTR-2023-220" data-customer="Urban Transit Corp">CTR-2023-220</option>
-        </select>
-      </div>
-
-      <div class="si-incident-field">
-        <label>Requestor Name</label>
-        <input name="requestor_name" placeholder="Requestor name" list="requestor-name-list" />
-        <datalist id="requestor-name-list"></datalist>
-      </div>
-      <div class="si-incident-field">
-        <label>Requestor Contact</label>
-        <input name="requestor_contact" placeholder="Requestor contact" list="requestor-contact-list" />
-        <datalist id="requestor-contact-list"></datalist>
+        <input name="assigned_to" placeholder="Engineer or team member" value="{{ incident.assigned_to or '' }}" />
       </div>
 
       <div class="si-incident-divider"></div>
       <div class="si-incident-section">Product details</div>
       <div class="si-incident-field">
-        <label>SRLM System</label>
+        <label>System Type</label>
         <select name="srlm_system" id="srlm-select">
           <option value="">-- None --</option>
-          <option value="LM">Loitering Munition (LM)</option>
-          <option value="GCS">Ground Control System (GCS)</option>
-          <option value="TMV">Tactical Mobility Vehicle (TMV)</option>
-          <option value="Simulator">Simulator</option>
+          <option value="SRLM" {% if incident.srlm_system == 'SRLM' %}selected{% endif %}>SRLM</option>
+          <option value="ERLM" {% if incident.srlm_system == 'ERLM' %}selected{% endif %}>ERLM</option>
         </select>
       </div>
       <div class="si-incident-field">
-        <label>Platform Variant</label>
+        <label>Product Category</label>
         <select name="platform_variant" id="platform-variant">
           <option value="">-- None --</option>
+          <option value="Loitering Munition (LM)" {% if incident.platform_variant == 'Loitering Munition (LM)' %}selected{% endif %}>Loitering Munition (LM)</option>
+          <option value="Gimbal" {% if incident.platform_variant == 'Gimbal' %}selected{% endif %}>Gimbal</option>
+          <option value="Tracker" {% if incident.platform_variant == 'Tracker' %}selected{% endif %}>Tracker</option>
+          <option value="GCS" {% if incident.platform_variant == 'GCS' %}selected{% endif %}>GCS</option>
+          <option value="GDT" {% if incident.platform_variant == 'GDT' %}selected{% endif %}>GDT</option>
+          <option value="Simulator" {% if incident.platform_variant == 'Simulator' %}selected{% endif %}>Simulator</option>
+          <option value="RDV" {% if incident.platform_variant == 'RDV' %}selected{% endif %}>RDV</option>
+          <option value="TMV" {% if incident.platform_variant == 'TMV' %}selected{% endif %}>TMV</option>
+          <option value="Warhead + ESAM" {% if incident.platform_variant == 'Warhead + ESAM' %}selected{% endif %}>Warhead + ESAM</option>
         </select>
+      </div>
+      <div class="si-incident-field">
+        <label>Serial Number</label>
+        <input name="line_replaceable_unit" placeholder="e.g., LM-SN-001-01" value="{{ incident.line_replaceable_unit or '' }}" />
       </div>
       <div class="si-incident-field">
         <label>Sub-system</label>
         <select name="sub_system" id="sub-system">
           <option value="">-- None --</option>
-          <option value="Airframe" data-srlm="LM">Airframe</option>
-          <option value="Propulsion" data-srlm="LM">Propulsion</option>
-          <option value="Avionics & Flight Control" data-srlm="LM">Avionics & Flight Control</option>
-          <option value="Communication" data-srlm="LM">Communication</option>
-          <option value="Payload" data-srlm="LM">Payload</option>
-          <option value="Computing" data-srlm="GCS">Computing</option>
-          <option value="Communication" data-srlm="GCS">Communication</option>
-          <option value="Display" data-srlm="GCS">Display</option>
-          <option value="Control Interface" data-srlm="GCS">Control Interface</option>
-          <option value="Power" data-srlm="GCS">Power</option>
-          <option value="Powertrain" data-srlm="TMV">Powertrain</option>
-          <option value="Electrical" data-srlm="TMV">Electrical</option>
-          <option value="Communication" data-srlm="TMV">Communication</option>
-          <option value="Navigation" data-srlm="TMV">Navigation</option>
-          <option value="Payload Handling" data-srlm="TMV">Payload Handling</option>
-          <option value="Computing" data-srlm="Simulator">Computing</option>
-          <option value="Display" data-srlm="Simulator">Display</option>
-          <option value="Control" data-srlm="Simulator">Control</option>
-          <option value="Audio" data-srlm="Simulator">Audio</option>
-          <option value="Software" data-srlm="Simulator">Software</option>
-        </select>
-      </div>
-      <div class="si-incident-field">
-        <label>Line Replaceable Unit (LRU)</label>
-        <select name="line_replaceable_unit" id="lru-select">
-          <option value="">-- None --</option>
+          <option value="Airframe" {% if incident.sub_system == 'Airframe' %}selected{% endif %}>Airframe</option>
+          <option value="Propulsion" {% if incident.sub_system == 'Propulsion' %}selected{% endif %}>Propulsion</option>
+          <option value="Avionics & Flight Control" {% if incident.sub_system == 'Avionics & Flight Control' %}selected{% endif %}>Avionics & Flight Control</option>
+          <option value="Communication" {% if incident.sub_system == 'Communication' %}selected{% endif %}>Communication</option>
+          <option value="Payload" {% if incident.sub_system == 'Payload' %}selected{% endif %}>Payload</option>
+          <option value="Computing" {% if incident.sub_system == 'Computing' %}selected{% endif %}>Computing</option>
+          <option value="Display" {% if incident.sub_system == 'Display' %}selected{% endif %}>Display</option>
+          <option value="Control Interface" {% if incident.sub_system == 'Control Interface' %}selected{% endif %}>Control Interface</option>
+          <option value="Power" {% if incident.sub_system == 'Power' %}selected{% endif %}>Power</option>
         </select>
       </div>
 
@@ -150,11 +139,11 @@
       <div class="si-incident-section">Service history</div>
       <div class="si-incident-field">
         <label>Warranty Status</label>
-        <input name="warranty_status" placeholder="Warranty status" />
+        <input name="warranty_status" placeholder="Active/Expired/Expiring Soon" value="{{ incident.warranty_status or '' }}" />
       </div>
       <div class="si-incident-field">
         <label>Last Serviced on</label>
-        <input name="last_serviced_on" placeholder="Last serviced on" />
+        <input name="last_serviced_date" placeholder="YYYY-MM-DD" value="{{ incident.last_serviced_date or '' }}" />
       </div>
 
       <div class="si-incident-divider"></div>
@@ -177,32 +166,56 @@
     {
       customer: "Acme Rail Systems",
       contract: "CTR-2024-001",
-      srlm: "LM",
-      variant: "LM Alpha - (LM-0001)",
-    },
-    {
-      customer: "MetroLine Services",
-      contract: "CTR-2024-014",
-      srlm: "LM",
-      variant: "LM Bravo - (LM-0002)",
+      srlm: "SRLM",
+      variant: "Loitering Munition (LM)",
     },
     {
       customer: "Acme Rail Systems",
       contract: "CTR-2024-001",
-      srlm: "GCS",
-      variant: "GCS North - (GCS-0101)",
+      srlm: "SRLM",
+      variant: "Gimbal",
     },
     {
       customer: "MetroLine Services",
       contract: "CTR-2024-014",
-      srlm: "TMV",
-      variant: "TMV Ranger - (TMV-2201)",
+      srlm: "SRLM",
+      variant: "Tracker",
+    },
+    {
+      customer: "MetroLine Services",
+      contract: "CTR-2024-014",
+      srlm: "SRLM",
+      variant: "GCS",
     },
     {
       customer: "Urban Transit Corp",
       contract: "CTR-2023-220",
-      srlm: "Simulator",
-      variant: "Simulator Prime - (SIM-3001)",
+      srlm: "ERLM",
+      variant: "GDT",
+    },
+    {
+      customer: "Urban Transit Corp",
+      contract: "CTR-2023-220",
+      srlm: "ERLM",
+      variant: "Simulator",
+    },
+    {
+      customer: "Acme Rail Systems",
+      contract: "CTR-2024-001",
+      srlm: "ERLM",
+      variant: "RDV",
+    },
+    {
+      customer: "MetroLine Services",
+      contract: "CTR-2024-014",
+      srlm: "ERLM",
+      variant: "TMV",
+    },
+    {
+      customer: "Urban Transit Corp",
+      contract: "CTR-2023-220",
+      srlm: "SRLM",
+      variant: "Warhead + ESAM",
     },
   ];
 
@@ -231,76 +244,70 @@
 
   const lruOptions = [
     {
-      srlm: "LM",
-      platformVariant: "LM Alpha - (LM-0001)",
+      srlm: "SRLM",
+      platformVariant: "Loitering Munition (LM)",
       subSystem: "Navigation",
       lru: "Guidance Module (LRU-1001)",
     },
     {
-      srlm: "LM",
-      platformVariant: "LM Alpha - (LM-0001)",
+      srlm: "SRLM",
+      platformVariant: "Loitering Munition (LM)",
       subSystem: "Airframe",
       lru: "Airframe Sensor Pack (LRU-1002)",
     },
     {
-      srlm: "LM",
-      platformVariant: "LM Alpha - (LM-0001)",
-      subSystem: "Propulsion",
-      lru: "Propulsion Pump (LRU-1004)",
+      srlm: "SRLM",
+      platformVariant: "Gimbal",
+      subSystem: "Stabilization",
+      lru: "Gimbal Motor (LRU-1101)",
     },
     {
-      srlm: "LM",
-      platformVariant: "LM Bravo - (LM-0002)",
-      subSystem: "Avionics & Flight Control",
+      srlm: "SRLM",
+      platformVariant: "Tracker",
+      subSystem: "Tracking",
+      lru: "Tracker Antenna (LRU-1201)",
+    },
+    {
+      srlm: "SRLM",
+      platformVariant: "GCS",
+      subSystem: "Computing",
       lru: "Compute Node A (LRU-2101)",
     },
     {
-      srlm: "LM",
-      platformVariant: "LM Bravo - (LM-0002)",
+      srlm: "SRLM",
+      platformVariant: "GCS",
       subSystem: "Communication",
       lru: "Comms Router (LRU-2103)",
     },
     {
-      srlm: "LM",
-      platformVariant: "LM Bravo - (LM-0002)",
-      subSystem: "Payload",
-      lru: "Display Panel A (LRU-2105)",
+      srlm: "ERLM",
+      platformVariant: "GDT",
+      subSystem: "Display",
+      lru: "Display Panel (LRU-2105)",
     },
     {
-      srlm: "GCS",
-      platformVariant: "GCS North - (GCS-0101)",
-      subSystem: "Powertrain",
-      lru: "Transmission Module (LRU-3101)",
-    },
-    {
-      srlm: "GCS",
-      platformVariant: "GCS North - (GCS-0101)",
-      subSystem: "Power",
-      lru: "Battery Pack (LRU-3103)",
-    },
-    {
-      srlm: "GCS",
-      platformVariant: "GCS North - (GCS-0101)",
-      subSystem: "Navigation",
-      lru: "GPS Module (LRU-3108)",
-    },
-    {
-      srlm: "Simulator",
-      platformVariant: "Simulator Prime - (SIM-3001)",
+      srlm: "ERLM",
+      platformVariant: "Simulator",
       subSystem: "Computing",
       lru: "Sim Compute Node (LRU-4101)",
     },
     {
-      srlm: "Simulator",
-      platformVariant: "Simulator Prime - (SIM-3001)",
-      subSystem: "Display",
-      lru: "Projection Unit (LRU-4104)",
+      srlm: "ERLM",
+      platformVariant: "RDV",
+      subSystem: "Powertrain",
+      lru: "RDV Motor (LRU-3201)",
     },
     {
-      srlm: "Simulator",
-      platformVariant: "Simulator Prime - (SIM-3001)",
-      subSystem: "Audio",
-      lru: "Audio Mixer (LRU-4107)",
+      srlm: "ERLM",
+      platformVariant: "TMV",
+      subSystem: "Powertrain",
+      lru: "Transmission Module (LRU-3101)",
+    },
+    {
+      srlm: "SRLM",
+      platformVariant: "Warhead + ESAM",
+      subSystem: "Payload",
+      lru: "Warhead Module (LRU-5001)",
     },
   ];
 
@@ -360,6 +367,44 @@
     });
   }
 
+  function updateProductSerialNo() {
+    const productSerialInput = document.querySelector("input[name='line_replaceable_unit']");
+    const srlmSelect = document.getElementById("srlm-select");
+    const platformSelect = document.getElementById("platform-variant");
+
+    if (!productSerialInput || !srlmSelect || !platformSelect) {
+      return;
+    }
+
+    const selectedSrlm = srlmSelect.value;
+    const selectedPlatform = platformSelect.value;
+
+    // Find all LRU options matching the selected platform variant
+    const matchingOptions = lruOptions.filter(
+      (item) => item.srlm === selectedSrlm && item.platformVariant === selectedPlatform
+    );
+
+    // Clear the input and create a datalist with suggestions
+    productSerialInput.value = "";
+    
+    let datalist = document.getElementById("product-serial-list");
+    if (!datalist) {
+      datalist = document.createElement("datalist");
+      datalist.id = "product-serial-list";
+      document.body.appendChild(datalist);
+      productSerialInput.setAttribute("list", "product-serial-list");
+    } else {
+      datalist.innerHTML = "";
+    }
+
+    // Populate datalist with available product serial numbers
+    matchingOptions.forEach((item) => {
+      const option = document.createElement("option");
+      option.value = item.lru;
+      datalist.appendChild(option);
+    });
+  }
+
   function updateRequestorFields() {
     const callerInput = document.querySelector('input[name="caller"]');
     const requestorNameInput = document.querySelector('input[name="requestor_name"]');
@@ -394,9 +439,13 @@
     updatePlatformVariants();
     updateSubSystems();
     updateLruOptions();
+    updateProductSerialNo();
   });
 
-  document.getElementById("platform-variant").addEventListener("change", updateLruOptions);
+  document.getElementById("platform-variant").addEventListener("change", () => {
+    updateLruOptions();
+    updateProductSerialNo();
+  });
   document.getElementById("sub-system").addEventListener("change", updateLruOptions);
 
   document.querySelector('input[name="caller"]').addEventListener("change", updateRequestorFields);

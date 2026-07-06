@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models.incident import Incident
+from models.entities import Customer, Contract
 from utils import build_template_context, redirect_with_flash
 
 router = APIRouter()
@@ -19,11 +20,59 @@ def incidents_page(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/incidents/new")
-def incidents_new_page(request: Request):
+def incidents_new_page(request: Request, db: Session = Depends(get_db)):
     issue_types = _get_issue_types()
     statuses = _get_incident_statuses()
     priorities = _get_incident_priorities()
-    context = build_template_context(request, issue_types=issue_types, statuses=statuses, priorities=priorities)
+    
+    # Fetch customers from database with full data
+    customers = db.query(Customer).all()
+    customer_list = []
+    for c in customers:
+        customer_data = {
+            "id": c.id, 
+            "name": c.name,
+            "contacts": []  # Include all contacts - no auto-population
+        }
+        # Extract all contacts from customer data JSON
+        if c.data and isinstance(c.data, dict):
+            # Get all contacts from contacts array
+            contacts = c.data.get("contacts", [])
+            for contact in contacts:
+                customer_data["contacts"].append({
+                    "name": contact.get("name", ""),
+                    "phone": contact.get("phone", ""),
+                    "email": contact.get("email", ""),
+                    "designation": contact.get("designation", "")
+                })
+        customer_list.append(customer_data)
+    
+    # Fetch contracts from database
+    contracts = db.query(Contract).all()
+    contract_list = [
+        {
+            "id": c.id, 
+            "number": c.number,
+            "customer_id": c.customer_id,
+            "customer_name": customers[0].name if customers else "Unknown"  # Default fallback
+        } 
+        for c in contracts
+    ]
+    
+    # Build correct customer name for each contract
+    for contract in contract_list:
+        customer = next((cust for cust in customers if cust.id == contract["customer_id"]), None)
+        if customer:
+            contract["customer_name"] = customer.name
+    
+    context = build_template_context(
+        request, 
+        issue_types=issue_types, 
+        statuses=statuses, 
+        priorities=priorities,
+        customers=customer_list,
+        contracts=contract_list
+    )
     return templates.TemplateResponse(request, "incidents_new.html", context)
 
 
@@ -36,6 +85,19 @@ def create_incident(
     status: str = Form("new"),
     issue_type: str = Form(""),
     stage: str = Form("triage"),
+    caller: str = Form(""),
+    requestor_name: str = Form(""),
+    customer_contract: str = Form(""),
+    requestor_contact: str = Form(""),
+    srlm_system: str = Form(""),
+    platform_variant: str = Form(""),
+    line_replaceable_unit: str = Form(""),
+    sub_system: str = Form(""),
+    assignment_group: str = Form(""),
+    assigned_to: str = Form(""),
+    sla: str = Form(""),
+    warranty_status: str = Form(""),
+    last_serviced_date: str = Form(""),
     db: Session = Depends(get_db),
 ):
     try:
@@ -46,6 +108,19 @@ def create_incident(
             status=status,
             issue_type=issue_type,
             stage=stage,
+            caller=caller,
+            requestor_name=requestor_name,
+            customer_contract=customer_contract,
+            requestor_contact=requestor_contact,
+            srlm_system=srlm_system,
+            platform_variant=platform_variant,
+            line_replaceable_unit=line_replaceable_unit,
+            sub_system=sub_system,
+            assignment_group=assignment_group,
+            assigned_to=assigned_to,
+            sla=sla,
+            warranty_status=warranty_status,
+            last_serviced_date=last_serviced_date,
         )
         db.add(incident)
         db.commit()
@@ -88,6 +163,19 @@ def update_incident(
     status: str = Form("new"),
     issue_type: str = Form(""),
     stage: str = Form("triage"),
+    caller: str = Form(""),
+    requestor_name: str = Form(""),
+    customer_contract: str = Form(""),
+    requestor_contact: str = Form(""),
+    srlm_system: str = Form(""),
+    platform_variant: str = Form(""),
+    line_replaceable_unit: str = Form(""),
+    sub_system: str = Form(""),
+    assignment_group: str = Form(""),
+    assigned_to: str = Form(""),
+    sla: str = Form(""),
+    warranty_status: str = Form(""),
+    last_serviced_date: str = Form(""),
     db: Session = Depends(get_db),
 ):
     """Update incident - accepts all form fields"""
@@ -102,6 +190,19 @@ def update_incident(
         incident.status = status
         incident.issue_type = issue_type
         incident.stage = stage
+        incident.caller = caller
+        incident.requestor_name = requestor_name
+        incident.customer_contract = customer_contract
+        incident.requestor_contact = requestor_contact
+        incident.srlm_system = srlm_system
+        incident.platform_variant = platform_variant
+        incident.line_replaceable_unit = line_replaceable_unit
+        incident.sub_system = sub_system
+        incident.assignment_group = assignment_group
+        incident.assigned_to = assigned_to
+        incident.sla = sla
+        incident.warranty_status = warranty_status
+        incident.last_serviced_date = last_serviced_date
         db.commit()
         return redirect_with_flash(f"/incidents/{incident_id}", request, "Incident updated successfully.", "success")
     except Exception as e:
@@ -113,14 +214,19 @@ def _get_issue_types():
     """Returns hierarchical issue types"""
     return [
         {
+            "id": "electrical",
+            "name": "Electrical",
+            "subcategories": []
+        },
+        {
             "id": "mechanical",
             "name": "Mechanical",
-            "subcategories": [
-                {"id": "propulsion", "name": "Propulsion"},
-                {"id": "electrical_power", "name": "Electrical / Power"},
-                {"id": "avionics_electronics", "name": "Avionics / Electronics"},
-                {"id": "communication", "name": "Communication"},
-            ]
+            "subcategories": []
+        },
+        {
+            "id": "electronics",
+            "name": "Electronics",
+            "subcategories": []
         },
         {
             "id": "software",
@@ -128,13 +234,28 @@ def _get_issue_types():
             "subcategories": []
         },
         {
-            "id": "payload_mission",
-            "name": "Payload / Mission System",
+            "id": "communication",
+            "name": "Communication",
             "subcategories": []
         },
         {
-            "id": "performance",
-            "name": "Performance",
+            "id": "sensors",
+            "name": "Sensors",
+            "subcategories": []
+        },
+        {
+            "id": "camera_imaging",
+            "name": "Camera & Imaging",
+            "subcategories": []
+        },
+        {
+            "id": "payload",
+            "name": "Payload",
+            "subcategories": []
+        },
+        {
+            "id": "maintenance",
+            "name": "Maintenance",
             "subcategories": []
         },
         {
@@ -143,8 +264,13 @@ def _get_issue_types():
             "subcategories": []
         },
         {
-            "id": "maintenance_spare",
-            "name": "Maintenance / Spare Request",
+            "id": "general_enquiry",
+            "name": "General Enquiry",
+            "subcategories": []
+        },
+        {
+            "id": "other",
+            "name": "Other",
             "subcategories": []
         },
     ]

@@ -1,5 +1,5 @@
 """
-Seed script to create default users for the Vajra Service Management system.
+Seed script to create default users for the ALS - 50 Customer Service Management Portal.
 Run this once to populate the database with sample users.
 """
 
