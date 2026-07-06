@@ -58,19 +58,21 @@
         </div>
       </div>
 
-      <div class="si-incident-field">
-        <label>Status</label>
-        <select name="status" {% if view_only %}disabled{% endif %}>
-          <option value="">Select status</option>
-          <option value="Active - Under Warranty" {% if contract.get('status') == 'Active - Under Warranty' %}selected{% endif %}>Active - Under Warranty</option>
-          <option value="Active - Under AMC (Warranty Expired)" {% if contract.get('status') == 'Active - Under AMC (Warranty Expired)' %}selected{% endif %}>Active - Under AMC (Warranty Expired)</option>
-          <option value="Active - Under CMC (Warranty Expired)" {% if contract.get('status') == 'Active - Under CMC (Warranty Expired)' %}selected{% endif %}>Active - Under CMC (Warranty Expired)</option>
-          <option value="Warranty Expired No AMC / CMC" {% if contract.get('status') == 'Warranty Expired No AMC / CMC' %}selected{% endif %}>Warranty Expired No AMC / CMC</option>
-        </select>
-      </div>
-      <div class="si-incident-field">
-        <label>Attachment</label>
-        <input type="file" name="attachment" {% if view_only %}disabled{% endif %} />
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="si-incident-field">
+          <label>Status</label>
+          <select name="status" {% if view_only %}disabled{% endif %}>
+            <option value="">Select status</option>
+            <option value="Active - Under Warranty" {% if contract.get('status') == 'Active - Under Warranty' %}selected{% endif %}>Active - Under Warranty</option>
+            <option value="Active - Under AMC (Warranty Expired)" {% if contract.get('status') == 'Active - Under AMC (Warranty Expired)' %}selected{% endif %}>Active - Under AMC (Warranty Expired)</option>
+            <option value="Active - Under CMC (Warranty Expired)" {% if contract.get('status') == 'Active - Under CMC (Warranty Expired)' %}selected{% endif %}>Active - Under CMC (Warranty Expired)</option>
+            <option value="Warranty Expired No AMC / CMC" {% if contract.get('status') == 'Warranty Expired No AMC / CMC' %}selected{% endif %}>Warranty Expired No AMC / CMC</option>
+          </select>
+        </div>
+        <div class="si-incident-field">
+          <label>Attachment</label>
+          <input type="file" name="attachment" {% if view_only %}disabled{% endif %} />
+        </div>
       </div>
 
       <div class="si-incident-divider"></div>
