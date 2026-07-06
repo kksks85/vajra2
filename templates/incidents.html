@@ -37,7 +37,7 @@
       <tbody>
         {% for incident in incidents %}
         <tr onclick="window.location.href='/incidents/{{ incident.id }}';" style="cursor: pointer;">
-          <td>INC{{ "%07d" | format(incident.id) }}</td>
+          <td>{{ incident.incident_number or "INC" + "%07d" | format(incident.id) }}</td>
           <td>{{ format_utc(incident.created_at, "%Y-%m-%d %H:%M") }}</td>
           <td>{{ incident.title }}</td>
           <td><span class="priority-text priority-{{ incident.priority }}">{{ incident.priority|capitalize }}</span></td>

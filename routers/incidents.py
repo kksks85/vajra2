@@ -122,6 +122,10 @@ def create_incident(
             warranty_status=warranty_status,
             last_serviced_date=last_serviced_date,
         )
+        
+        # Generate incident number
+        incident.incident_number = _generate_incident_number(caller, db)
+        
         db.add(incident)
         db.commit()
         db.refresh(incident)
@@ -297,3 +301,58 @@ def _get_incident_priorities():
         {"id": "medium", "name": "3 - Medium", "label": "Medium", "level": 3},
         {"id": "low", "name": "4 - Low", "label": "Low", "level": 4},
     ]
+
+
+def _generate_incident_number(customer_name: str, db: Session):
+    """
+    Generate automated incident number based on:
+    1. Customer name (short code)
+    2. Incident Number Format from contract
+    3. Current year (YYYY)
+    4. Sequential counter (0001, 0002, etc.)
+    
+    Format: TASL-{CUSTOMER_CODE}-{INCIDENT_FORMAT}-{YYYY}-{SEQUENCE}
+    Example: TASL-IAF-ERLM-2026-0001
+    """
+    from datetime import datetime
+    
+    if not customer_name:
+        return None
+    
+    try:
+        # Get customer short code (first 3 letters of customer name, uppercase)
+        customer_code = ''.join(word[0].upper() for word in customer_name.split() if word)[:3]
+        if not customer_code:
+            customer_code = "UNK"
+        
+        # Find the customer and their contract to get incident_number_format
+        customer = db.query(Customer).filter(Customer.name == customer_name).first()
+        incident_number_format = "INCIDENT"  # default
+        
+        if customer:
+            # Find contract associated with this customer
+            contract = db.query(Contract).filter(Contract.customer_id == customer.id).first()
+            if contract and contract.data and isinstance(contract.data, dict):
+                incident_number_format = contract.data.get('incident_number_format', 'INCIDENT')
+        
+        # Get current year
+        current_year = datetime.now().year
+        
+        # Count incidents for this customer in the current year to get sequence
+        # Get the max sequence number for this customer in this year
+        from sqlalchemy import func as sql_func
+        existing_incidents = db.query(Incident).filter(
+            Incident.caller == customer_name,
+            sql_func.year(Incident.created_at) == current_year
+        ).all()
+        
+        sequence_number = len(existing_incidents) + 1
+        
+        # Generate incident number
+        incident_number = f"TASL-{customer_code}-{incident_number_format}-{current_year}-{sequence_number:04d}"
+        
+        return incident_number
+    
+    except Exception as e:
+        print(f"Error generating incident number: {str(e)}")
+        return None
