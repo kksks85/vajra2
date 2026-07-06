@@ -43,11 +43,6 @@
         </select>
       </div>
 
-      <div class="si-incident-field">
-        <label>Incident Number Format</label>
-        <input type="text" name="incident_number_format" placeholder="e.g., IAF-INC-YYYY-001" value="{{ contract.get('incident_number_format', '') }}" {% if view_only %}readonly disabled{% endif %} />
-      </div>
-
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; grid-column: 1 / -1;">
         <div class="si-incident-field">
           <label>Contract Date</label>

@@ -112,9 +112,15 @@
 
       <div class="si-incident-divider"></div>
       <div class="si-incident-section">Customer Contracts</div>
-      <div class="si-incident-field">
-        <label>Contract Name</label>
-        <input name="contracts" placeholder="Enter contract name" value="{{ customer.get('contracts', '') }}" {% if view_only %}readonly disabled{% endif %} />
+      <div class="si-incident-row si-incident-row-2">
+        <div class="si-incident-field">
+          <label>Contract Name</label>
+          <input name="contracts" placeholder="Enter contract name" value="{{ customer.get('contracts', '') }}" {% if view_only %}readonly disabled{% endif %} />
+        </div>
+        <div class="si-incident-field">
+          <label>Incident Number Format</label>
+          <input type="text" name="incident_number_format" placeholder="e.g., IAF-INC-YYYY-001" value="{{ customer.get('incident_number_format', '') }}" {% if view_only %}readonly disabled{% endif %} />
+        </div>
       </div>
 
     </div>
