@@ -788,6 +788,7 @@ async def create_or_update_customer(request: Request, db: Session = Depends(get_
     customer_name = form.get("customer_name", form.get("name", ""))
     primary_address = form.get("primary_address", "")
     contracts = form.get("contracts", "")
+    incident_number_format = form.get("incident_number_format", "")
     
     # Build primary contact from form
     primary_contact = {
@@ -829,6 +830,7 @@ async def create_or_update_customer(request: Request, db: Session = Depends(get_
         "contacts": all_contacts,
         "status": "Active",
         "contracts": contracts,
+        "incident_number_format": incident_number_format,
     }
     
     if customer_id:

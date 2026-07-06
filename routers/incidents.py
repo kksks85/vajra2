@@ -14,9 +14,20 @@ templates = Jinja2Templates(directory="templates")
 
 @router.get("/incidents")
 def incidents_page(request: Request, db: Session = Depends(get_db)):
-    incidents = db.query(Incident).order_by(Incident.created_at.desc()).all()
-    context = build_template_context(request, incidents=incidents)
-    return templates.TemplateResponse(request, "incidents.html", context)
+    try:
+        incidents = db.query(Incident).order_by(Incident.created_at.desc()).all()
+        
+        # Add generated incident numbers to incidents
+        for incident in incidents:
+            incident.generated_number = _generate_incident_number(incident.caller, db)
+        
+        context = build_template_context(request, incidents=incidents)
+        return templates.TemplateResponse(request, "incidents.html", context)
+    except Exception as e:
+        print(f"Error loading incidents: {str(e)}")
+        # Fallback - return empty list if there's an error
+        context = build_template_context(request, incidents=[])
+        return templates.TemplateResponse(request, "incidents.html", context)
 
 
 @router.get("/incidents/new")
@@ -123,9 +134,6 @@ def create_incident(
             last_serviced_date=last_serviced_date,
         )
         
-        # Generate incident number
-        incident.incident_number = _generate_incident_number(caller, db)
-        
         db.add(incident)
         db.commit()
         db.refresh(incident)
@@ -147,9 +155,13 @@ def incident_detail(request: Request, incident_id: int, db: Session = Depends(ge
     statuses = _get_incident_statuses()
     priorities = _get_incident_priorities()
     
+    # Generate incident number
+    generated_incident_number = _generate_incident_number(incident.caller, db)
+    
     context = build_template_context(
         request,
         incident=incident,
+        incident_number=generated_incident_number,
         issue_types=issue_types,
         statuses=statuses,
         priorities=priorities,
@@ -339,14 +351,15 @@ def _generate_incident_number(customer_name: str, db: Session):
         current_year = datetime.now().year
         
         # Count incidents for this customer in the current year to get sequence
-        # Get the max sequence number for this customer in this year
-        from sqlalchemy import func as sql_func
-        existing_incidents = db.query(Incident).filter(
-            Incident.caller == customer_name,
-            sql_func.year(Incident.created_at) == current_year
-        ).all()
+        existing_incidents = db.query(Incident).filter(Incident.caller == customer_name).all()
         
-        sequence_number = len(existing_incidents) + 1
+        # Filter for current year only
+        current_year_count = 0
+        for inc in existing_incidents:
+            if inc.created_at and inc.created_at.year == current_year:
+                current_year_count += 1
+        
+        sequence_number = current_year_count + 1
         
         # Generate incident number
         incident_number = f"TASL-{customer_code}-{incident_number_format}-{current_year}-{sequence_number:04d}"

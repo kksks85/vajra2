@@ -8,7 +8,6 @@ class Incident(Base):
     __tablename__ = "incidents"
 
     id = Column(Integer, primary_key=True, index=True)
-    incident_number = Column(String(100), unique=True, nullable=True)  # Auto-generated incident number
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     status = Column(String(50), nullable=False, default="new")

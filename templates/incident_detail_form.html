@@ -4,7 +4,7 @@
   <header class="si-incident-header">
     <div>
       <div class="si-incident-title">Incident</div>
-      <div class="si-incident-subtitle">{{ incident.incident_number or "INC" + "%07d" | format(incident.id) }}</div>
+      <div class="si-incident-subtitle">{{ incident_number or "INC" + "%07d" | format(incident.id) }}</div>
     </div>
     <div class="si-incident-actions">
       <button type="submit" form="incident-detail-form" class="si-btn">Save</button>
@@ -17,7 +17,7 @@
       <div class="si-incident-section">Incident details</div>
       <div class="si-incident-field">
         <label>Incident Number</label>
-        <input value="{{ incident.incident_number or 'INC' + '%07d' | format(incident.id) }}" readonly disabled />
+        <input value="{{ incident_number or 'INC' + '%07d' | format(incident.id) }}" readonly disabled />
       </div>
       <div class="si-incident-field">
         <label>Created on</label>
