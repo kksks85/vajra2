@@ -32,6 +32,10 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     resolved = db.query(Incident).filter(Incident.status == "closure").count()
     critical_priority = db.query(Incident).filter(Incident.priority == "critical").count()
     
+    # AOG: Critical incidents in progress (not resolved)
+    in_progress_statuses = ["new", "open", "assigned", "in_progress", "on_hold", "diagnosis", "investigation", "quality_check"]
+    aog = db.query(Incident).filter(Incident.priority == "critical", Incident.status.in_(in_progress_statuses)).count()
+    
     # Get incidents by priority with open and resolved breakdown
     all_incidents = db.query(Incident).all()
     incidents_by_priority = {}
@@ -199,6 +203,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         "work_in_progress": work_in_progress,
         "resolved": resolved,
         "critical_priority": critical_priority,
+        "aog": aog,
         "incidents_by_priority": dict(incidents_by_priority),
         "incidents_by_category": dict(incidents_by_category),
         "service_schedule_next_month": service_schedule_next_month,

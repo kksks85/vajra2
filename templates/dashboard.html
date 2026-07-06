@@ -15,7 +15,7 @@
       <div class="admin-hero-title">Fleet Status</div>
       <div class="admin-hero-stat">{{ metrics.total_incidents }} Incidents</div>
       <div class="admin-hero-sub">Customer Service Management Platform</div>
-      <div class="admin-hero-matrix">
+      <div class="admin-hero-matrix" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;">
         <div>
           <span>Total Incident</span>
           <strong>{{ metrics.total_incidents }}</strong>
@@ -31,6 +31,10 @@
         <div>
           <span>Critical Priority</span>
           <strong>{{ metrics.critical_priority }}</strong>
+        </div>
+        <div>
+          <span>AOG</span>
+          <strong style="color: #dc2626;">{{ metrics.aog }}</strong>
         </div>
       </div>
     </div>
