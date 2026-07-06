@@ -43,7 +43,7 @@
         </select>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; grid-column: 1 / -1;">
         <div class="si-incident-field">
           <label>Contract Date</label>
           <input type="date" name="executed_on" value="{{ contract.get('executed_on', '') }}" {% if view_only %}readonly disabled{% endif %} />
@@ -58,7 +58,7 @@
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; grid-column: 1 / -1;">
         <div class="si-incident-field">
           <label>Status</label>
           <select name="status" {% if view_only %}disabled{% endif %}>
