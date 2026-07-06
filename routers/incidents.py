@@ -319,7 +319,7 @@ def _generate_incident_number(customer_name: str, db: Session):
     """
     Generate automated incident number based on:
     1. Customer name (short code)
-    2. Incident Number Format from contract
+    2. Incident Number Format from customer
     3. Current year (YYYY)
     4. Sequential counter (0001, 0002, etc.)
     
@@ -337,15 +337,13 @@ def _generate_incident_number(customer_name: str, db: Session):
         if not customer_code:
             customer_code = "UNK"
         
-        # Find the customer and their contract to get incident_number_format
+        # Find the customer and get incident_number_format from customer data
         customer = db.query(Customer).filter(Customer.name == customer_name).first()
         incident_number_format = "INCIDENT"  # default
         
-        if customer:
-            # Find contract associated with this customer
-            contract = db.query(Contract).filter(Contract.customer_id == customer.id).first()
-            if contract and contract.data and isinstance(contract.data, dict):
-                incident_number_format = contract.data.get('incident_number_format', 'INCIDENT')
+        if customer and customer.data and isinstance(customer.data, dict):
+            # Get incident_number_format from customer's data
+            incident_number_format = customer.data.get('incident_number_format', 'INCIDENT')
         
         # Get current year
         current_year = datetime.now().year
