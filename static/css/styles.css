@@ -785,10 +785,10 @@ body.si-app {
 }
 
 .si-login-logo {
-  height: 65px;
+  height: 72px;
   width: auto;
   display: block;
-  filter: drop-shadow(0 12px 20px rgba(10, 20, 32, 0.35));
+  filter: brightness(0) invert(1) drop-shadow(0 12px 20px rgba(10, 20, 32, 0.35));
 }
 
 .si-login-brand-text {
@@ -1195,7 +1195,7 @@ body.si-app {
 }
 
 .si-login-logo-tasl {
-  height: 65px;
+  height: 72px;
 }
 
 .si-login-mark {
@@ -1320,12 +1320,12 @@ body.si-app {
 }
 
 .si-login-card-head {
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 
 .si-login-card-title {
   font-weight: 700;
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .si-login-card-subtitle {
@@ -1366,7 +1366,7 @@ body.si-app {
 
 .si-auth-form {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .si-auth-form label {
