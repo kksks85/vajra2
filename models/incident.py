@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey
 from sqlalchemy.sql import func
 
 from database import Base
@@ -35,6 +35,17 @@ class Incident(Base):
     # Service History
     warranty_status = Column(String(50), nullable=True)
     last_serviced_date = Column(String(50), nullable=True)
+    
+    # Repair Execution Fields
+    repair_execution = Column(String(100), nullable=True)  # e.g., "Standard Repair"
+    repair_status = Column(String(200), nullable=True)  # e.g., "1. Initial Inspection"
+    
+    # Repair Execution Status (stores status name directly)
+    repair_execution_status = Column(String(200), nullable=True)
+    
+    # Notes & Audit
+    work_notes = Column(Text, nullable=True)  # Work notes by technicians
+    audit_log = Column(Text, nullable=True)  # JSON-formatted audit log of all changes
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

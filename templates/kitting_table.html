@@ -220,6 +220,10 @@
     padding: 12px 16px;
     color: #333;
     word-break: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px;
   }
 
   .action-links {
@@ -285,10 +289,19 @@
     <div class="grid-header">
       <div class="grid-title">
         <h1>LM Kitting Items <span class="pill">Master Data</span></h1>
+        <div style="margin-top: 12px;">
+          <form method="get" action="/admin/lm-kitting" style="display: flex; gap: 8px;">
+            <input type="text" name="q" placeholder="Search by part number, SAP part, description..." value="{{ q }}" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; width: 300px; font-size: 13px;">
+            <button type="submit" style="padding: 8px 16px; background: #0052cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;">Search</button>
+            {% if q %}
+            <a href="/admin/lm-kitting" style="padding: 8px 16px; background: #f0f0f0; color: #333; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 600;">Clear</a>
+            {% endif %}
+          </form>
+        </div>
       </div>
       <div class="grid-meta">
         <span class="count">Total Records</span>
-        <span class="total" id="total-count">{{ items|length }}</span>
+        <span class="total" id="total-count">{{ pagination.total }}</span>
       </div>
       <div class="gear-menu">
         <button class="gear-btn" onclick="toggleGearMenu()" title="Settings">⚙️</button>
@@ -344,10 +357,6 @@
               <input type="checkbox" value="subsystems" checked onchange="toggleColumn('subsystems')">
               Subsystems
             </label>
-            <label class="column-option">
-              <input type="checkbox" value="remarks" checked onchange="toggleColumn('remarks')">
-              Remarks
-            </label>
           </div>
 
           <!-- Export Options -->
@@ -378,7 +387,6 @@
             <th data-column="quantity">Required Quantity</th>
             <th data-column="uom">Unit of Measurement</th>
             <th data-column="subsystems">Subsystems</th>
-            <th data-column="remarks">Remarks</th>
             <th>Actions</th>
           </tr>
           <tr id="filter-row">
@@ -394,7 +402,6 @@
             <th class="filter-header"><input type="text" placeholder="Search..." data-column="quantity"></th>
             <th class="filter-header"><input type="text" placeholder="Search..." data-column="uom"></th>
             <th class="filter-header"><input type="text" placeholder="Search..." data-column="subsystems"></th>
-            <th class="filter-header"><input type="text" placeholder="Search..." data-column="remarks"></th>
             <th></th>
           </tr>
         </thead>
@@ -412,27 +419,25 @@
               data-weight="{% if item.weight_in_grams %}{{ item.weight_in_grams|lower }}{% endif %}"
               data-quantity="{% if item.required_quantity %}{{ item.required_quantity|lower }}{% endif %}"
               data-uom="{% if item.uom %}{{ item.uom|lower }}{% endif %}"
-              data-subsystems="{% if item.subsystems %}{{ item.subsystems|lower }}{% endif %}"
-              data-remarks="{% if item.remarks %}{{ item.remarks|lower }}{% endif %}">
-            <td data-column="product_serial_no" class="si-primary" style="background: linear-gradient(to right, rgba(59, 130, 246, 0.1) 0%, transparent 100%); font-weight: 600; color: #1e40af;">
+              data-subsystems="{% if item.subsystems %}{{ item.subsystems|lower }}{% endif %}">
+            <td data-column="product_serial_no" class="si-primary" style="background: linear-gradient(to right, rgba(59, 130, 246, 0.1) 0%, transparent 100%); font-weight: 600; color: #1e40af;" title="{{ item.product_serial_no }}">
               <span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; display: inline-block;">{{ item.product_serial_no }}</span>
             </td>
-            <td data-column="product_category" style="text-align: center;">
+            <td data-column="product_category" style="text-align: center;" title="{{ item.product_category }}">
               <strong style="background: {% if item.product_category == 'LM' %}#22c55e{% elif item.product_category == 'GCS' %}#3b82f6{% else %}#8b5cf6{% endif %}; color: white; padding: 4px 12px; border-radius: 4px; display: inline-block; font-size: 12px;">{{ item.product_category }}</strong>
             </td>
-            <td data-column="route_card" style="color: #64748b; font-size: 13px;">{{ item.route_card_description }}</td>
-            <td data-column="part_number" style="color: #1e293b; font-weight: 500;">{{ item.part_number }}</td>
-            <td data-column="sap_part" style="color: #64748b;">{{ item.sap_part_number }}</td>
-            <td data-column="material_desc" style="color: #64748b; font-size: 13px;">{{ item.material_description }}</td>
-            <td data-column="batch_no" style="color: #64748b; font-size: 13px;">{{ item.batch_no_po_no }}</td>
-            <td data-column="material_serial" style="color: #0369a1; font-weight: 500;">{{ item.material_serial_no }}</td>
-            <td data-column="weight" style="text-align: right; color: #64748b;">{{ item.weight_in_grams }}</td>
-            <td data-column="quantity" style="text-align: center; font-weight: 600;">
+            <td data-column="route_card" style="color: #64748b; font-size: 13px;" title="{{ item.route_card_description }}">{{ item.route_card_description }}</td>
+            <td data-column="part_number" style="color: #1e293b; font-weight: 500;" title="{{ item.part_number }}">{{ item.part_number }}</td>
+            <td data-column="sap_part" style="color: #64748b;" title="{{ item.sap_part_number }}">{{ item.sap_part_number }}</td>
+            <td data-column="material_desc" style="color: #64748b; font-size: 13px;" title="{{ item.material_description }}">{{ item.material_description }}</td>
+            <td data-column="batch_no" style="color: #64748b; font-size: 13px;" title="{{ item.batch_no_po_no }}">{{ item.batch_no_po_no }}</td>
+            <td data-column="material_serial" style="color: #0369a1; font-weight: 500;" title="{{ item.material_serial_no }}">{{ item.material_serial_no }}</td>
+            <td data-column="weight" style="text-align: right; color: #64748b;" title="{{ item.weight_in_grams }}">{{ item.weight_in_grams }}</td>
+            <td data-column="quantity" style="text-align: center; font-weight: 600;" title="{{ item.required_quantity }}">
               <span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px;">{{ item.required_quantity }}</span>
             </td>
-            <td data-column="uom" style="text-align: center; color: #64748b;">{{ item.uom }}</td>
-            <td data-column="subsystems" style="color: #64748b; font-size: 13px;">{{ item.subsystems }}</td>
-            <td data-column="remarks" style="color: #64748b; font-size: 13px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{ item.remarks }}</td>
+            <td data-column="uom" style="text-align: center; color: #64748b;" title="{{ item.uom }}">{{ item.uom }}</td>
+            <td data-column="subsystems" style="color: #64748b; font-size: 13px;" title="{{ item.subsystems }}">{{ item.subsystems }}</td>
             <td style="text-align: center;">
               <div class="action-links" onclick="event.stopPropagation();">
                 <a href="/admin/lm-kitting/{{ item.id }}" style="color: #0369a1; text-decoration: none; margin: 0 4px;">View</a>
@@ -446,8 +451,41 @@
 
     <!-- Results Info -->
     <div class="results-info">
-      <span id="results-text">Showing <strong id="visible-count">{{ items|length }}</strong> of <strong id="total-records">{{ items|length }}</strong> records</span>
+      <span id="results-text">Showing <strong id="visible-count">{{ items|length }}</strong> of <strong id="total-records">{{ pagination.total }}</strong> records</span>
     </div>
+
+    <!-- Pagination -->
+    {% if pagination and pagination.total_pages > 1 %}
+    <div class="pagination">
+      <span class="pagination-info">Page {{ pagination.page }} of {{ pagination.total_pages }} ({{ pagination.start_index }}-{{ pagination.end_index }} of {{ pagination.total }})</span>
+      
+      {% if pagination.has_previous %}
+        <a class="pagination-item" href="/admin/lm-kitting?page=1{% if q %}&q={{ q }}{% endif %}" title="First Page">«</a>
+        <a class="pagination-item" href="/admin/lm-kitting?page={{ pagination.previous_page }}{% if q %}&q={{ q }}{% endif %}">← Prev</a>
+      {% else %}
+        <span class="pagination-item pagination-disabled">«</span>
+        <span class="pagination-item pagination-disabled">← Prev</span>
+      {% endif %}
+
+      {% for page_num in range(1, pagination.total_pages + 1) %}
+        {% if page_num == pagination.page %}
+          <span class="pagination-item pagination-current">{{ page_num }}</span>
+        {% elif page_num == 1 or page_num == pagination.total_pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
+          <a class="pagination-item" href="/admin/lm-kitting?page={{ page_num }}{% if q %}&q={{ q }}{% endif %}">{{ page_num }}</a>
+        {% elif page_num == 2 or page_num == pagination.total_pages - 1 %}
+          <span class="pagination-separator">...</span>
+        {% endif %}
+      {% endfor %}
+
+      {% if pagination.has_next %}
+        <a class="pagination-item" href="/admin/lm-kitting?page={{ pagination.next_page }}{% if q %}&q={{ q }}{% endif %}">Next →</a>
+        <a class="pagination-item" href="/admin/lm-kitting?page={{ pagination.total_pages }}{% if q %}&q={{ q }}{% endif %}" title="Last Page">»</a>
+      {% else %}
+        <span class="pagination-item pagination-disabled">Next →</span>
+        <span class="pagination-item pagination-disabled">»</span>
+      {% endif %}
+    </div>
+    {% endif %}
 
     <!-- No Results -->
     <div id="no-results" class="no-results" style="display: none;">
@@ -458,14 +496,24 @@
 
 <script>
   let allRows = [];
-  const visibleColumns = new Set(['product_serial_no', 'product_category', 'route_card', 'part_number', 'sap_part', 'material_desc', 'batch_no', 'material_serial', 'weight', 'quantity', 'uom', 'subsystems', 'remarks']);
+  const visibleColumns = new Set(['product_serial_no', 'product_category', 'route_card', 'part_number', 'sap_part', 'material_desc', 'batch_no', 'material_serial', 'weight', 'quantity', 'uom', 'subsystems']);
 
   document.addEventListener('DOMContentLoaded', function() {
     allRows = Array.from(document.querySelectorAll('.data-row'));
     setupFilterListeners();
     setupClickOutside();
+    setupTooltips();
     document.getElementById('total-records').textContent = allRows.length;
   });
+
+  function setupTooltips() {
+    document.querySelectorAll('.data-table tbody td[data-column]').forEach(cell => {
+      const text = cell.textContent.trim();
+      if (text) {
+        cell.setAttribute('title', text);
+      }
+    });
+  }
 
   function setupFilterListeners() {
     document.querySelectorAll('.filter-header input').forEach(input => {

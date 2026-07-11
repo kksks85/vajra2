@@ -65,6 +65,7 @@ Jinja2Templates.TemplateResponse = patched_template_response
 from config import settings
 from database import Base, engine
 import models.entities  # Ensure all entity models are loaded into metadata
+from models.query_request import QueryRequest  # Load QueryRequest model for database table creation
 from routers.auth import router as auth_router
 from routers.admin import router as admin_router
 from routers.incidents import router as incidents_router
@@ -73,6 +74,8 @@ from routers.builder import router as builder_router
 from routers.dashboard import router as dashboard_router
 from routers.email_config import router as email_config_router
 from routers.email_rules import router as email_rules_router
+from routers.repair_execution import router as repair_execution_router
+from routers.query_request import router as query_request_router
 
 app = FastAPI(title=settings.APP_NAME)
 app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
@@ -82,9 +85,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(dashboard_router)
 app.include_router(auth_router)
 app.include_router(incidents_router)
+app.include_router(query_request_router)
 app.include_router(knowledge_router)
 app.include_router(builder_router)
 app.include_router(admin_router)
+app.include_router(repair_execution_router)
 app.include_router(email_config_router)
 app.include_router(email_rules_router)
 

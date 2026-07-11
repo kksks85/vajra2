@@ -13,6 +13,122 @@
   </header>
 
   <form id="incident-detail-form" method="post" action="/incidents/{{ incident.id }}" class="si-incident-form">
+    <!-- Status Progress Bar (Top, Full Width) -->
+    <div id="progress-container" style="display: none; margin-bottom: 20px; padding: 0;">
+      <div class="status-progress-bar">
+        <div class="progress-steps" id="progress-steps">
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .status-progress-bar {
+        width: 100%;
+        margin-top: 4px;
+        background: var(--si-surface);
+        border: 1px solid var(--si-border);
+        border-radius: 6px;
+        padding: 10px 12px;
+      }
+
+      .progress-steps {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        justify-content: space-between;
+        overflow-x: auto;
+      }
+
+      .progress-step {
+        flex: 1;
+        min-width: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 4px 4px;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        white-space: nowrap;
+      }
+
+      .progress-step::after {
+        content: '';
+        position: absolute;
+        right: -4px;
+        top: 0;
+        width: 1px;
+        height: 100%;
+        background: linear-gradient(180deg, rgba(226, 232, 240, 0.3) 0%, rgba(226, 232, 240, 0.8) 50%, rgba(226, 232, 240, 0.3) 100%);
+        opacity: 1;
+        transition: background 0.3s ease;
+        z-index: 1;
+      }
+
+      .progress-step:last-child::after {
+        display: none;
+      }
+
+      .progress-step.completed {
+        background: linear-gradient(135deg, #dcfce7 0%, #e8f9ed 100%);
+        color: #166534;
+        font-weight: 600;
+      }
+
+      .progress-step.completed::after {
+        background: linear-gradient(180deg, rgba(20, 184, 82, 0.2) 0%, rgba(20, 184, 82, 0.5) 50%, rgba(20, 184, 82, 0.2) 100%);
+      }
+
+      .progress-step.current {
+        background: linear-gradient(135deg, #dbeafe 0%, #e8f5ff 100%);
+        color: #1e40af;
+        font-weight: 600;
+        box-shadow: 0 0 0 2px var(--si-primary), 0 2px 8px rgba(43, 116, 214, 0.15);
+      }
+
+      .progress-step.current::after {
+        background: linear-gradient(180deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.7) 50%, rgba(59, 130, 246, 0.3) 100%);
+      }
+
+      .progress-step.pending {
+        background: var(--si-bg);
+        color: var(--si-muted);
+      }
+
+      .progress-step.pending::after {
+        background: linear-gradient(180deg, rgba(226, 232, 240, 0.3) 0%, rgba(226, 232, 240, 0.8) 50%, rgba(226, 232, 240, 0.3) 100%);
+      }
+
+      .progress-step:hover:not(.pending) {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(43, 116, 214, 0.1);
+      }
+
+      .progress-step:hover.pending {
+        background: #f0f4fb;
+      }
+
+      .status-number {
+        display: block;
+        font-size: 9px;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+
+      .status-name {
+        display: block;
+        font-size: 8px;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.1;
+        word-break: break-word;
+        max-width: 45px;
+      }
+    </style>
+
     <div class="si-incident-grid">
       <div class="si-incident-section">Incident details</div>
       <div class="si-incident-field">
@@ -25,19 +141,29 @@
       </div>
 
       <div class="si-incident-field">
-        <label>Status</label>
-        <select name="status">
-          {% for status in statuses %}
-          <option value="{{ status.id }}" {% if incident.status == status.id %}selected{% endif %}>{{ status.label }}</option>
+        <label>Repair Execution</label>
+        <select name="repair_execution" id="repair_execution">
+          <option value="">-- Select Repair Execution --</option>
+          {% for execution in repair_executions %}
+          <option value="{{ execution.name }}" {% if incident.repair_execution == execution.name %}selected{% endif %}>{{ execution.name }}</option>
           {% endfor %}
         </select>
       </div>
+
       <div class="si-incident-field">
-        <label>Priority</label>
-        <select name="priority">
-          {% for priority in priorities %}
-          <option value="{{ priority.id }}" {% if incident.priority == priority.id %}selected{% endif %}>{{ priority.name }}</option>
-          {% endfor %}
+        <label>Status</label>
+        <select name="repair_status" id="repair_status">
+          <option value="">-- Select Status --</option>
+          {% if incident.repair_execution and incident.repair_status %}
+            {% set matching_execution = repair_executions|selectattr('name', 'equalto', incident.repair_execution)|first %}
+            {% if matching_execution %}
+              {% for status in matching_execution.statuses|sort(attribute='order') %}
+              <option value="{{ status.status }}" {% if incident.repair_status == status.status %}selected{% endif %}>
+                {{ status.order }}. {{ status.status }}
+              </option>
+              {% endfor %}
+            {% endif %}
+          {% endif %}
         </select>
       </div>
 
@@ -77,10 +203,12 @@
           {% endfor %}
         </select>
       </div>
+
       <div class="si-incident-field">
         <label>SLA</label>
         <input name="sla" placeholder="e.g., 4 hours, 24 hours" value="{{ incident.sla or '' }}" />
       </div>
+
       <div class="si-incident-field">
         <label>Assignment Group</label>
         <input name="assignment_group" placeholder="Technical Support, Engineering, Field Operations" value="{{ incident.assignment_group or '' }}" />
@@ -157,9 +285,277 @@
         <label>Description</label>
         <textarea name="description" placeholder="Description">{{ incident.description }}</textarea>
       </div>
+
+      <div class="si-incident-divider"></div>
+      <div class="si-incident-section">Notes</div>
+      <div class="si-incident-field si-incident-field-wide">
+        <label><span class="si-required" id="work-notes-required" style="display: none;">*</span> Work Notes</label>
+        <textarea name="work_notes" id="work_notes" placeholder="Add work notes here..." data-required="false">{{ incident.work_notes or '' }}</textarea>
+        <p class="info-text">Document all work performed on this incident</p>
+      </div>
+
+      <div class="si-incident-field si-incident-field-wide">
+        <div class="audit-log-header" onclick="toggleAuditLog()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 0; user-select: none;">
+          <label style="margin: 0; cursor: pointer; font-weight: 600;">Audit Log</label>
+          <span class="audit-log-toggle" style="font-size: 18px; color: #666; transition: transform 0.3s ease; transform: rotate(0deg);">▼</span>
+        </div>
+        <div id="audit_log_container" style="background: #f9f9f9; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 6px 6px; min-height: 150px; max-height: 400px; overflow-y: auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; display: none; padding: 12px;">
+          {% if incident.audit_log %}
+            <div id="audit_log_display" style="padding: 0;"></div>
+          {% else %}
+            <div style="padding: 15px; color: #999; text-align: center; font-style: italic;">No audit entries yet.</div>
+          {% endif %}
+        </div>
+        <p class="info-text">System-generated log of all changes to this incident</p>
+      </div>
     </div>
   </form>
 </section>
+
+  <style>
+    .audit-entry {
+      border-bottom: 1px solid #eee;
+      padding: 10px 0;
+      margin: 0;
+      display: flex;
+      gap: 10px;
+    }
+    .audit-entry:last-child {
+      border-bottom: none;
+    }
+    .audit-entry-avatar {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      background: #e8f4f8;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: #0066cc;
+      font-size: 12px;
+    }
+    .audit-entry-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .audit-entry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2px;
+      gap: 8px;
+    }
+    .audit-timestamp {
+      color: #0066cc;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .audit-updatedby {
+      color: #999;
+      font-size: 12px;
+    }
+    .audit-entry-text {
+      color: #333;
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 2px 0;
+    }
+    .audit-change-detail {
+      margin-top: 4px;
+      padding: 6px 8px;
+      background: #f8f8f8;
+      border-left: 2px solid #0066cc;
+      border-radius: 2px;
+      font-size: 11px;
+      color: #333;
+    }
+    .audit-change-field {
+      font-weight: 600;
+      text-transform: capitalize;
+      margin-bottom: 2px;
+      font-size: 11px;
+    }
+    .audit-change-values {
+      display: flex;
+      gap: 12px;
+      font-size: 11px;
+    }
+    .audit-change-value {
+      flex: 1;
+    }
+    .audit-change-label {
+      font-weight: 600;
+      color: #999;
+      font-size: 10px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      letter-spacing: 0.5px;
+    }
+    .audit-change-content {
+      color: #333;
+      word-break: break-word;
+      line-height: 1.3;
+    }
+  </style>
+
+  <script>
+    // Parse and display audit log - supports both old text format and new JSON format
+    function displayAuditLog() {
+      const auditLogText = `{{ incident.audit_log|safe }}`;
+      if (!auditLogText || auditLogText.trim() === '') return;
+      
+      try {
+        const entries = [];
+        const lines = auditLogText.trim().split('\n');
+        
+        lines.forEach(line => {
+          if (!line.trim()) return;
+          
+          try {
+            // Try parsing as JSON first (new format)
+            const entry = JSON.parse(line);
+            entries.push(entry);
+          } catch (e) {
+            // Fall back to parsing old text format: [YYYY-MM-DD HH:MM:SS] message
+            const match = line.match(/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s+(.+)$/);
+            if (match) {
+              const [, timestamp, message] = match;
+              entries.push({
+                date_time: timestamp,
+                updated_by: 'System',
+                field: 'Status',
+                previous_value: '',
+                new_value: message,
+                work_note: '',
+                is_legacy: true
+              });
+            }
+          }
+        });
+        
+        if (entries.length === 0) {
+          document.getElementById('audit_log_display').innerHTML = '<div style="padding: 15px; color: #999; font-style: italic;">No audit entries yet.</div>';
+          return;
+        }
+        
+        // Reverse to show newest first
+        entries.reverse();
+        
+        let html = '';
+        entries.forEach(entry => {
+          const avatarLetter = entry.updated_by.charAt(0).toUpperCase();
+          
+          if (entry.is_legacy) {
+            // Old text format
+            html += `
+              <div class="audit-entry">
+                <div class="audit-entry-avatar">${avatarLetter}</div>
+                <div class="audit-entry-content">
+                  <div class="audit-entry-header">
+                    <span class="audit-timestamp">${entry.date_time}</span>
+                    <span class="audit-updatedby">${entry.updated_by}</span>
+                  </div>
+                  <div class="audit-entry-text">${entry.new_value}</div>
+                </div>
+              </div>
+            `;
+          } else if (entry.changes) {
+            // New batched format with multiple changes
+            let changesHtml = '';
+            Object.entries(entry.changes).forEach(([fieldName, change]) => {
+              changesHtml += `
+                <div class="audit-change-detail">
+                  <div class="audit-change-field">${fieldName}</div>
+                  <div class="audit-change-values">
+                    <div class="audit-change-value">
+                      <div class="audit-change-label">Previous</div>
+                      <div class="audit-change-content">${change.previous_value || '(empty)'}</div>
+                    </div>
+                    <div class="audit-change-value">
+                      <div class="audit-change-label">New</div>
+                      <div class="audit-change-content">${change.new_value || '(empty)'}</div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            });
+            
+            const fieldCount = Object.keys(entry.changes).length;
+            const changesSummary = fieldCount === 1 
+              ? `Modified ${Object.keys(entry.changes)[0]}`
+              : `Updated ${fieldCount} fields`;
+            
+            html += `
+              <div class="audit-entry">
+                <div class="audit-entry-avatar">${avatarLetter}</div>
+                <div class="audit-entry-content">
+                  <div class="audit-entry-header">
+                    <span class="audit-timestamp">${entry.date_time}</span>
+                    <span class="audit-updatedby">${entry.updated_by}</span>
+                  </div>
+                  <div class="audit-entry-text">${changesSummary}</div>
+                  ${changesHtml}
+                  ${entry.work_note ? `<div style="margin-top: 8px; padding: 8px; background: #fffbf0; border-left: 3px solid #ff9800; font-size: 13px; color: #666;"><strong>Note:</strong> ${entry.work_note}</div>` : ''}
+                </div>
+              </div>
+            `;
+          } else if (entry.field) {
+            // Legacy JSON format (single field format)
+            html += `
+              <div class="audit-entry">
+                <div class="audit-entry-avatar">${avatarLetter}</div>
+                <div class="audit-entry-content">
+                  <div class="audit-entry-header">
+                    <span class="audit-timestamp">${entry.date_time}</span>
+                    <span class="audit-updatedby">${entry.updated_by}</span>
+                  </div>
+                  <div class="audit-entry-text">Modified <strong>${entry.field}</strong></div>
+                  <div class="audit-change-detail">
+                    <div class="audit-change-field">${entry.field}</div>
+                    <div class="audit-change-values">
+                      <div class="audit-change-value">
+                        <div class="audit-change-label">Previous</div>
+                        <div class="audit-change-content">${entry.previous_value || '(empty)'}</div>
+                      </div>
+                      <div class="audit-change-value">
+                        <div class="audit-change-label">New</div>
+                        <div class="audit-change-content">${entry.new_value || '(empty)'}</div>
+                      </div>
+                    </div>
+                  </div>
+                  ${entry.work_note ? `<div style="margin-top: 8px; padding: 8px; background: #fffbf0; border-left: 3px solid #ff9800; font-size: 13px; color: #666;"><strong>Note:</strong> ${entry.work_note}</div>` : ''}
+                </div>
+              </div>
+            `;
+          }
+        });
+        
+        document.getElementById('audit_log_display').innerHTML = html;
+      } catch (e) {
+        console.error('Error displaying audit log:', e);
+        document.getElementById('audit_log_display').innerHTML = '<div style="padding: 15px; color: #d32f2f;">Error loading audit log.</div>';
+      }
+    }
+    
+    // Toggle audit log visibility
+    function toggleAuditLog() {
+      const container = document.getElementById('audit_log_container');
+      const toggle = document.querySelector('.audit-log-toggle');
+      
+      if (container.style.display === 'none' || container.style.display === '') {
+        container.style.display = 'block';
+        toggle.style.transform = 'rotate(180deg)';
+      } else {
+        container.style.display = 'none';
+        toggle.style.transform = 'rotate(0deg)';
+      }
+    }
+    
+    // Call on page load
+    document.addEventListener('DOMContentLoaded', displayAuditLog);
+  </script>
 
 <script>
   const platformVariants = [
@@ -449,5 +845,156 @@
   document.getElementById("sub-system").addEventListener("change", updateLruOptions);
 
   document.querySelector('input[name="caller"]').addEventListener("change", updateRequestorFields);
+
+  // Repair Execution Status Filtering
+  const repairExecutionData = {
+    {% for execution in repair_executions %}
+    "{{ execution.name }}": [
+      {% for status in execution.statuses|sort(attribute='order') %}
+      { order: {{ status.order }}, status: "{{ status.status }}" }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]{% if not loop.last %},{% endif %}
+    {% endfor %}
+  };
+
+  function updateProgressBar() {
+    const executionSelect = document.getElementById('repair_execution');
+    const statusSelect = document.getElementById('repair_status');
+    const progressContainer = document.getElementById('progress-container');
+    const progressSteps = document.getElementById('progress-steps');
+    const selectedExecution = executionSelect.value;
+    const currentStatus = statusSelect.value;
+
+    if (!selectedExecution || !repairExecutionData[selectedExecution]) {
+      progressContainer.style.display = 'none';
+      return;
+    }
+
+    progressContainer.style.display = 'block';
+    const statuses = repairExecutionData[selectedExecution].sort((a, b) => a.order - b.order);
+    
+    // Build progress bar
+    progressSteps.innerHTML = '';
+    
+    statuses.forEach((statusObj, index) => {
+      const step = document.createElement('div');
+      
+      let className = 'progress-step pending';
+      if (currentStatus === statusObj.status) {
+        className = 'progress-step current';
+      } else if (statuses.findIndex(s => s.status === currentStatus) !== -1 && 
+                 index < statuses.findIndex(s => s.status === currentStatus)) {
+        className = 'progress-step completed';
+      }
+      
+      step.className = className;
+      step.innerHTML = `<span class="status-number">${statusObj.order}</span><span class="status-name">${statusObj.status}</span>`;
+      step.addEventListener('click', function() {
+        statusSelect.value = statusObj.status;
+        statusSelect.dispatchEvent(new Event('change'));
+      });
+      
+      progressSteps.appendChild(step);
+    });
+  }
+
+  function updateRepairExecutionStatus() {
+    const executionSelect = document.getElementById('repair_execution');
+    const statusSelect = document.getElementById('repair_status');
+    const selectedExecution = executionSelect.value;
+    const currentValue = statusSelect.value; // Preserve current value
+    
+    // Only rebuild if there's a selected execution
+    if (selectedExecution && repairExecutionData[selectedExecution]) {
+      const statuses = repairExecutionData[selectedExecution].sort((a, b) => a.order - b.order);
+      const options = [];
+      
+      statuses.forEach(statusObj => {
+        const option = document.createElement('option');
+        option.value = statusObj.status;
+        option.textContent = `${statusObj.order}. ${statusObj.status}`;
+        options.push(option);
+      });
+      
+      // Clear and rebuild options
+      statusSelect.innerHTML = '<option value="">-- Select Status --</option>';
+      options.forEach(opt => statusSelect.appendChild(opt));
+      
+      // Restore the value if it still exists
+      if (currentValue) {
+        statusSelect.value = currentValue;
+      }
+    }
+
+    // Update progress bar after updating statuses
+    updateProgressBar();
+  }
+
+  // Add event listener for repair execution selection
+  document.addEventListener('DOMContentLoaded', function() {
+    const executionSelect = document.getElementById('repair_execution');
+    const statusSelect = document.getElementById('repair_status');
+    
+    if (executionSelect) {
+      executionSelect.addEventListener('change', updateRepairExecutionStatus);
+      // Initialize on page load if repair_execution is already selected
+      if (executionSelect.value) {
+        updateRepairExecutionStatus();
+      }
+    }
+
+    // Update progress bar when status selection changes
+    if (statusSelect) {
+      statusSelect.addEventListener('change', updateProgressBar);
+      // Also call updateProgressBar on load to highlight current status if already selected
+      updateProgressBar();
+    }
+  });
+
+  // Work Notes Validation and Audit Logging
+  document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.getElementById('repair_status');
+    const workNotesField = document.getElementById('work_notes');
+    const workNotesRequired = document.getElementById('work-notes-required');
+    const initialStatus = statusSelect?.value || '';
+
+    // Check if we need to make work notes mandatory on page load
+    function updateWorkNotesRequirement() {
+      if (statusSelect && statusSelect.value && statusSelect.value !== 'Query Registered' && statusSelect.value !== '') {
+        workNotesRequired.style.display = 'inline';
+        workNotesField.setAttribute('data-required', 'true');
+      } else {
+        workNotesRequired.style.display = 'none';
+        workNotesField.setAttribute('data-required', 'false');
+      }
+    }
+
+    // Update on status change
+    if (statusSelect) {
+      statusSelect.addEventListener('change', updateWorkNotesRequirement);
+      // Check on initial load
+      updateWorkNotesRequirement();
+    }
+
+    // Form submission validation
+    const form = document.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        const isRequired = workNotesField?.getAttribute('data-required') === 'true';
+        if (isRequired && !workNotesField?.value?.trim()) {
+          e.preventDefault();
+          alert('Work Notes are mandatory when the incident has moved beyond Query Registered status.');
+          workNotesField.focus();
+          return false;
+        }
+      });
+    }
+
+    // Clear work notes field on successful save
+    const workNotes = document.getElementById('work_notes');
+    if (workNotes) {
+      workNotes.value = '';
+    }
+  });
 </script>
 {% endblock %}

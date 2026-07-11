@@ -24,24 +24,6 @@
       </div>
 
       <div class="form-group">
-        <label for="priority">Priority</label>
-        <select id="priority" name="priority">
-          {% for priority in priorities %}
-          <option value="{{ priority.id }}" {% if incident.priority == priority.id %}selected{% endif %}>{{ priority.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="status">Status</label>
-        <select id="status" name="status">
-          {% for st in statuses %}
-          <option value="{{ st.id }}" {% if incident.status == st.id %}selected{% endif %}>{{ st.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group">
         <label for="issue_type">Issue Type</label>
         <select id="issue_type" name="issue_type">
           <option value="">Select issue type</option>

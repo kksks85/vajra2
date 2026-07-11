@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .repair-exec-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .repair-exec-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+  }
+
+  .repair-exec-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .btn-add-execution {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .btn-add-execution:hover {
+    background: #2563eb;
+  }
+
+  .execution-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+  }
+
+  .execution-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+  }
+
+  .execution-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: #3b82f6;
+  }
+
+  .execution-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  .execution-desc {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 15px;
+    line-height: 1.5;
+  }
+
+  .status-count {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 15px;
+  }
+
+  .status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+
+  .status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: #f9fafb;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  .status-badge {
+    background: #10b981;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .status-desc {
+    color: #6b7280;
+    font-size: 12px;
+  }
+
+  .execution-actions {
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 15px;
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .action-btn:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+  }
+
+  .action-btn.delete {
+    color: #dc2626;
+    border-color: #fecaca;
+  }
+
+  .action-btn.delete:hover {
+    background: #fee2e2;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal.show {
+    display: flex;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 25px rgba(0,0,0,0.15);
+  }
+
+  .modal-header {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+
+  .modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 5px;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 13px;
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: flex-end;
+  }
+
+  .modal-actions button {
+    padding: 10px 20px;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .modal-actions .btn-primary {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+
+  .modal-actions .btn-primary:hover {
+    background: #2563eb;
+  }
+
+  .modal-actions .btn-secondary {
+    background: white;
+  }
+
+  .modal-actions .btn-secondary:hover {
+    background: #f3f4f6;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6b7280;
+  }
+
+  .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+  }
+</style>
+
+<div class="repair-exec-container">
+  <div class="repair-exec-header">
+    <h1>🔧 Repair Execution Management</h1>
+    <button class="btn-add-execution" onclick="showAddExecutionModal()">+ Add Execution</button>
+  </div>
+
+  {% if executions %}
+  <div class="execution-cards">
+    {% for execution in executions %}
+    <div class="execution-card" data-exec-id="{{ execution.id }}">
+      <div class="execution-title">{{ execution.name }}</div>
+      <div class="execution-desc">{{ execution.description }}</div>
+      
+      <div class="status-count">{{ execution.status_count }} Status Steps</div>
+      
+      {% if execution.statuses %}
+      <div class="status-list">
+        {% for status in execution.statuses[:4] %}
+        <div class="status-item">
+          <div>
+            <div style="margin-bottom: 3px; color: #374151; font-weight: 500;">
+              {{ status.order }}. {{ status.status }}
+            </div>
+            {% if status.description %}
+            <div class="status-desc">{{ status.description }}</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+        {% if execution.status_count > 4 %}
+        <div style="text-align: center; color: #9ca3af; font-size: 12px; padding: 8px;">
+          +{{ execution.status_count - 4 }} more status steps...
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+      
+      <div class="execution-actions">
+        <button class="action-btn" onclick="editExecution({{ execution.id }})">Edit</button>
+        <button class="action-btn" onclick="manageStatuses({{ execution.id }})">Manage Statuses</button>
+        <button class="action-btn delete" onclick="deleteExecution({{ execution.id }})">Delete</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">📭</div>
+    <div>No repair executions found</div>
+    <div style="font-size: 12px; margin-top: 10px;">Create one to get started</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add Execution Modal -->
+<div id="addExecutionModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">Add New Repair Execution</div>
+    <form class="modal-form" onsubmit="handleAddExecution(event)">
+      <div class="form-group">
+        <label>Execution Name *</label>
+        <input type="text" id="execName" required placeholder="e.g., Standard Repair, Complex Repair">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="execDesc" placeholder="Describe this repair execution workflow..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeAddExecutionModal()">Cancel</button>
+        <button type="submit" class="btn-primary">Create Execution</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function showAddExecutionModal() {
+  document.getElementById('addExecutionModal').classList.add('show');
+}
+
+function closeAddExecutionModal() {
+  document.getElementById('addExecutionModal').classList.remove('show');
+  document.getElementById('execName').value = '';
+  document.getElementById('execDesc').value = '';
+}
+
+async function handleAddExecution(e) {
+  e.preventDefault();
+  
+  const name = document.getElementById('execName').value;
+  const desc = document.getElementById('execDesc').value;
+  
+  try {
+    const response = await fetch('/admin/repair-executions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ name, description: desc })
+    });
+    
+    if (response.ok) {
+      location.reload();
+    } else {
+      alert('Error creating execution');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error creating execution');
+  }
+}
+
+async function deleteExecution(id) {
+  if (!confirm('Are you sure you want to delete this repair execution and all its statuses?')) {
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/admin/repair-executions/${id}`, {
+      method: 'DELETE'
+    });
+    
+    if (response.ok) {
+      location.reload();
+    } else {
+      alert('Error deleting execution');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error deleting execution');
+  }
+}
+
+function editExecution(id) {
+  alert('Edit functionality coming soon!');
+}
+
+function manageStatuses(id) {
+  alert('Manage statuses for execution ID: ' + id);
+  // TODO: Implement status management
+}
+
+// Close modal when clicking outside
+document.getElementById('addExecutionModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeAddExecutionModal();
+  }
+});
+</script>
+
+{% endblock %}

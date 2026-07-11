@@ -1,4 +1,4 @@
-from models.admin import Role, User
+from models.admin import Role, User, RepairExecution, RepairExecutionStatus
 from models.entities import (
     Battery,
     BatteryType,
@@ -28,6 +28,8 @@ __all__ = [
     "ApprovalRequest",
     "Role",
     "User",
+    "RepairExecution",
+    "RepairExecutionStatus",
     "Customer",
     "Contract",
     "BatteryType",

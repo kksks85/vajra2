@@ -1,0 +1,785 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .query-container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    width: 100%;
+  }
+
+  .query-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 40px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 0;
+  }
+
+  .query-header > div:first-child {
+    flex: 1;
+  }
+
+  .query-header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .query-header p {
+    margin: 6px 0 0 0;
+    color: #6b7280;
+    font-size: 14px;
+  }
+
+  .query-form {
+    display: grid;
+    gap: 0;
+    padding: 20px 30px;
+  }
+
+  .form-section {
+    padding: 16px;
+    background: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    grid-column: 1 / -1;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 12px;
+  }
+
+  .form-grid.full {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group-full {
+    grid-column: 1 / -1;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 4px;
+  }
+
+  .required {
+    color: #ef4444;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    justify-content: flex-start;
+  }
+
+  .query-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .query-btn-primary {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .query-btn-primary:hover {
+    background: #2563eb;
+  }
+
+  .query-btn-secondary {
+    background: #e5e7eb;
+    color: #111827;
+  }
+
+  .query-btn-secondary:hover {
+    background: #d1d5db;
+  }
+
+  .alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 20px 30px 0 30px;
+    font-size: 14px;
+    border: 1px solid;
+  }
+
+  .alert-error {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
+  }
+
+  .alert-success {
+    background-color: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+  }
+
+  .audit-log-section {
+    padding: 16px;
+    background: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .audit-log-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .audit-log-header:hover {
+    color: #374151;
+  }
+
+  #audit_log_container {
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .audit-entry {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 15px;
+    display: flex;
+    gap: 15px;
+  }
+
+  .audit-avatar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+  }
+
+  .audit-content {
+    flex: 1;
+  }
+
+  .audit-timestamp {
+    color: #0066cc;
+    font-weight: 600;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .audit-field {
+    background: #f9f9f9;
+    border-left: 3px solid #0066cc;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 2px;
+  }
+
+  .audit-field-name {
+    font-weight: 500;
+    text-transform: capitalize;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+
+  .audit-values {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .audit-worknote {
+    background: #fff3cd;
+    border-left: 3px solid #ffc107;
+    padding: 10px;
+    border-radius: 2px;
+    font-size: 13px;
+  }
+
+  .audit-updated-by {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+</style>
+
+<div class="query-container">
+  <div class="query-header">
+    <div>
+      <h1>{{ query.query_number or 'Query Request' }}</h1>
+      <p>Created: {{ query.created_at.strftime('%Y-%m-%d %H:%M:%S') if query.created_at else '-' }}</p>
+    </div>
+  </div>
+
+  <!-- Flash Messages -->
+  {% if flash_messages %}
+    {% for message in flash_messages %}
+      <div class="alert alert-{{ message.category }}">
+        {{ message.message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Edit Form -->
+  <form method="POST" action="/queries/{{ query.id }}" class="query-form">
+    <!-- Requestor Information Section (MOVED UP) -->
+    <div class="form-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb;">
+        <div class="section-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">👤 Customer & Requestor</div>
+        <div style="font-size: 13px; font-weight: 600; color: #374151; background: #f0f4f8; padding: 6px 12px; border-radius: 4px;">
+          <span style="color: #6b7280;">Query #:</span> <span style="font-family: monospace; color: #0066cc;">{{ query.query_number or 'QRY-????-0001' }}</span>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label><span class="required">*</span>Customer Name</label>
+          <select name="caller" id="customerSelect" required onchange="updateContracts(); updateRequestors()">
+            <option value="">-- Select Customer --</option>
+            {% for customer in customers %}
+            <option value="{{ customer.name }}" {% if query.caller == customer.name %}selected{% endif %}>
+              {{ customer.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label><span class="required">*</span>Requestor Name</label>
+          <select name="requestor_name" id="requestorSelect" required onchange="updateRequestorContact()">
+            <option value="">-- Select Contact --</option>
+            {% if query.requestor_name %}
+            <option value="{{ query.requestor_name }}" selected>{{ query.requestor_name }}</option>
+            {% endif %}
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Requestor Contact</label>
+          <input type="text" name="requestor_contact" id="requestorPhone" placeholder="Phone or Email" value="{{ query.requestor_contact or '' }}" readonly />
+        </div>
+        
+        <div class="form-group">
+          <label>Requestor Email</label>
+          <input type="email" name="requestor_email" id="requestorEmail" placeholder="Email address" value="{{ query.requestor_email or '' }}" readonly />
+        </div>
+      </div>
+    </div>
+
+    <!-- Query Details Section (MOVED DOWN) -->
+    <div class="form-section">
+      <div class="section-title">Query Details</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Title <span class="required">*</span></label>
+          <input type="text" name="title" required value="{{ query.title }}">
+        </div>
+        
+        <div class="form-group">
+          <label>Query Type <span class="required">*</span></label>
+          <select name="query_type" required>
+            <option value="">-- Select Query Type --</option>
+            {% for qt in query_types %}
+              <option value="{{ qt }}" {% if query.query_type == qt %}selected{% endif %}>{{ qt }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            {% for s in statuses %}
+              <option value="{{ s }}" {% if query.status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Priority</label>
+          <select name="priority">
+            {% for p in priorities %}
+              <option value="{{ p }}" {% if query.priority == p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Assigned To</label>
+          <input type="text" name="assigned_to" value="{{ query.assigned_to or '' }}">
+        </div>
+
+        <div class="form-group">
+          <label>Assignment Group</label>
+          <input type="text" name="assignment_group" value="{{ query.assignment_group or '' }}">
+        </div>
+
+        <div class="form-group form-group-full">
+          <label>Subject</label>
+          <input type="text" name="subject" value="{{ query.subject or '' }}">
+        </div>
+
+        <div class="form-group form-group-full">
+          <label>Description</label>
+          <textarea name="description">{{ query.description or '' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes Section -->
+    <div class="form-section">
+      <div class="section-title">Notes</div>
+      <div class="form-grid">
+        <div class="form-group form-group-full">
+          <label>Add Notes</label>
+          <textarea name="notes" id="notes" placeholder="Add notes here..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button type="submit" class="query-btn query-btn-primary">Save Changes</button>
+      <a href="/queries" class="query-btn query-btn-secondary">Back to List</a>
+    </div>
+  </form>
+
+  <!-- Audit Log Section -->
+  <div class="audit-log-section">
+    <div class="audit-log-header" onclick="toggleAuditLog()">
+      Audit Log
+      <span id="audit_toggle_icon" style="font-size: 16px;">▼</span>
+    </div>
+    
+    <div id="audit_log_container" style="display: none;">
+      <div id="audit_log_display"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleAuditLog() {
+    const container = document.getElementById('audit_log_container');
+    const icon = document.getElementById('audit_toggle_icon');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        icon.textContent = '▲';
+        displayAuditLog();
+    } else {
+        container.style.display = 'none';
+        icon.textContent = '▼';
+    }
+}
+
+function displayAuditLog() {
+    const auditLogRaw = `{{ query.audit_log|safe }}`;
+    const container = document.getElementById('audit_log_display');
+    
+    if (!auditLogRaw.trim()) {
+        container.innerHTML = '<p style="color: #999; padding: 20px; text-align: center; font-size: 14px;">No audit entries yet</p>';
+        return;
+    }
+    
+    let entries = [];
+    
+    // Parse audit log entries (JSON lines format)
+    try {
+        for (const line of auditLogRaw.trim().split('\n')) {
+            if (line.trim()) {
+                try {
+                    entries.push(JSON.parse(line));
+                } catch (e) {
+                    // Handle old text format
+                    if (line.trim()) {
+                        entries.push({
+                            date_time: new Date().toLocaleString(),
+                            updated_by: 'System',
+                            changes: {},
+                            note: line.trim()
+                        });
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        container.innerHTML = '<p style="color: #999; padding: 20px; text-align: center; font-size: 14px;">No audit entries yet</p>';
+        return;
+    }
+    
+    if (entries.length === 0) {
+        container.innerHTML = '<p style="color: #999; padding: 20px; text-align: center; font-size: 14px;">No audit entries yet</p>';
+        return;
+    }
+    
+    // Reverse to show newest first
+    entries.reverse();
+    
+    // Render entries
+    let html = '';
+    const colors = ['#e3f2fd', '#f3e5f5', '#e8f5e9', '#fff3e0'];
+    
+    for (let i = 0; i < entries.length; i++) {
+        const entry = entries[i];
+        const initials = (entry.updated_by || 'S').substring(0, 1).toUpperCase();
+        const bgColor = colors[i % colors.length];
+        
+        html += `<div style="border-bottom: 1px solid #e0e0e0; padding: 15px; display: flex; gap: 15px;">`;
+        html += `<div style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background-color: ${bgColor}; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; color: #333;">${initials}</div>`;
+        html += `<div style="flex: 1;">`;
+        html += `<div style="font-size: 12px; color: #0066cc; font-weight: 600; margin-bottom: 4px;">${entry.date_time}</div>`;
+        html += `<div style="font-size: 13px; color: #666; margin-bottom: 8px;"><strong>Updated by:</strong> ${entry.updated_by || 'System'}</div>`;
+        
+        if (entry.changes && Object.keys(entry.changes).length > 0) {
+            html += `<div style="background: #f9f9f9; border-left: 3px solid #0066cc; padding: 10px; margin-bottom: 8px; border-radius: 2px;">`;
+            for (const [field, values] of Object.entries(entry.changes)) {
+                html += `<div style="font-weight: 500; text-transform: capitalize; margin-bottom: 4px; font-size: 13px;">${field}</div>`;
+                html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; margin-bottom: 8px;">`;
+                html += `<div><span style="color: #999;">Previous:</span> ${values.previous_value || '(empty)'}</div>`;
+                html += `<div><span style="color: #999;">New:</span> ${values.new_value || '(empty)'}</div>`;
+                html += `</div>`;
+            }
+            html += `</div>`;
+        }
+        
+        if (entry.note) {
+            html += `<div style="background: #fff3cd; border-left: 3px solid #ffc107; padding: 10px; border-radius: 2px; font-size: 13px;">📝 <strong>Note:</strong> ${entry.note}</div>`;
+        }
+        
+        html += `</div></div>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+// Clear notes field after save
+document.addEventListener('DOMContentLoaded', function() {
+    displayAuditLog();
+    
+    // Check if there's a success message, then clear notes
+    const alerts = document.querySelectorAll('.alert-success');
+    if (alerts.length > 0) {
+        const notesField = document.getElementById('notes');
+        if (notesField) {
+            notesField.value = '';
+        }
+    }
+    
+    // Initialize customer contacts map
+    customerContactsData.forEach(customer => {
+      if (customer.name && customer.contacts && Array.isArray(customer.contacts)) {
+        customerContactsMap[customer.name] = customer.contacts;
+      }
+    });
+    
+    // Pre-populate requestor contact if caller is already set
+    const customerSelect = document.getElementById('customerSelect');
+    if (customerSelect && customerSelect.value) {
+      updateRequestors();
+    }
+});
+
+// Customer contacts data
+const customerContactsData = {{ customers | tojson }};
+const customerContactsMap = {};
+
+// Update contracts based on customer selection
+function updateContracts() {
+    const customerSelect = document.getElementById('customerSelect');
+    const contractSelect = document.getElementById('contractSelect');
+    const selectedCustomer = customerSelect.value;
+
+    // Only process contracts if the element exists
+    if (contractSelect) {
+      // Reset contracts
+      contractSelect.value = '';
+
+      // Filter contracts
+      for (let option of contractSelect.options) {
+        if (option.value === '') {
+          option.style.display = '';
+        } else {
+          const optionCustomer = option.getAttribute('data-customer');
+          option.style.display = (optionCustomer === selectedCustomer) ? '' : 'none';
+        }
+      }
+    }
+
+    // Update requestor options
+    updateRequestors();
+}
+
+// Update requestor list based on customer
+function updateRequestors() {
+    const customerSelect = document.getElementById('customerSelect');
+    const requestorSelect = document.getElementById('requestorSelect');
+    const selectedCustomer = customerSelect.value;
+
+    requestorSelect.innerHTML = '<option value="">-- Select Contact --</option>';
+    const currentRequestor = requestorSelect.getAttribute('data-current-value') || '';
+    requestorSelect.value = '';
+    document.getElementById('requestorPhone').value = '';
+
+    if (selectedCustomer && customerContactsMap[selectedCustomer]) {
+      const contacts = customerContactsMap[selectedCustomer];
+      contacts.forEach(contact => {
+        const option = document.createElement('option');
+        option.value = contact.name;
+        option.setAttribute('data-phone', contact.phone || '');
+        option.setAttribute('data-email', contact.email || '');
+        option.textContent = contact.name;
+        requestorSelect.appendChild(option);
+      });
+    }
+}
+
+// Update phone and email when requestor is selected
+function updateRequestorContact() {
+    const requestorSelect = document.getElementById('requestorSelect');
+    const selectedOption = requestorSelect.options[requestorSelect.selectedIndex];
+    const phone = selectedOption.getAttribute('data-phone') || '';
+    const email = selectedOption.getAttribute('data-email') || '';
+
+    document.getElementById('requestorPhone').value = phone || email || '';
+    document.getElementById('requestorEmail').value = email || '';
+}
+
+// Placeholder for contract-based filtering if needed
+function filterRequestorsForContract() {
+    // Can implement additional filtering based on contract if needed
+}
+</script>
+{% endblock %}
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">Customer Contract</label>
+                    <input type="text" name="customer_contract" value="{{ query.customer_contract or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+                </div>
+                
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">Requestor Name</label>
+                    <input type="text" name="requestor_name" value="{{ query.requestor_name or '' }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes Section -->
+        <div style="margin-bottom: 30px;">
+            <h2 style="font-size: 18px; font-weight: 600; margin: 0 0 20px 0;">Notes</h2>
+            
+            <div>
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px;">Add Notes</label>
+                <textarea name="notes" id="notes" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; box-sizing: border-box; font-family: inherit; resize: vertical;" rows="4" placeholder="Add notes here..."></textarea>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" style="background-color: #0066cc; color: white; padding: 10px 24px; border: none; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer;">Save Changes</button>
+            <a href="/queries" style="background-color: #f5f5f5; color: #333; padding: 10px 24px; border: none; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block;">Back to List</a>
+        </div>
+    </form>
+
+    <!-- Audit Log Section -->
+    <div style="background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 30px;">
+        <h2 style="font-size: 18px; font-weight: 600; margin: 0 0 20px 0; cursor: pointer; display: flex; align-items: center; justify-content: space-between;" onclick="toggleAuditLog()">
+            Audit Log
+            <span id="audit_toggle_icon" style="font-size: 20px;">▼</span>
+        </h2>
+        
+        <div id="audit_log_container" style="display: none;">
+            <div id="audit_log_display" style="max-height: 500px; overflow-y: auto;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleAuditLog() {
+    const container = document.getElementById('audit_log_container');
+    const icon = document.getElementById('audit_toggle_icon');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        icon.textContent = '▲';
+        displayAuditLog();
+    } else {
+        container.style.display = 'none';
+        icon.textContent = '▼';
+    }
+}
+
+function displayAuditLog() {
+    const auditLogRaw = `{{ query.audit_log|safe }}`;
+    const container = document.getElementById('audit_log_display');
+    
+    if (!auditLogRaw.trim()) {
+        container.innerHTML = '<p style="color: #999; padding: 20px; text-align: center;">No audit entries yet</p>';
+        return;
+    }
+    
+    let entries = [];
+    
+    // Parse audit log entries (JSON lines format)
+    try {
+        for (const line of auditLogRaw.trim().split('\n')) {
+            if (line.trim()) {
+                try {
+                    entries.push(JSON.parse(line));
+                } catch (e) {
+                    // Handle old text format
+                    if (line.trim()) {
+                        entries.push({
+                            date_time: new Date().toLocaleString(),
+                            updated_by: 'System',
+                            changes: {},
+                            note: line.trim()
+                        });
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        container.innerHTML = '<p style="color: #999; padding: 20px; text-align: center;">No audit entries yet</p>';
+        return;
+    }
+    
+    if (entries.length === 0) {
+        container.innerHTML = '<p style="color: #999; padding: 20px; text-align: center;">No audit entries yet</p>';
+        return;
+    }
+    
+    // Reverse to show newest first
+    entries.reverse();
+    
+    // Render entries
+    let html = '';
+    for (const entry of entries) {
+        const initials = (entry.updated_by || 'S').substring(0, 1).toUpperCase();
+        const bgColor = ['#e3f2fd', '#f3e5f5', '#e8f5e9', '#fff3e0'][Math.floor(Math.random() * 4)];
+        
+        html += `<div style="border-bottom: 1px solid #e0e0e0; padding: 15px; display: flex; gap: 15px;">`;
+        html += `<div style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background-color: ${bgColor}; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; color: #333;">${initials}</div>`;
+        html += `<div style="flex: 1;">`;
+        html += `<div style="font-size: 12px; color: #0066cc; font-weight: 600; margin-bottom: 4px;">${entry.date_time}</div>`;
+        html += `<div style="font-size: 13px; color: #666; margin-bottom: 8px;"><strong>Updated by:</strong> ${entry.updated_by || 'System'}</div>`;
+        
+        if (entry.changes && Object.keys(entry.changes).length > 0) {
+            html += `<div style="background: #f9f9f9; border-left: 3px solid #0066cc; padding: 10px; margin-bottom: 8px; border-radius: 2px;">`;
+            for (const [field, values] of Object.entries(entry.changes)) {
+                html += `<div style="font-weight: 500; text-transform: capitalize; margin-bottom: 4px; font-size: 13px;">${field}</div>`;
+                html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; margin-bottom: 8px;">`;
+                html += `<div><span style="color: #999;">Previous:</span> ${values.previous_value || '(empty)'}</div>`;
+                html += `<div><span style="color: #999;">New:</span> ${values.new_value || '(empty)'}</div>`;
+                html += `</div>`;
+            }
+            html += `</div>`;
+        }
+        
+        if (entry.note) {
+            html += `<div style="background: #fff3cd; border-left: 3px solid #ffc107; padding: 10px; border-radius: 2px; font-size: 13px;">📝 <strong>Note:</strong> ${entry.note}</div>`;
+        }
+        
+        html += `</div></div>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+// Clear notes field after save
+document.addEventListener('DOMContentLoaded', function() {
+    displayAuditLog();
+    
+    // Check if there's a success message, then clear notes
+    const alerts = document.querySelectorAll('.alert-message:not(.alert-error)');
+    if (alerts.length > 0) {
+        const notesField = document.getElementById('notes');
+        if (notesField) {
+            notesField.value = '';
+        }
+    }
+});
+</script>
+
+<style>
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    button:hover {
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}

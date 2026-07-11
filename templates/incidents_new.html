@@ -13,7 +13,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 30px 40px;
+    padding: 10px 20px;
     background: #f9fafb;
     border-bottom: 1px solid #e5e7eb;
     margin-bottom: 0;
@@ -25,31 +25,31 @@
 
   .incident-header h1 {
     margin: 0;
-    font-size: 28px;
+    font-size: 20px;
     font-weight: 600;
     color: #111827;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
   }
 
   .incident-header p {
-    margin: 6px 0 0 0;
+    margin: 2px 0 0 0;
     color: #6b7280;
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .incident-actions {
     display: flex;
-    gap: 12px;
+    gap: 8px;
   }
 
   .incident-btn {
-    padding: 10px 20px;
+    padding: 6px 14px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     transition: all 0.2s;
   }
@@ -75,32 +75,32 @@
   .incident-form {
     display: grid;
     gap: 0;
-    padding: 20px 30px;
+    padding: 12px 20px;
   }
 
   .form-section {
-    padding: 16px;
+    padding: 10px 12px;
     background: #ffffff;
     border-radius: 6px;
     border: 1px solid #e5e7eb;
   }
 
   .section-title {
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 600;
     color: #6b7280;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     grid-column: 1 / -1;
-    padding-bottom: 8px;
+    padding-bottom: 4px;
     border-bottom: 1px solid #e5e7eb;
   }
 
   .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px 12px;
+    gap: 8px 8px;
   }
 
   .form-grid.full {
@@ -117,10 +117,10 @@
   }
 
   .form-group label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     color: #374151;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
   }
 
   .required {
@@ -130,10 +130,10 @@
   .form-group input,
   .form-group select,
   .form-group textarea {
-    padding: 10px 12px;
+    padding: 8px 10px;
     border: 1px solid #d1d5db;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 13px;
     font-family: inherit;
   }
 
@@ -208,6 +208,121 @@
   </div>
 
   <form id="incident-form" method="post" action="/incidents" class="incident-form">
+    <!-- Status Progress Bar (Top, Full Width) -->
+    <div id="progress-container" style="display: none; margin-bottom: 20px;">
+      <div class="status-progress-bar">
+        <div class="progress-steps" id="progress-steps">
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .status-progress-bar {
+        width: 100%;
+        margin-top: 4px;
+        background: var(--si-surface);
+        border: 1px solid var(--si-border);
+        border-radius: 6px;
+        padding: 10px 12px;
+      }
+
+      .progress-steps {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        justify-content: space-between;
+        overflow-x: auto;
+      }
+
+      .progress-step {
+        flex: 1;
+        min-width: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 4px 4px;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        white-space: nowrap;
+      }
+
+      .progress-step::after {
+        content: '';
+        position: absolute;
+        right: -1px;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        background: linear-gradient(180deg, rgba(226, 232, 240, 0.3) 0%, rgba(226, 232, 240, 0.6) 50%, rgba(226, 232, 240, 0.3) 100%);
+        opacity: 1;
+        z-index: 1;
+        transition: background 0.3s ease;
+      }
+
+      .progress-step:last-child::after {
+        display: none;
+      }
+
+      .progress-step.completed {
+        background: linear-gradient(135deg, #dcfce7 0%, #e8f9ed 100%);
+        color: #166534;
+      }
+
+      .progress-step.completed::after {
+        background: linear-gradient(180deg, rgba(20, 184, 82, 0.2) 0%, rgba(20, 184, 82, 0.4) 50%, rgba(20, 184, 82, 0.2) 100%);
+      }
+
+      .progress-step.current {
+        background: linear-gradient(135deg, #dbeafe 0%, #e8f5ff 100%);
+        color: #1e40af;
+        font-weight: 600;
+        box-shadow: 0 0 0 2px var(--si-primary), 0 2px 8px rgba(43, 116, 214, 0.15);
+      }
+
+      .progress-step.current::after {
+        background: linear-gradient(180deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.6) 50%, rgba(59, 130, 246, 0.3) 100%);
+      }
+
+      .progress-step.pending {
+        background: var(--si-bg);
+        color: var(--si-muted);
+      }
+
+      .progress-step.pending::after {
+        background: linear-gradient(180deg, rgba(226, 232, 240, 0.3) 0%, rgba(226, 232, 240, 0.6) 50%, rgba(226, 232, 240, 0.3) 100%);
+      }
+
+      .progress-step:hover:not(.pending) {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(43, 116, 214, 0.1);
+      }
+
+      .progress-step:hover.pending {
+        background: #f0f4fb;
+      }
+
+      .status-number {
+        display: block;
+        font-size: 9px;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+
+      .status-name {
+        display: block;
+        font-size: 8px;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.1;
+        word-break: break-word;
+        max-width: 45px;
+      }
+    </style>
+
     <div class="form-section">
       <div class="form-grid">
         
@@ -223,23 +338,19 @@
           <div class="read-only-value">Auto-generated</div>
         </div>
         <div class="form-group">
-          <label>Status</label>
-          <select name="status">
-            {% for status in statuses %}
-            <option value="{{ status.id }}" {% if status.id == 'new' %}selected{% endif %}>
-              {{ status.label }}
-            </option>
+          <label>Repair Execution</label>
+          <select name="repair_execution" id="repair_execution">
+            <option value="">-- Select Repair Execution --</option>
+            {% for execution in repair_executions %}
+            <option value="{{ execution.name }}">{{ execution.name }}</option>
             {% endfor %}
           </select>
         </div>
+
         <div class="form-group">
-          <label>Priority</label>
-          <select name="priority">
-            {% for priority in priorities %}
-            <option value="{{ priority.id }}" {% if priority.id == 'medium' %}selected{% endif %}>
-              {{ priority.name }}
-            </option>
-            {% endfor %}
+          <label>Status</label>
+          <select name="repair_status" id="repair_status" disabled>
+            <option value="">-- Select Status --</option>
           </select>
         </div>
 
@@ -337,6 +448,7 @@
             {% endfor %}
           </select>
         </div>
+
         <div class="form-group">
           <label>Assignment Group</label>
           <input type="text" name="assignment_group" placeholder="e.g., Technical Support, Engineering" />
@@ -463,6 +575,117 @@
   function filterRequestorsForContract() {
     // Can implement additional filtering based on contract if needed
   }
+
+  // Repair Execution Status Filtering
+  const repairExecutionData = {
+    {% for execution in repair_executions %}
+    "{{ execution.name }}": [
+      {% for status in execution.statuses|sort(attribute='order') %}
+      { order: {{ status.order }}, status: "{{ status.status }}" }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]{% if not loop.last %},{% endif %}
+    {% endfor %}
+  };
+
+  function updateProgressBar() {
+    const executionSelect = document.getElementById('repair_execution');
+    const statusSelect = document.getElementById('repair_status');
+    const progressContainer = document.getElementById('progress-container');
+    const selectedExecution = executionSelect.value;
+    const currentStatus = statusSelect.value;
+
+    if (!selectedExecution || !repairExecutionData[selectedExecution]) {
+      progressContainer.style.display = 'none';
+      return;
+    }
+
+    progressContainer.style.display = 'block';
+    const statuses = repairExecutionData[selectedExecution].sort((a, b) => a.order - b.order);
+    
+    // Build progress bar
+    const progressSteps = document.getElementById('progress-steps');
+    progressSteps.innerHTML = '';
+    
+    statuses.forEach((statusObj, index) => {
+      const step = document.createElement('div');
+      
+      let className = 'progress-step pending';
+      if (currentStatus === statusObj.status) {
+        className = 'progress-step current';
+      } else if (statuses.findIndex(s => s.status === currentStatus) !== -1 && 
+                 index < statuses.findIndex(s => s.status === currentStatus)) {
+        className = 'progress-step completed';
+      }
+      
+      step.className = className;
+      step.innerHTML = `<span class="status-number">${statusObj.order}</span><span class="status-name">${statusObj.status}</span>`;
+      step.addEventListener('click', function() {
+        statusSelect.value = statusObj.status;
+        statusSelect.dispatchEvent(new Event('change'));
+      });
+      
+      progressSteps.appendChild(step);
+    });
+  }
+
+  function updateRepairExecutionStatus() {
+    const executionSelect = document.getElementById('repair_execution');
+    const statusSelect = document.getElementById('repair_status');
+    const selectedExecution = executionSelect.value;
+    
+    // Clear existing options
+    statusSelect.innerHTML = '<option value="">-- Select Status --</option>';
+    
+    // Keep status field disabled always on new incident form - just populate options
+    if (selectedExecution && repairExecutionData[selectedExecution]) {
+      const statuses = repairExecutionData[selectedExecution].sort((a, b) => a.order - b.order);
+      statuses.forEach(statusObj => {
+        const option = document.createElement('option');
+        option.value = statusObj.status;
+        option.textContent = `${statusObj.order}. ${statusObj.status}`;
+        statusSelect.appendChild(option);
+      });
+    }
+
+    // Update progress bar after updating statuses
+    updateProgressBar();
+  }
+
+  // Add event listener for repair execution selection
+  document.addEventListener('DOMContentLoaded', function() {
+    const executionSelect = document.getElementById('repair_execution');
+    const statusSelect = document.getElementById('repair_status');
+    const form = document.querySelector('form');
+    
+    if (executionSelect) {
+      executionSelect.addEventListener('change', updateRepairExecutionStatus);
+    }
+
+    // Update progress bar when status selection changes
+    if (statusSelect) {
+      statusSelect.addEventListener('change', updateProgressBar);
+    }
+
+    // Handle form submission - set status to first status if not selected
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        const executionSelect = document.getElementById('repair_execution');
+        const statusSelect = document.getElementById('repair_status');
+        const selectedExecution = executionSelect.value;
+
+        // If repair execution is selected but status is not, set it to the first status
+        if (selectedExecution && !statusSelect.value && repairExecutionData[selectedExecution]) {
+          const statuses = repairExecutionData[selectedExecution].sort((a, b) => a.order - b.order);
+          if (statuses.length > 0) {
+            statusSelect.value = statuses[0].status;
+          }
+        }
+
+        // Enable the status field before submitting so the value is included in form data
+        statusSelect.disabled = false;
+      });
+    }
+  });
 </script>
 
 {% endblock %}

@@ -337,6 +337,92 @@
     display: none;
   }
 
+  /* Pagination Styles */
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 20px;
+    background: #f5f6f7;
+    border-top: 1px solid #e0e0e0;
+    flex-wrap: wrap;
+  }
+
+  .pagination-info {
+    font-size: 12px;
+    color: #666;
+    margin-right: 16px;
+    white-space: nowrap;
+  }
+
+  .pagination-controls {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .pagination-btn {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #333;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .pagination-btn:hover:not(:disabled) {
+    background: #e8f0ff;
+    border-color: #0052cc;
+    color: #0052cc;
+  }
+
+  .pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    color: #999;
+  }
+
+  .pagination-page {
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #333;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .pagination-page:hover {
+    background: #f0f0f0;
+    border-color: #666;
+  }
+
+  .pagination-page.active {
+    background: #0052cc;
+    color: white;
+    border-color: #0052cc;
+  }
+
+  .page-size-selector {
+    margin-left: 16px;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .page-size-selector select {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
   @media (max-width: 768px) {
     .grid-header {
       flex-direction: column;
@@ -347,6 +433,20 @@
     .grid-meta {
       align-self: flex-end;
       margin-right: 0;
+    }
+
+    .pagination-container {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .pagination-info {
+      margin-right: 0;
+      text-align: center;
+    }
+
+    .pagination-controls {
+      justify-content: center;
     }
   }
 </style>
@@ -360,7 +460,7 @@
       </div>
       <div class="grid-meta">
         <span class="count">Total Records</span>
-        <span class="total" id="total-count">{{ units|length }}</span>
+        <span class="total" id="total-count">{{ pagination.total if pagination else units|length }}</span>
       </div>
       <div class="gear-menu">
         <button class="gear-btn" onclick="toggleGearMenu()" title="Settings">⚙️</button>
@@ -503,8 +603,52 @@
 
     <!-- Results Info -->
     <div class="results-info">
-      <span id="results-text">Showing <strong id="visible-count">{{ units|length }}</strong> of <strong id="total-records">{{ units|length }}</strong> records</span>
+      <span id="results-text">Total: {{ pagination.total }}</span>
     </div>
+
+    <!-- Pagination Controls -->
+    {% if pagination and pagination.total_pages > 1 %}
+    <div class="pagination-container">
+      <div class="pagination-info">
+        Page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.total_pages }}</strong>
+      </div>
+      <div class="pagination-controls">
+        {% if pagination.has_previous %}
+        <a href="?page=1" class="pagination-btn" title="First Page">«</a>
+        <a href="?page={{ pagination.previous_page }}" class="pagination-btn" title="Previous Page">‹</a>
+        {% else %}
+        <button class="pagination-btn" disabled>«</button>
+        <button class="pagination-btn" disabled>‹</button>
+        {% endif %}
+
+        {% if pagination.page > 3 %}
+        <span style="color: #999; padding: 0 4px;">...</span>
+        {% endif %}
+
+        {% for p in range(1, pagination.total_pages + 1) %}
+          {% if p >= pagination.page - 2 and p <= pagination.page + 2 %}
+            {% if p == pagination.page %}
+            <span class="pagination-page active">{{ p }}</span>
+            {% else %}
+            <a href="?page={{ p }}" class="pagination-page">{{ p }}</a>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+
+        {% if pagination.page < pagination.total_pages - 2 %}
+        <span style="color: #999; padding: 0 4px;">...</span>
+        {% endif %}
+
+        {% if pagination.has_next %}
+        <a href="?page={{ pagination.next_page }}" class="pagination-btn" title="Next Page">›</a>
+        <a href="?page={{ pagination.total_pages }}" class="pagination-btn" title="Last Page">»</a>
+        {% else %}
+        <button class="pagination-btn" disabled>›</button>
+        <button class="pagination-btn" disabled>»</button>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
 
     <!-- No Results -->
     <div id="no-results" class="no-results" style="display: none;">
@@ -516,12 +660,16 @@
 <script>
   let allRows = [];
   const visibleColumns = new Set(['serial_number', 'unit_name', 'sap_part', 'cust_part', 'customer', 'contract', 'warranty', 'make', 'model', 'software', 'status']);
+  const totalRecords = {% if pagination %}{{ pagination.total }}{% else %}0{% endif %};
+  const currentPage = {% if pagination %}{{ pagination.page }}{% else %}1{% endif %};
+  const totalPages = {% if pagination %}{{ pagination.total_pages }}{% else %}1{% endif %};
+  const paginationStartIndex = {% if pagination %}{{ pagination.start_index }}{% else %}0{% endif %};
+  const paginationEndIndex = {% if pagination %}{{ pagination.end_index }}{% else %}0{% endif %};
 
   document.addEventListener('DOMContentLoaded', function() {
     allRows = Array.from(document.querySelectorAll('.data-row'));
     setupFilterListeners();
     setupClickOutside();
-    document.getElementById('total-records').textContent = allRows.length;
   });
 
   function setupFilterListeners() {
@@ -591,7 +739,19 @@
       if (show) visibleCount++;
     });
 
-    document.getElementById('visible-count').textContent = visibleCount;
+    // Update the visible count display
+    const startIndex = document.getElementById('start-index');
+    const endIndex = document.getElementById('end-index');
+    if (Object.keys(filters).length > 0) {
+      // Show only the filtered results on this page
+      startIndex.textContent = visibleCount > 0 ? 1 : 0;
+      endIndex.textContent = visibleCount;
+    } else {
+      // Show the normal pagination range
+      startIndex.textContent = paginationStartIndex;
+      endIndex.textContent = paginationEndIndex;
+    }
+    
     if (Object.keys(filters).length > 0) {
       noResults.style.display = visibleCount === 0 ? 'block' : 'none';
       tableBody.style.display = visibleCount === 0 ? 'none' : '';

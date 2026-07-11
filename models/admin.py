@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, JSON
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, JSON, ForeignKey
 from sqlalchemy.sql import func
 
 from database import Base
@@ -56,4 +56,26 @@ class Group(Base):
     user_ids = Column(JSON, default=list)
     member_count = Column(Integer, default=0)
     data = Column(JSON, default=dict, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class RepairExecution(Base):
+    __tablename__ = "repair_executions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    repair_execution = Column(String(200), nullable=False)
+    status = Column(String(200), nullable=False)
+    order = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class RepairExecutionStatus(Base):
+    # This class is kept for backwards compatibility but not actively used
+    __tablename__ = "repair_execution_statuses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    repair_execution_id = Column(Integer, nullable=False)
+    status = Column(String(200), nullable=False)
+    description = Column(String(500), default="")
+    order = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

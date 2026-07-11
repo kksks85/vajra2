@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .data-grid-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin: 20px;
+  }
+
+  .grid-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fafbfc;
+  }
+
+  .grid-title h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .grid-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .grid-actions a {
+    background: #0052cc;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.2s;
+  }
+
+  .grid-actions a:hover {
+    background: #0043a8;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .data-table thead {
+    background: #fafbfc;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  .data-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    font-size: 13px;
+  }
+
+  .data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .data-table tbody tr:hover {
+    background: #f9fafb;
+  }
+
+  .action-links {
+    display: flex;
+    gap: 8px;
+  }
+
+  .action-links a {
+    color: #0052cc;
+    text-decoration: none;
+    font-size: 13px;
+  }
+
+  .action-links a:hover {
+    text-decoration: underline;
+  }
+
+  .no-data {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+  }
+
+  .order-badge {
+    display: inline-block;
+    background: #f3f4f6;
+    color: #374151;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+</style>
+
+<section class="si-kitting">
+  <div class="data-grid-container">
+    <div class="grid-header">
+      <div class="grid-title">
+        <h1>⚙️ Repair Executions</h1>
+      </div>
+      <div class="grid-actions">
+        <a href="/admin/repair-execution/new">+ New Repair Execution</a>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Repair Execution</th>
+            <th>Status</th>
+            <th>Order</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if items %}
+            {% for item in items %}
+            <tr>
+              <td style="font-weight: 600; color: #0052cc;">{{ item.id }}</td>
+              <td style="font-weight: 500;">{{ item.repair_execution }}</td>
+              <td style="color: #666;">{{ item.status }}</td>
+              <td style="text-align: center;">
+                <span class="order-badge">{{ item.order }}</span>
+              </td>
+              <td>
+                <div class="action-links">
+                  <a href="/admin/repair-execution/{{ item.id }}/edit">Edit</a>
+                  <a href="/admin/repair-execution/{{ item.id }}/delete" onclick="return confirm('Delete this repair execution?');">Delete</a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="5" class="no-data">No repair executions found. <a href="/admin/repair-execution/new">Create one</a></td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+

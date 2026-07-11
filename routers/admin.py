@@ -6,7 +6,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
 from database import get_db, engine
-from models.admin import Role, User, License, Group
+from models.admin import Role, User, License, Group, RepairExecution, RepairExecutionStatus
 from models.entities import (
     Battery,
     BatteryType,
@@ -788,7 +788,6 @@ async def create_or_update_customer(request: Request, db: Session = Depends(get_
     customer_name = form.get("customer_name", form.get("name", ""))
     primary_address = form.get("primary_address", "")
     contracts = form.get("contracts", "")
-    incident_number_format = form.get("incident_number_format", "")
     
     # Build primary contact from form
     primary_contact = {
@@ -830,7 +829,6 @@ async def create_or_update_customer(request: Request, db: Session = Depends(get_
         "contacts": all_contacts,
         "status": "Active",
         "contracts": contracts,
-        "incident_number_format": incident_number_format,
     }
     
     if customer_id:
@@ -2487,7 +2485,7 @@ def lm_kitting_list_page(request: Request, db: Session = Depends(get_db)):
         )
     
     all_items = query.order_by(KittingItem.id.desc()).all()
-    pagination = paginate(all_items, page=page, per_page=5000)
+    pagination = paginate(all_items, page=page, per_page=50)
     
     lm_units = db.query(LoiteringMunition).all()
     lm_serials = [u.serial_number for u in lm_units if u.serial_number]
@@ -4125,5 +4123,90 @@ async def create_sam(request: Request, db: Session = Depends(get_db)):
     data = parse_form_data(form)
     persist_entity(db, SAM, data=data, top_level_fields=["unit_name"])
     return redirect_with_flash("/admin/sam", request, "Unit saved.", "success")
+
+
+# Repair Execution Routes
+@router.get("/admin/repair-execution")
+async def get_repair_executions(request: Request, db: Session = Depends(get_db)):
+    """Display repair execution list"""
+    items = db.query(RepairExecution).order_by(RepairExecution.repair_execution, RepairExecution.order).all()
+    context = build_template_context(request, title="Repair Executions")
+    context["items"] = items
+    context["total_items"] = len(items)
+    return templates.TemplateResponse("repair_execution.html", context)
+
+
+@router.get("/admin/repair-execution/new")
+async def new_repair_execution(request: Request, db: Session = Depends(get_db)):
+    """Create new repair execution form"""
+    context = build_template_context(request, title="New Repair Execution")
+    return templates.TemplateResponse("repair_execution_form.html", context)
+
+
+@router.post("/admin/repair-execution")
+async def create_repair_execution(request: Request, db: Session = Depends(get_db)):
+    """Create new repair execution"""
+    form = await request.form()
+    
+    repair_execution = form.get("repair_execution", "").strip()
+    status = form.get("status", "").strip()
+    order = int(form.get("order", "0") or "0")
+    
+    if not repair_execution or not status:
+        return redirect_with_flash("/admin/repair-execution", request, "Repair Execution and Status are required.", "error")
+    
+    item = RepairExecution(
+        repair_execution=repair_execution,
+        status=status,
+        order=order
+    )
+    db.add(item)
+    db.commit()
+    
+    return redirect_with_flash("/admin/repair-execution", request, "Repair Execution created successfully.", "success")
+
+
+@router.get("/admin/repair-execution/{item_id}/edit")
+async def edit_repair_execution(item_id: int, request: Request, db: Session = Depends(get_db)):
+    """Edit repair execution"""
+    item = db.query(RepairExecution).filter(RepairExecution.id == item_id).first()
+    if not item:
+        return redirect_with_flash("/admin/repair-execution", request, "Repair Execution not found.", "error")
+    
+    context = build_template_context(request, title=f"Edit Repair Execution")
+    context["item"] = item
+    return templates.TemplateResponse("repair_execution_edit.html", context)
+
+
+@router.post("/admin/repair-execution/{item_id}")
+async def update_repair_execution(item_id: int, request: Request, db: Session = Depends(get_db)):
+    """Update repair execution"""
+    item = db.query(RepairExecution).filter(RepairExecution.id == item_id).first()
+    if not item:
+        return redirect_with_flash("/admin/repair-execution", request, "Repair Execution not found.", "error")
+    
+    form = await request.form()
+    
+    item.repair_execution = form.get("repair_execution", "").strip()
+    item.status = form.get("status", "").strip()
+    item.order = int(form.get("order", "0") or "0")
+    
+    if not item.repair_execution or not item.status:
+        return redirect_with_flash("/admin/repair-execution", request, "Repair Execution and Status are required.", "error")
+    
+    db.commit()
+    
+    return redirect_with_flash("/admin/repair-execution", request, "Repair Execution updated successfully.", "success")
+
+
+@router.get("/admin/repair-execution/{item_id}/delete")
+async def delete_repair_execution(item_id: int, request: Request, db: Session = Depends(get_db)):
+    """Delete repair execution"""
+    item = db.query(RepairExecution).filter(RepairExecution.id == item_id).first()
+    if item:
+        db.delete(item)
+        db.commit()
+    return redirect_with_flash("/admin/repair-execution", request, "Repair Execution deleted.", "success")
+
 
 

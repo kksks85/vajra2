@@ -1,42 +1,31 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="admin-dashboard">
-  <header class="admin-hero">
-    <div class="admin-hero-content">
-      <p class="admin-eyebrow">ALS - 50 Command Center</p>
-      <h1>Operations Dashboard</h1>
-      <p>Service management and incident tracking for the complete fleet. Monitor incidents, track service schedules, and manage warranty status with precision.</p>
-      <div class="admin-hero-actions">
-        <div class="admin-pill">Total Incidents: {{ metrics.total_incidents }}</div>
-        <div class="admin-pill admin-pill--soft">Open: {{ metrics.open_incidents }}</div>
+  <div class="admin-hero-panel">
+    <div class="admin-hero-title">Operational Overview</div>
+    <div class="admin-hero-matrix" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;">
+      <div>
+        <span>Total Incident</span>
+        <strong>{{ metrics.total_incidents }}</strong>
+      </div>
+      <div>
+        <span>Work in Progress</span>
+        <strong>{{ metrics.work_in_progress }}</strong>
+      </div>
+      <div>
+        <span>Resolved</span>
+        <strong>{{ metrics.resolved }}</strong>
+      </div>
+      <div>
+        <span>Critical Priority</span>
+        <strong>{{ metrics.critical_priority }}</strong>
+      </div>
+      <div>
+        <span>AOG</span>
+        <strong style="color: #dc2626;">{{ metrics.aog }}</strong>
       </div>
     </div>
-    <div class="admin-hero-panel">
-      <div class="admin-hero-title">Operational Overview</div>
-      <div class="admin-hero-matrix" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;">
-        <div>
-          <span>Total Incident</span>
-          <strong>{{ metrics.total_incidents }}</strong>
-        </div>
-        <div>
-          <span>Work in Progress</span>
-          <strong>{{ metrics.work_in_progress }}</strong>
-        </div>
-        <div>
-          <span>Resolved</span>
-          <strong>{{ metrics.resolved }}</strong>
-        </div>
-        <div>
-          <span>Critical Priority</span>
-          <strong>{{ metrics.critical_priority }}</strong>
-        </div>
-        <div>
-          <span>AOG</span>
-          <strong style="color: #dc2626;">{{ metrics.aog }}</strong>
-        </div>
-      </div>
-    </div>
-  </header>
+  </div>
 
   <section class="admin-grid">
     <div class="admin-card" style="cursor: pointer;" onclick="window.location.href='/admin/incidents'">
