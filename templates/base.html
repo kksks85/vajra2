@@ -53,11 +53,13 @@
 
         <details class="si-nav-group open">
           <summary class="si-nav-section">Administration</summary>
+          <a class="si-nav-link si-nav-sublink" href="/admin" style="color: #ffffff !important; font-weight: bold;">Admin</a>
           <a class="si-nav-link si-nav-sublink" href="/admin/users">User Management</a>
           <a class="si-nav-link si-nav-sublink" href="/admin/licenses">License Management</a>
           <a class="si-nav-link si-nav-sublink" href="/admin/groups">Group Management</a>
           <a class="si-nav-link si-nav-sublink" href="/admin/email-config">📧 Email Configuration</a>
           <a class="si-nav-link si-nav-sublink" href="/admin/email-rules">📨 Email Rules</a>
+          <a class="si-nav-link si-nav-sublink" href="/admin/reports">📊 Report Engine</a>
         </details>
 
         <details class="si-nav-group open">
@@ -67,26 +69,6 @@
           <a class="si-nav-link si-nav-sublink" href="/admin/master-products">Master Product Table</a>
           <a class="si-nav-link si-nav-sublink" href="/admin/customers">Customer Configuration</a>
           <a class="si-nav-link si-nav-sublink" href="/admin/contracts">Contracts</a>
-          <details class="si-nav-group nested open">
-            <summary class="si-nav-link">Loitering Munition (LM)</summary>
-            <a class="si-nav-link si-nav-sublink" href="/admin/lm">LM List</a>
-            <a class="si-nav-link si-nav-sublink" href="/admin/lm-kitting">LM Kitting Table</a>
-          </details>
-          <a class="si-nav-link si-nav-sublink" href="/admin/batteries">Batteries</a>
-          <a class="si-nav-link si-nav-sublink" href="/admin/warhead">War Head</a>
-          <a class="si-nav-link si-nav-sublink" href="/admin/sam">SAM</a>
-          <details class="si-nav-group nested open">
-            <summary class="si-nav-link">Ground Control Systems (GCS)</summary>
-            <a class="si-nav-link si-nav-sublink" href="/admin/gcs">GCS List</a>
-            <a class="si-nav-link si-nav-sublink" href="/admin/gcs-kitting">GCS Kitting Table</a>
-          </details>
-          <a class="si-nav-link si-nav-sublink" href="/admin/tmv">Tactical Mobility Vehicle (TMV)</a>
-          <a class="si-nav-link si-nav-sublink" href="/admin/simulator">Simulator</a>
-          <a class="si-nav-link si-nav-sublink" href="/admin/rdv">Rapid Deployment Vehicle (RDV)</a>
-          <a class="si-nav-link si-nav-sublink" href="/admin/mrls">MRLS</a>
-          <a class="si-nav-link si-nav-sublink" href="/admin/lru">Line Replaceable Unit (LRU)</a>
-          <a class="si-nav-link si-nav-sublink" href="/admin/smt-ste">SMT STE</a>
-          <a class="si-nav-link si-nav-sublink" href="/admin/sub-systems">Sub-Systems</a>
         </details>
       </nav>
 
@@ -109,7 +91,7 @@
               <div class="si-avatar-sm">{{ current_user.initials }}</div>
               <div>
                 <div class="si-profile-name">{{ current_user.name }}</div>
-                <div class="si-profile-role">{{ current_user.role }}</div>
+                <div class="si-profile-role" style="color: #ffffff !important; font-weight: 500; opacity: 0.9;">{{ current_user.role }}</div>
               </div>
             </div>
           {% endif %}

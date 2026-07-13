@@ -1,101 +1,676 @@
 {% extends "base.html" %}
 {% block content %}
+
+<style>
+  .data-grid-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin: 20px;
+  }
+
+  .grid-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fafbfc;
+  }
+
+  .grid-title {
+    flex: 1;
+  }
+
+  .grid-title h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .grid-title .pill {
+    display: inline-block;
+    background: #e8f0ff;
+    color: #0052cc;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+  }
+
+  .grid-meta {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-right: 20px;
+  }
+
+  .grid-meta .count {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+  }
+
+  .grid-meta .total {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .gear-menu {
+    position: relative;
+  }
+
+  .gear-btn {
+    background: none;
+    border: 1px solid #ddd;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 8px 12px;
+    color: #666;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .gear-btn:hover {
+    background: #f0f0f0;
+    color: #333;
+  }
+
+  .gear-dropdown {
+    position: absolute;
+    right: 0;
+    top: 40px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    min-width: 220px;
+    z-index: 100;
+    display: none;
+    max-height: 600px;
+    overflow-y: auto;
+  }
+
+  .gear-dropdown.show {
+    display: block;
+  }
+
+  .dropdown-section {
+    border-bottom: 1px solid #e0e0e0;
+    padding: 8px 0;
+  }
+
+  .dropdown-section:last-child {
+    border-bottom: none;
+  }
+
+  .dropdown-title {
+    padding: 8px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .column-option {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+    transition: background 0.2s;
+  }
+
+  .column-option:hover {
+    background: #f5f5f5;
+  }
+
+  .column-option input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+  }
+
+  .export-option {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+    transition: background 0.2s;
+  }
+
+  .export-option:hover {
+    background: #f5f5f5;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+  }
+
+  .data-table thead {
+    background: #f5f6f7;
+  }
+
+  .data-table thead tr:first-child th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 1px solid #e0e0e0;
+    white-space: nowrap;
+    position: relative;
+    background: #f5f6f7;
+  }
+
+  .data-table thead tr:last-child th {
+    padding: 10px 16px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fafbfc;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  .filter-header {
+    position: relative;
+  }
+
+  .filter-header input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+
+  .filter-header input:focus {
+    outline: none;
+    border-color: #0052cc;
+    box-shadow: 0 0 0 2px rgba(0, 82, 204, 0.1);
+  }
+
+  .data-table tbody tr {
+    border-bottom: 1px solid #e8e8e8;
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+
+  .data-table tbody tr:hover {
+    background: #f9f9f9;
+  }
+
+  .data-table tbody td {
+    padding: 12px 16px;
+    color: #333;
+    word-break: break-word;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px;
+  }
+
+  .action-links {
+    display: flex;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .action-links a {
+    color: #0052cc;
+    text-decoration: none;
+    font-size: 12px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .action-links a:hover {
+    color: #003a99;
+    text-decoration: underline;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 14px;
+  }
+
+  .results-info {
+    padding: 12px 20px;
+    background: #f5f6f7;
+    border-top: 1px solid #e0e0e0;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .hidden-column {
+    display: none;
+  }
+
+  .si-primary {
+    color: #0052cc;
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    .grid-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .grid-meta {
+      align-self: flex-end;
+      margin-right: 0;
+    }
+  }
+</style>
+
 <section class="list-shell">
-  <div class="list-bar">
-    <div class="list-title">
-      <h1>Master Product Table</h1>
-      <span class="pill">All</span>
-    </div>
-    <div class="list-controls">
-      <span class="list-meta">{{ pagination.total }} total</span>
-    </div>
-  </div>
-
-  <div class="list-card">
-    <table class="table dense">
-      <thead>
-        <tr>
-          <th>Product Type</th>
-          <th>Serial Number</th>
-          <th>Unit Name</th>
-          <th>SAP Part number</th>
-          <th>Customer Part no</th>
-          <th>Customer</th>
-          <th>Contract</th>
-          <th>Warranty Valid To</th>
-          <th>Make</th>
-          <th>Model</th>
-          <th>Software version</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for product in products %}
-        <tr>
-          <td><span class="badge">{{ product.product_type }}</span></td>
-          <td>{{ product.serial_number }}</td>
-          <td>{{ product.unit_name }}</td>
-          <td>{{ product.sap_part_number }}</td>
-          <td>{{ product.customer_part_number }}</td>
-          <td>{{ product.customer_name }}</td>
-          <td>{{ product.contract_number }}</td>
-          <td>{{ product.warranty_valid_to }}</td>
-          <td>{{ product.make }}</td>
-          <td>{{ product.model }}</td>
-          <td>{{ product.software_version }}</td>
-          <td>{{ product.status }}</td>
-          <td>
-            {% if product.product_type == "LM" %}
-              <a class="ghost small" href="/admin/lm/{{ product.id }}">View</a>
-            {% elif product.product_type == "GCS" %}
-              <a class="ghost small" href="/admin/gcs/{{ product.id }}">View</a>
-            {% elif product.product_type == "TMV" %}
-              <a class="ghost small" href="/admin/tmv/{{ product.id }}">View</a>
-            {% elif product.product_type == "Simulator" %}
-              <a class="ghost small" href="/admin/simulator/{{ product.id }}">View</a>
-            {% elif product.product_type == "RDV" %}
-              <a class="ghost small" href="/admin/rdv/{{ product.id }}">View</a>
-            {% elif product.product_type == "MRLS" %}
-              <a class="ghost small" href="/admin/mrls/{{ product.id }}">View</a>
+  <div class="data-grid-container">
+    <!-- Grid Header -->
+    <div class="grid-header">
+      <div class="grid-title">
+        <h1>Master Product Table <span class="pill">LM Kitting Data</span></h1>
+        <div style="margin-top: 12px;">
+          <form method="get" action="/admin/master-products" style="display: flex; gap: 8px;">
+            <input type="text" name="q" placeholder="Search by part number, SAP part, description..." value="{{ q }}" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; width: 300px; font-size: 13px;">
+            <button type="submit" style="padding: 8px 16px; background: #0052cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;">Search</button>
+            {% if q %}
+            <a href="/admin/master-products" style="padding: 8px 16px; background: #f0f0f0; color: #333; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: 600;">Clear</a>
             {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+          </form>
+        </div>
+      </div>
+      <div class="grid-meta">
+        <span class="count">Total Records</span>
+        <span class="total" id="total-count">{{ pagination.total }}</span>
+      </div>
+      <div class="gear-menu">
+        <button class="gear-btn" onclick="toggleGearMenu()" title="Settings">⚙️</button>
+        <div class="gear-dropdown" id="gear-dropdown">
+          <!-- Column Selection -->
+          <div class="dropdown-section">
+            <div class="dropdown-title">Columns</div>
+            <label class="column-option">
+              <input type="checkbox" value="product_serial_no" checked onchange="toggleColumn('product_serial_no')">
+              Product Serial Number
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="product_category" checked onchange="toggleColumn('product_category')">
+              Product Category
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="route_card" checked onchange="toggleColumn('route_card')">
+              Route Card Description
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="part_number" checked onchange="toggleColumn('part_number')">
+              Part Number
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="sap_part" checked onchange="toggleColumn('sap_part')">
+              SAP Part Number
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="material_desc" checked onchange="toggleColumn('material_desc')">
+              Material Description
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="batch_no" checked onchange="toggleColumn('batch_no')">
+              Batch No / PO No
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="material_serial" checked onchange="toggleColumn('material_serial')">
+              Material Serial No
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="weight" checked onchange="toggleColumn('weight')">
+              Weight in Grams
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="quantity" checked onchange="toggleColumn('quantity')">
+              Required Quantity
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="uom" checked onchange="toggleColumn('uom')">
+              Unit of Measurement
+            </label>
+            <label class="column-option">
+              <input type="checkbox" value="subsystems" checked onchange="toggleColumn('subsystems')">
+              Subsystems
+            </label>
+          </div>
 
-  {% if pagination and pagination.total_pages > 1 %}
-  <div class="pagination">
-    <span class="pagination-info">Showing {{ pagination.start_index }}-{{ pagination.end_index }} of {{ pagination.total }}</span>
-    
-    {% if pagination.has_previous %}
-      <a class="pagination-item" href="/admin/master-products?page=1" title="First Page">«</a>
-      <a class="pagination-item" href="/admin/master-products?page={{ pagination.previous_page }}">← Prev</a>
-    {% else %}
-      <span class="pagination-item pagination-disabled">«</span>
-      <span class="pagination-item pagination-disabled">← Prev</span>
-    {% endif %}
+          <!-- Export Options -->
+          <div class="dropdown-section">
+            <div class="dropdown-title">Export</div>
+            <div class="export-option" onclick="exportToExcel()">📊 Excel</div>
+            <div class="export-option" onclick="exportToCSV()">📄 CSV</div>
+            <div class="export-option" onclick="exportToPDF()">📕 PDF</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    {% for page_num in range(1, pagination.total_pages + 1) %}
-      {% if page_num == pagination.page %}
-        <span class="pagination-item pagination-current">{{ page_num }}</span>
-      {% elif page_num == 1 or page_num == pagination.total_pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
-        <a class="pagination-item" href="/admin/master-products?page={{ page_num }}">{{ page_num }}</a>
-      {% elif page_num == 2 or page_num == pagination.total_pages - 1 %}
-        <span class="pagination-separator">...</span>
+    <!-- Data Table -->
+    <div class="table-wrapper">
+      <table class="data-table" id="data-table">
+        <thead>
+          <tr>
+            <th data-column="product_serial_no">Product Serial Number</th>
+            <th data-column="product_category">Product Category</th>
+            <th data-column="route_card">Route Card Description</th>
+            <th data-column="part_number">Part Number</th>
+            <th data-column="sap_part">SAP Part Number</th>
+            <th data-column="material_desc">Material Description</th>
+            <th data-column="batch_no">Batch No / PO No</th>
+            <th data-column="material_serial">Material Serial No</th>
+            <th data-column="weight">Weight in Grams</th>
+            <th data-column="quantity">Required Quantity</th>
+            <th data-column="uom">Unit of Measurement</th>
+            <th data-column="subsystems">Subsystems</th>
+            <th>Actions</th>
+          </tr>
+          <tr id="filter-row">
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="product_serial_no"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="product_category"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="route_card"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="part_number"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="sap_part"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="material_desc"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="batch_no"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="material_serial"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="weight"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="quantity"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="uom"></th>
+            <th class="filter-header"><input type="text" placeholder="Search..." data-column="subsystems"></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          {% for item in items %}
+          <tr class="data-row" style="cursor: pointer;" onclick="window.location.href='/admin/lm-kitting/{{ item.id }}';"
+              data-product_serial_no="{% if item.product_serial_no %}{{ item.product_serial_no|lower }}{% endif %}"
+              data-product_category="{% if item.product_category %}{{ item.product_category|lower }}{% endif %}"
+              data-route_card="{% if item.route_card_description %}{{ item.route_card_description|lower }}{% endif %}"
+              data-part_number="{% if item.part_number %}{{ item.part_number|lower }}{% endif %}"
+              data-sap_part="{% if item.sap_part_number %}{{ item.sap_part_number|lower }}{% endif %}"
+              data-material_desc="{% if item.material_description %}{{ item.material_description|lower }}{% endif %}"
+              data-batch_no="{% if item.batch_no_po_no %}{{ item.batch_no_po_no|lower }}{% endif %}"
+              data-material_serial="{% if item.material_serial_no %}{{ item.material_serial_no|lower }}{% endif %}"
+              data-weight="{% if item.weight_in_grams %}{{ item.weight_in_grams|lower }}{% endif %}"
+              data-quantity="{% if item.required_quantity %}{{ item.required_quantity|lower }}{% endif %}"
+              data-uom="{% if item.uom %}{{ item.uom|lower }}{% endif %}"
+              data-subsystems="{% if item.subsystems %}{{ item.subsystems|lower }}{% endif %}">
+            <td data-column="product_serial_no" class="si-primary" style="background: linear-gradient(to right, rgba(59, 130, 246, 0.1) 0%, transparent 100%); font-weight: 600; color: #1e40af;" title="{{ item.product_serial_no }}">
+              <span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; display: inline-block;">{{ item.product_serial_no }}</span>
+            </td>
+            <td data-column="product_category" style="text-align: center;" title="{{ item.product_category }}">
+              <strong style="background: {% if item.product_category == 'LM' %}#22c55e{% elif item.product_category == 'GCS' %}#3b82f6{% else %}#8b5cf6{% endif %}; color: white; padding: 4px 12px; border-radius: 4px; display: inline-block; font-size: 12px;">{{ item.product_category }}</strong>
+            </td>
+            <td data-column="route_card" style="color: #64748b; font-size: 13px;" title="{{ item.route_card_description }}">{{ item.route_card_description }}</td>
+            <td data-column="part_number" style="color: #1e293b; font-weight: 500;" title="{{ item.part_number }}">{{ item.part_number }}</td>
+            <td data-column="sap_part" style="color: #64748b;" title="{{ item.sap_part_number }}">{{ item.sap_part_number }}</td>
+            <td data-column="material_desc" style="color: #64748b; font-size: 13px;" title="{{ item.material_description }}">{{ item.material_description }}</td>
+            <td data-column="batch_no" style="color: #64748b; font-size: 13px;" title="{{ item.batch_no_po_no }}">{{ item.batch_no_po_no }}</td>
+            <td data-column="material_serial" style="color: #0369a1; font-weight: 500;" title="{{ item.material_serial_no }}">{{ item.material_serial_no }}</td>
+            <td data-column="weight" style="text-align: right; color: #64748b;" title="{{ item.weight_in_grams }}">{{ item.weight_in_grams }}</td>
+            <td data-column="quantity" style="text-align: center; font-weight: 600;" title="{{ item.required_quantity }}">
+              <span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px;">{{ item.required_quantity }}</span>
+            </td>
+            <td data-column="uom" style="text-align: center; color: #64748b;" title="{{ item.uom }}">{{ item.uom }}</td>
+            <td data-column="subsystems" style="color: #64748b; font-size: 13px;" title="{{ item.subsystems }}">{{ item.subsystems }}</td>
+            <td style="text-align: center;">
+              <div class="action-links" onclick="event.stopPropagation();">
+                <a href="/admin/lm-kitting/{{ item.id }}" style="color: #0369a1; text-decoration: none; margin: 0 4px;">View</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Results Info -->
+    <div class="results-info">
+      <span id="results-text">Showing <strong id="visible-count">{{ items|length }}</strong> of <strong id="total-records">{{ pagination.total }}</strong> records</span>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination and pagination.total_pages > 1 %}
+    <div class="pagination">
+      <span class="pagination-info">Page {{ pagination.page }} of {{ pagination.total_pages }} ({{ pagination.start_index }}-{{ pagination.end_index }} of {{ pagination.total }})</span>
+      
+      {% if pagination.has_previous %}
+        <a class="pagination-item" href="/admin/master-products?page=1{% if q %}&q={{ q }}{% endif %}" title="First Page">«</a>
+        <a class="pagination-item" href="/admin/master-products?page={{ pagination.previous_page }}{% if q %}&q={{ q }}{% endif %}">← Prev</a>
+      {% else %}
+        <span class="pagination-item pagination-disabled">«</span>
+        <span class="pagination-item pagination-disabled">← Prev</span>
       {% endif %}
-    {% endfor %}
 
-    {% if pagination.has_next %}
-      <a class="pagination-item" href="/admin/master-products?page={{ pagination.next_page }}">Next →</a>
-      <a class="pagination-item" href="/admin/master-products?page={{ pagination.total_pages }}" title="Last Page">»</a>
-    {% else %}
-      <span class="pagination-item pagination-disabled">Next →</span>
-      <span class="pagination-item pagination-disabled">»</span>
+      {% for page_num in range(1, pagination.total_pages + 1) %}
+        {% if page_num == pagination.page %}
+          <span class="pagination-item pagination-current">{{ page_num }}</span>
+        {% elif page_num == 1 or page_num == pagination.total_pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
+          <a class="pagination-item" href="/admin/master-products?page={{ page_num }}{% if q %}&q={{ q }}{% endif %}">{{ page_num }}</a>
+        {% elif page_num == 2 or page_num == pagination.total_pages - 1 %}
+          <span class="pagination-separator">...</span>
+        {% endif %}
+      {% endfor %}
+
+      {% if pagination.has_next %}
+        <a class="pagination-item" href="/admin/master-products?page={{ pagination.next_page }}{% if q %}&q={{ q }}{% endif %}">Next →</a>
+        <a class="pagination-item" href="/admin/master-products?page={{ pagination.total_pages }}{% if q %}&q={{ q }}{% endif %}" title="Last Page">»</a>
+      {% else %}
+        <span class="pagination-item pagination-disabled">Next →</span>
+        <span class="pagination-item pagination-disabled">»</span>
+      {% endif %}
+    </div>
     {% endif %}
+
+    <!-- No Results -->
+    <div id="no-results" class="no-results" style="display: none;">
+      No records found matching your search criteria.
+    </div>
   </div>
-  {% endif %}
 </section>
+
+<script>
+  let allRows = [];
+  const visibleColumns = new Set(['product_serial_no', 'product_category', 'route_card', 'part_number', 'sap_part', 'material_desc', 'batch_no', 'material_serial', 'weight', 'quantity', 'uom', 'subsystems']);
+
+  document.addEventListener('DOMContentLoaded', function() {
+    allRows = Array.from(document.querySelectorAll('.data-row'));
+    setupFilterListeners();
+    setupClickOutside();
+    setupTooltips();
+    document.getElementById('total-records').textContent = allRows.length;
+  });
+
+  function setupTooltips() {
+    document.querySelectorAll('.data-table tbody td[data-column]').forEach(cell => {
+      const text = cell.textContent.trim();
+      if (text) {
+        cell.setAttribute('title', text);
+      }
+    });
+  }
+
+  function setupFilterListeners() {
+    document.querySelectorAll('.filter-header input').forEach(input => {
+      input.addEventListener('keyup', applyFilters);
+      input.addEventListener('change', applyFilters);
+    });
+  }
+
+  function setupClickOutside() {
+    document.addEventListener('click', function(e) {
+      const dropdown = document.getElementById('gear-dropdown');
+      const gearBtn = document.querySelector('.gear-btn');
+      if (!e.target.closest('.gear-menu')) {
+        dropdown.classList.remove('show');
+      }
+    });
+  }
+
+  function toggleGearMenu() {
+    document.getElementById('gear-dropdown').classList.toggle('show');
+  }
+
+  function toggleColumn(columnName) {
+    if (visibleColumns.has(columnName)) {
+      visibleColumns.delete(columnName);
+    } else {
+      visibleColumns.add(columnName);
+    }
+    updateColumnVisibility();
+  }
+
+  function updateColumnVisibility() {
+    document.querySelectorAll('[data-column]').forEach(cell => {
+      const column = cell.getAttribute('data-column');
+      if (visibleColumns.has(column)) {
+        cell.classList.remove('hidden-column');
+      } else {
+        cell.classList.add('hidden-column');
+      }
+    });
+  }
+
+  function applyFilters() {
+    const filters = {};
+    document.querySelectorAll('.filter-header input').forEach(input => {
+      const value = input.value.toLowerCase().trim();
+      if (value) {
+        filters[input.dataset.column] = value;
+      }
+    });
+
+    let visibleCount = 0;
+    const noResults = document.getElementById('no-results');
+    const tableBody = document.getElementById('table-body');
+
+    allRows.forEach(row => {
+      let show = true;
+      for (const [column, value] of Object.entries(filters)) {
+        const rowValue = (row.getAttribute(`data-${column}`) || '').toLowerCase();
+        if (!rowValue.includes(value)) {
+          show = false;
+          break;
+        }
+      }
+      row.style.display = show ? '' : 'none';
+      if (show) visibleCount++;
+    });
+
+    document.getElementById('visible-count').textContent = visibleCount;
+    if (Object.keys(filters).length > 0) {
+      noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+      tableBody.style.display = visibleCount === 0 ? 'none' : '';
+    } else {
+      noResults.style.display = 'none';
+      tableBody.style.display = '';
+    }
+  }
+
+  function getVisibleData() {
+    const rows = [];
+    const headers = [];
+    
+    document.querySelectorAll('th[data-column]').forEach(th => {
+      const column = th.getAttribute('data-column');
+      if (visibleColumns.has(column)) {
+        headers.push(th.textContent.trim());
+      }
+    });
+
+    allRows.forEach(row => {
+      if (row.style.display !== 'none') {
+        const rowData = [];
+        row.querySelectorAll('td[data-column]').forEach(td => {
+          const column = td.getAttribute('data-column');
+          if (visibleColumns.has(column)) {
+            rowData.push(td.textContent.trim());
+          }
+        });
+        if (rowData.length > 0) rows.push(rowData);
+      }
+    });
+
+    return { headers, rows };
+  }
+
+  function exportToCSV() {
+    const { headers, rows } = getVisibleData();
+    let csv = headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\n';
+    rows.forEach(row => {
+      csv += row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',') + '\n';
+    });
+    downloadFile(csv, 'master_products.csv', 'text/csv');
+  }
+
+  function exportToExcel() {
+    const { headers, rows } = getVisibleData();
+    if (typeof XLSX === 'undefined') {
+      alert('Excel library not loaded. Please try CSV export instead.');
+      return;
+    }
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    XLSX.utils.book_append_sheet(wb, ws, 'Kitting Items');
+    XLSX.writeFile(wb, 'master_products.xlsx');
+  }
+
+  function exportToPDF() {
+    const { headers, rows } = getVisibleData();
+    if (typeof jsPDF === 'undefined') {
+      alert('PDF library not loaded. Please try CSV export instead.');
+      return;
+    }
+    const doc = new jsPDF.jsPDF({ orientation: 'landscape' });
+    doc.autoTable({
+      head: [headers],
+      body: rows,
+      margin: 10,
+      theme: 'grid',
+      fontSize: 10
+    });
+    doc.save('master_products.pdf');
+  }
+
+  function downloadFile(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+</script>
+
+<!-- Required Libraries for Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
 {% endblock %}

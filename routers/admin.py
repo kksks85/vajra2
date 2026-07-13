@@ -6,7 +6,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
 from database import get_db, engine
-from models.admin import Role, User, License, Group, RepairExecution, RepairExecutionStatus
+from models.admin import Role, User, License, Group, RepairExecution, RepairExecutionStatus, Report
 from models.entities import (
     Battery,
     BatteryType,
@@ -272,10 +272,10 @@ def list_or_sample(db: Session, model, unit_type: str, top_level_fields=None):
 
 @router.get("/admin")
 def admin_page(request: Request, db: Session = Depends(get_db)):
-    roles = []
-    licenses = []
-    groups = []
-    users = []
+    roles = db.query(Role).all()
+    licenses = db.query(License).all()
+    groups = db.query(Group).all()
+    users = db.query(User).all()
     context = build_template_context(request, roles=roles, licenses=licenses, groups=groups, users=users)
     return templates.TemplateResponse(request, "admin.html", context)
 
@@ -2150,60 +2150,30 @@ def loitering_munition_new_page(request: Request, db: Session = Depends(get_db))
 
 @router.get("/admin/master-products")
 def master_products_list_page(request: Request, db: Session = Depends(get_db)):
-    """Master Product Table - Aggregates all product types (LM, GCS, TMV, Simulator, RDV, MRLS)"""
+    """Master Product Table - Replaced by LM Kitting table data and columns"""
     page = int(request.query_params.get("page", 1))
+    q = request.query_params.get("q", "").strip()
     
-    import datetime
-    today = datetime.date.today()
-    all_products = []
+    query = db.query(KittingItem).filter(KittingItem.product_category == "LM")
+    if q:
+        query = query.filter(
+            (KittingItem.part_number.ilike(f"%{q}%")) |
+            (KittingItem.sap_part_number.ilike(f"%{q}%")) |
+            (KittingItem.material_description.ilike(f"%{q}%")) |
+            (KittingItem.product_serial_no.ilike(f"%{q}%")) |
+            (KittingItem.route_card_description.ilike(f"%{q}%")) |
+            (KittingItem.subsystems.ilike(f"%{q}%"))
+        )
     
-    # Load contracts for warranty data
-    _, contracts = _load_customers_and_contracts(db)
+    all_items = query.order_by(KittingItem.id.desc()).all()
+    pagination = paginate(all_items, page=page, per_page=50)
     
-    # Fetch from each product table
-    product_models = [
-        (LoiteringMunition, "LM"),
-        (GroundControlSystem, "GCS"),
-        (TacticalMobilityVehicle, "TMV"),
-        (SimulatorUnit, "Simulator"),
-        (RapidDeploymentVehicle, "RDV"),
-        (MRLS, "MRLS"),
-    ]
-    
-    for model_class, product_type in product_models:
-        units = list_or_sample(db, model_class, unit_type=product_type, top_level_fields=["unit_name", "serial_number"])
-        
-        for u in units:
-            u["product_type"] = product_type
-            
-            # Load contract warranty data
-            c_id = u.get("contract_id")
-            c_num = u.get("contract_number")
-            con = None
-            if c_id:
-                con = next((c for c in contracts if str(c.get("id")) == str(c_id)), None)
-            if not con and c_num:
-                con = next((c for c in contracts if str(c.get("number")) == str(c_num)), None)
-            if con:
-                u["warranty_valid_from"] = con.get("executed_on", "")
-                u["warranty_valid_to"] = con.get("valid_till", "")
-                
-                vt = con.get("valid_till")
-                if vt:
-                    try:
-                        vt_date = datetime.datetime.strptime(vt, "%Y-%m-%d").date()
-                        if vt_date < today:
-                            u["status"] = "Expired"
-                    except Exception:
-                        pass
-            
-            all_products.append(u)
-    
-    # Sort by serial number
-    all_products.sort(key=lambda x: x.get("serial_number", ""))
-    
-    pagination = paginate(all_products, page=page, per_page=50)
-    context = build_template_context(request, products=pagination["items"], pagination=pagination)
+    context = build_template_context(
+        request, 
+        items=pagination["items"], 
+        pagination=pagination, 
+        q=q
+    )
     return templates.TemplateResponse(request, "master_product_table.html", context)
 
 
@@ -4207,6 +4177,132 @@ async def delete_repair_execution(item_id: int, request: Request, db: Session = 
         db.delete(item)
         db.commit()
     return redirect_with_flash("/admin/repair-execution", request, "Repair Execution deleted.", "success")
+
+
+import json
+from sqlalchemy.sql import func
+from models.incident import Incident
+
+def aggregate_report_data(db: Session, data_source: str, x_field: str):
+    labels = []
+    values = []
+    
+    if data_source == "incidents":
+        if hasattr(Incident, x_field):
+            field_attr = getattr(Incident, x_field)
+            results = db.query(field_attr, func.count(Incident.id)).group_by(field_attr).all()
+            for label, val in results:
+                labels.append(str(label or "None"))
+                values.append(val)
+    elif data_source == "kitting_items":
+        if hasattr(KittingItem, x_field):
+            field_attr = getattr(KittingItem, x_field)
+            results = db.query(field_attr, func.count(KittingItem.id)).group_by(field_attr).all()
+            for label, val in results:
+                labels.append(str(label or "None"))
+                values.append(val)
+    elif data_source == "customers":
+        if hasattr(Customer, x_field):
+            field_attr = getattr(Customer, x_field)
+            results = db.query(field_attr, func.count(Customer.id)).group_by(field_attr).all()
+            for label, val in results:
+                labels.append(str(label or "None"))
+                values.append(val)
+                
+    return {"labels": labels, "values": values}
+
+
+@router.get("/admin/reports")
+def get_reports_page(request: Request, db: Session = Depends(get_db)):
+    # Check if we need to seed default reports
+    count = db.query(Report).count()
+    if count == 0:
+        default_reports = [
+            Report(
+                name="Incident Distribution by Priority",
+                description="Overview of incidents across priority levels",
+                data_source="incidents",
+                chart_type="bar",
+                x_field="priority",
+                y_field="count"
+            ),
+            Report(
+                name="Incident Status Breakdown",
+                description="Status distribution for all open and closed incidents",
+                data_source="incidents",
+                chart_type="pie",
+                x_field="status",
+                y_field="count"
+            ),
+            Report(
+                name="Kitting Items by Subsystem",
+                description="Count of kitting parts mapped to subsystems",
+                data_source="kitting_items",
+                chart_type="bar",
+                x_field="subsystems",
+                y_field="count"
+            )
+        ]
+        for r in default_reports:
+            db.add(r)
+        db.commit()
+    
+    db_reports = db.query(Report).order_by(Report.id.desc()).all()
+    reports_with_data = []
+    
+    for r in db_reports:
+        chart_data = aggregate_report_data(db, r.data_source, r.x_field)
+        reports_with_data.append({
+            "id": r.id,
+            "name": r.name,
+            "description": r.description,
+            "data_source": r.data_source,
+            "chart_type": r.chart_type,
+            "x_field": r.x_field,
+            "labels": json.dumps(chart_data["labels"]),
+            "values": json.dumps(chart_data["values"])
+        })
+        
+    context = build_template_context(request, reports=reports_with_data)
+    return templates.TemplateResponse(request, "reports_dashboards.html", context)
+
+
+@router.post("/admin/reports")
+def create_custom_report(
+    request: Request,
+    db: Session = Depends(get_db),
+    name: str = Form(...),
+    description: str = Form(""),
+    data_source: str = Form(...),
+    chart_type: str = Form(...),
+    x_field: str = Form(...),
+):
+    try:
+        report = Report(
+            name=name.strip(),
+            description=description.strip(),
+            data_source=data_source,
+            chart_type=chart_type,
+            x_field=x_field,
+            y_field="count"
+        )
+        db.add(report)
+        db.commit()
+        return redirect_with_flash("/admin/reports", request, "Report created successfully.", "success")
+    except Exception as e:
+        db.rollback()
+        return redirect_with_flash("/admin/reports", request, f"Error creating report: {str(e)}", "error")
+
+
+@router.post("/admin/reports/{report_id}/delete")
+def delete_custom_report(report_id: int, request: Request, db: Session = Depends(get_db)):
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if report:
+        db.delete(report)
+        db.commit()
+        return redirect_with_flash("/admin/reports", request, "Report deleted successfully.", "success")
+    return redirect_with_flash("/admin/reports", request, "Report not found.", "error")
+
 
 
 

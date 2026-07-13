@@ -7,7 +7,7 @@ import json
 
 from database import get_db
 from models.incident import Incident
-from models.entities import Customer, Contract
+from models.entities import Customer, Contract, KittingItem
 from models import RepairExecution, RepairExecutionStatus
 from utils import build_template_context, redirect_with_flash
 
@@ -285,6 +285,18 @@ def incident_detail(request: Request, incident_id: int, db: Session = Depends(ge
     # Generate incident number for this specific incident
     generated_incident_number = _generate_incident_number(incident.caller, db, incident.id, incident.customer_contract)
     
+    from routers.admin import LM_ROUTE_CARDS
+    kitting_items = []
+    if incident.line_replaceable_unit:
+        kitting_items = db.query(KittingItem).filter(
+            KittingItem.product_serial_no == incident.line_replaceable_unit,
+            KittingItem.product_category == "LM"
+        ).all()
+    else:
+        kitting_items = db.query(KittingItem).filter(
+            KittingItem.product_category == "LM"
+        ).all()
+        
     context = build_template_context(
         request,
         incident=incident,
@@ -293,6 +305,8 @@ def incident_detail(request: Request, incident_id: int, db: Session = Depends(ge
         statuses=statuses,
         priorities=priorities,
         repair_executions=repair_executions_list,
+        route_cards=LM_ROUTE_CARDS,
+        kitting_items=kitting_items,
     )
     return templates.TemplateResponse(request, "incident_detail_form.html", context)
 
@@ -323,6 +337,9 @@ def update_incident(
     repair_execution: str = Form(""),
     repair_status: str = Form(""),
     work_notes: str = Form(""),
+    resolved_by: str = Form(""),
+    resolved_date_time: str = Form(""),
+    resolution_notes: str = Form(""),
     db: Session = Depends(get_db),
 ):
     """Update incident - accepts all form fields"""
@@ -370,6 +387,9 @@ def update_incident(
             ('last_serviced_date', last_serviced_date),
             ('repair_execution', repair_execution),
             ('repair_status', repair_status),
+            ('resolved_by', resolved_by),
+            ('resolved_date_time', resolved_date_time),
+            ('resolution_notes', resolution_notes),
         ]
         
         # Collect all changes (batch them into one entry)
@@ -411,6 +431,9 @@ def update_incident(
         incident.repair_execution = repair_execution
         incident.repair_status = repair_status
         incident.work_notes = work_notes
+        incident.resolved_by = resolved_by
+        incident.resolved_date_time = resolved_date_time
+        incident.resolution_notes = resolution_notes
         
         db.commit()
         return redirect_with_flash(f"/incidents/{incident_id}", request, "Incident updated successfully.", "success")

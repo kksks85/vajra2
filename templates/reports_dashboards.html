@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .reports-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    padding: 24px;
+    align-items: start;
+  }
+
+  .report-builder-card {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 24px;
+  }
+
+  .report-builder-card h2 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 8px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+  }
+
+  .form-group select, .form-group input, .form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 13px;
+    background: #ffffff;
+    outline: none;
+    box-sizing: border-box;
+  }
+
+  .form-group select:focus, .form-group input:focus, .form-group textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 10px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .btn-submit:hover {
+    background: #2563eb;
+  }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 20px;
+  }
+
+  .chart-card {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .chart-title-area h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .chart-title-area p {
+    margin: 4px 0 0 0;
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .btn-delete {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-delete:hover {
+    color: #ef4444;
+    background: #fee2e2;
+  }
+
+  .chart-body {
+    position: relative;
+    height: 240px;
+    width: 100%;
+    margin-top: auto;
+  }
+
+  .empty-dashboard {
+    text-align: center;
+    padding: 60px;
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    color: #64748b;
+  }
+
+  @media (max-width: 900px) {
+    .reports-layout {
+      grid-template-columns: 1fr;
+    }
+    .report-builder-card {
+      position: static;
+    }
+  }
+</style>
+
+<div class="reports-layout">
+  <!-- Left Side: Report Builder -->
+  <div class="report-builder-card">
+    <h2>Report Builder</h2>
+    <form action="/admin/reports" method="post">
+      <div class="form-group">
+        <label>Report Name</label>
+        <input type="text" name="name" placeholder="e.g., Active Incidents by Priority" required />
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" placeholder="Brief details about this report..." rows="2"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Data Source</label>
+        <select name="data_source" id="data-source-select" onchange="onDataSourceChange()">
+          <option value="incidents">Incidents</option>
+          <option value="kitting_items">LM Kitting Items</option>
+          <option value="customers">Customers</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Chart Type</label>
+        <select name="chart_type">
+          <option value="bar">Bar Chart</option>
+          <option value="pie">Pie Chart</option>
+          <option value="line">Line Chart</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>X-Axis (Group By Field)</label>
+        <select name="x_field" id="x-field-select">
+          <!-- Populated by JavaScript -->
+        </select>
+      </div>
+
+      <button type="submit" class="btn-submit">Generate & Add to Dashboard</button>
+    </form>
+  </div>
+
+  <!-- Right Side: Dashboard -->
+  <div>
+    <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #0f172a;">Report Engine</h1>
+        <p style="margin: 4px 0 0 0; font-size: 13px; color: #64748b;">Dynamic visual analysis of drone service management entities.</p>
+      </div>
+    </div>
+
+    {% if reports %}
+      <div class="dashboard-grid">
+        {% for report in reports %}
+          <div class="chart-card">
+            <div class="chart-header">
+              <div class="chart-title-area">
+                <h3>{{ report.name }}</h3>
+                <p>{{ report.description or 'No description provided.' }}</p>
+              </div>
+              <form action="/admin/reports/{{ report.id }}/delete" method="post" onsubmit="return confirm('Are you sure you want to delete this report?');">
+                <button type="submit" class="btn-delete" title="Remove from Dashboard">🗑️</button>
+              </form>
+            </div>
+            
+            <div class="chart-body">
+              <canvas id="chart-{{ report.id }}"></canvas>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-dashboard">
+        <h3>No Reports on Dashboard</h3>
+        <p>Use the Report Builder on the left to create and add charts here.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Chart.js and rendering scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const xFieldsMap = {
+    incidents: [
+      { value: 'priority', label: 'Priority' },
+      { value: 'status', label: 'Status' },
+      { value: 'platform_variant', label: 'Product Category' },
+      { value: 'issue_type', label: 'Issue Type' },
+      { value: 'caller', label: 'Customer' },
+      { value: 'srlm_system', label: 'System Type' }
+    ],
+    kitting_items: [
+      { value: 'subsystems', label: 'Subsystem' },
+      { value: 'product_category', label: 'Product Category' },
+      { value: 'route_card_description', label: 'Route Card' }
+    ],
+    customers: [
+      { value: 'name', label: 'Customer Name' }
+    ]
+  };
+
+  function onDataSourceChange() {
+    const sourceSelect = document.getElementById('data-source-select');
+    const xSelect = document.getElementById('x-field-select');
+    const selectedSource = sourceSelect.value;
+    
+    // Clear options
+    xSelect.innerHTML = '';
+    
+    // Populate options
+    const options = xFieldsMap[selectedSource] || [];
+    options.forEach(opt => {
+      const el = document.createElement('option');
+      el.value = opt.value;
+      el.textContent = opt.label;
+      xSelect.appendChild(el);
+    });
+  }
+
+  // Initial populate on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    onDataSourceChange();
+    
+    // Render charts for each report
+    {% for report in reports %}
+      (function() {
+        const ctx = document.getElementById('chart-{{ report.id }}').getContext('2d');
+        const labels = {{ report.labels|safe }};
+        const values = {{ report.values|safe }};
+        const type = '{{ report.chart_type }}';
+        
+        let colors = [
+          'rgba(59, 130, 246, 0.7)',
+          'rgba(16, 185, 129, 0.7)',
+          'rgba(245, 158, 11, 0.7)',
+          'rgba(239, 68, 68, 0.7)',
+          'rgba(139, 92, 246, 0.7)',
+          'rgba(6, 182, 212, 0.7)',
+          'rgba(236, 72, 153, 0.7)'
+        ];
+
+        let borderColors = [
+          'rgba(59, 130, 246, 1)',
+          'rgba(16, 185, 129, 1)',
+          'rgba(245, 158, 11, 1)',
+          'rgba(239, 68, 68, 1)',
+          'rgba(139, 92, 246, 1)',
+          'rgba(6, 182, 212, 1)',
+          'rgba(236, 72, 153, 1)'
+        ];
+        
+        // Configuration options
+        const config = {
+          type: type === 'pie' ? 'pie' : (type === 'line' ? 'line' : 'bar'),
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Record Count',
+              data: values,
+              backgroundColor: type === 'pie' ? colors : colors[0],
+              borderColor: type === 'pie' ? borderColors : borderColors[0],
+              borderWidth: 1.5,
+              fill: type === 'line' ? { target: 'origin', above: 'rgba(59, 130, 246, 0.1)' } : false,
+              tension: 0.2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: type === 'pie' ? true : false,
+                position: 'bottom',
+                labels: {
+                  boxWidth: 12,
+                  font: { size: 11 }
+                }
+              }
+            },
+            scales: type === 'pie' ? {} : {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  precision: 0
+                },
+                grid: {
+                  color: '#f1f5f9'
+                }
+              },
+              x: {
+                grid: {
+                  display: false
+                }
+              }
+            }
+          }
+        };
+        
+        new Chart(ctx, config);
+      })();
+    {% endfor %}
+  });
+</script>
+
+{% endblock %}

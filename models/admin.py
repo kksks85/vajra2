@@ -79,3 +79,16 @@ class RepairExecutionStatus(Base):
     description = Column(String(500), default="")
     order = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class Report(Base):
+    __tablename__ = "reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(200), nullable=False)
+    description = Column(String(500), default="")
+    data_source = Column(String(100), nullable=False)  # 'incidents', 'kitting_items', 'customers'
+    chart_type = Column(String(50), nullable=False)  # 'bar', 'pie', 'line'
+    x_field = Column(String(100), nullable=False)
+    y_field = Column(String(100), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

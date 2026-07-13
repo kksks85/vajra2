@@ -47,6 +47,11 @@ class Incident(Base):
     work_notes = Column(Text, nullable=True)  # Work notes by technicians
     audit_log = Column(Text, nullable=True)  # JSON-formatted audit log of all changes
     
+    # Resolution Fields
+    resolved_by = Column(String(200), nullable=True)
+    resolved_date_time = Column(String(100), nullable=True)
+    resolution_notes = Column(Text, nullable=True)
+    
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
